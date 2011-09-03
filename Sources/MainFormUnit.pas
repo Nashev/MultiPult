@@ -5,8 +5,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
-  Gauges, Buttons, Math, ComCtrls, FileCtrl, jpeg, mmSystem, WaveUtils,
-  WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
+  Gauges, Buttons, Math, ComCtrls, FileCtrl, jpeg, mmSystem,
+  WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
 
 const
   ControlActionStackDeep = 10;
@@ -99,6 +99,8 @@ type
     mmiN1: TMenuItem;
     actToggleTeleport0: TAction;
     mmiToggleTeleport0: TMenuItem;
+    mmiMode: TMenuItem;
+    mmiDoubleFramerate: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -136,6 +138,7 @@ type
     procedure actExportToAVIExecute(Sender: TObject);
     procedure actToggleTeleport0Execute(Sender: TObject);
     procedure pbIndicatorClick(Sender: TObject);
+    procedure mmiDoubleFramerateClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -375,6 +378,19 @@ end;
 procedure TMainForm.mmiBackwardWhilePressedClick(Sender: TObject);
 begin
  //
+end;
+
+procedure TMainForm.mmiDoubleFramerateClick(Sender: TObject);
+begin
+  if FrameRate = 25 then
+    FrameRate := 50
+  else
+    FrameRate := 25;
+  mmiDoubleFramerate.Checked := (FrameRate = 50);
+
+  Timer.Interval := 1000 div FrameRate;
+  pnlToolls.Invalidate;
+//  Invalidate;
 end;
 
 function CopyProgressHandler(
@@ -1234,13 +1250,7 @@ end;
 
 procedure TMainForm.pbIndicatorClick(Sender: TObject);
 begin
-  if FrameRate = 25 then
-    FrameRate := 50
-  else
-    FrameRate := 25;
-  Timer.Interval := 1000 div FrameRate;
-  pnlToolls.Invalidate;
-//  Invalidate;
+  mmiDoubleFramerate.Click;
 end;
 
 function TMainForm.IsShortCut(var Message: TWMKey): Boolean;

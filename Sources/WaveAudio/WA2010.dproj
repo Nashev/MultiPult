@@ -24,6 +24,8 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_DcuOutput>..\..\dcu\</DCC_DcuOutput>
 			<DesignOnlyPackage>true</DesignOnlyPackage>
 			<DCC_WriteableConstants>true</DCC_WriteableConstants>
 			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
@@ -64,7 +66,7 @@
 			<DCCReference Include="WavePlayers.pas"/>
 			<DCCReference Include="WaveRecorders.pas"/>
 			<DCCReference Include="WaveRedirector.pas"/>
-			<DCCReference Include="WaveReg.pas"/>
+			<DCCReference Include="WaveReg.dcr"/>
 			<DCCReference Include="WaveStorage.pas"/>
 			<DCCReference Include="WaveTimer.pas"/>
 			<DCCReference Include="WaveMixer.pas"/>
@@ -102,8 +104,8 @@
 						<VersionInfo Name="Special">False</VersionInfo>
 						<VersionInfo Name="Private">False</VersionInfo>
 						<VersionInfo Name="DLL">False</VersionInfo>
-						<VersionInfo Name="Locale">1049</VersionInfo>
-						<VersionInfo Name="CodePage">1251</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
 					</VersionInfo>
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>

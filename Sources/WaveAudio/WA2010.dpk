@@ -12,7 +12,7 @@ package WA2010;
 {$LOCALSYMBOLS ON}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION ON}
+{$OPTIMIZATION OFF}
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
 {$REFERENCEINFO OFF}
@@ -41,7 +41,7 @@ contains
   WavePlayers in 'WavePlayers.pas',
   WaveRecorders in 'WaveRecorders.pas',
   WaveRedirector in 'WaveRedirector.pas',
-  WaveReg in 'WaveReg.pas',
+  WaveReg,
   WaveStorage in 'WaveStorage.pas',
   WaveTimer in 'WaveTimer.pas',
   WaveMixer in 'WaveMixer.pas';

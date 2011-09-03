@@ -107,8 +107,6 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitLeft = -1
-    ExplicitTop = 439
     DesignSize = (
       703
       34)
@@ -609,15 +607,6 @@ object MainForm: TMainForm
     end
     object mmiNavigation: TMenuItem
       Caption = #1053#1072#1074#1080#1075#1072#1094#1080#1103
-      object mmiRecord: TMenuItem
-        Action = actRecord
-      end
-      object mmiPlay: TMenuItem
-        Action = actPlay
-      end
-      object mmiSeparatorSteps: TMenuItem
-        Caption = '-'
-      end
       object mmiNext: TMenuItem
         Action = actStepNext
         ShortCut = 39
@@ -659,6 +648,22 @@ object MainForm: TMainForm
       end
       object mmiToggleTeleport0: TMenuItem
         Action = actToggleTeleport0
+      end
+    end
+    object mmiMode: TMenuItem
+      Caption = #1056#1077#1078#1080#1084
+      object mmiRecord: TMenuItem
+        Action = actRecord
+      end
+      object mmiPlay: TMenuItem
+        Action = actPlay
+      end
+      object mmiSeparatorSteps: TMenuItem
+        Caption = '-'
+      end
+      object mmiDoubleFramerate: TMenuItem
+        Caption = #1059#1076#1074#1086#1077#1085#1085#1072#1103' '#1095#1072#1089#1090#1086#1090#1072' '#1082#1072#1088#1086#1074
+        OnClick = mmiDoubleFramerateClick
       end
     end
     object mmiHelp: TMenuItem
