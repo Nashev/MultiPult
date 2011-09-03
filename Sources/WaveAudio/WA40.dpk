@@ -1,0 +1,47 @@
+package WA40;
+
+{$R *.RES}
+{$R 'WaveReg.dcr'}
+{$ALIGN ON}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO OFF}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST ON}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $00400000}
+{$DESCRIPTION 'Wave Audio Package for Delphi 4.0'}
+{$DESIGNONLY}
+{$IMPLICITBUILD ON}
+
+requires
+  vcl40;
+
+contains
+  WaveACM in 'WaveACM.pas',
+  WaveUtils in 'WaveUtils.pas',
+  WaveIn in 'WaveIn.pas',
+  WaveIO in 'WaveIO.pas',
+  WaveOut in 'WaveOut.pas',
+  WavePlayers in 'WavePlayers.pas',
+  WaveRecorders in 'WaveRecorders.pas',
+  WaveRedirector in 'WaveRedirector.pas',
+  WaveReg in 'WaveReg.pas',
+  WaveStorage in 'WaveStorage.pas',
+  WaveTimer in 'WaveTimer.pas',
+  WaveMixer in 'WaveMixer.pas';
+
+end.

@@ -1,8 +1,8 @@
-program MultPult;
+program LiveConvert;
 
 uses
   Forms,
-  MainFormUnit in 'MainFormUnit.pas' {MainForm};
+  Main in 'Main.pas' {MainForm};
 
 {$R *.res}
 

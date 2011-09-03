@@ -1,13 +1,14 @@
-program MultPult;
+program ReceiverFile;
 
 uses
   Forms,
-  MainFormUnit in 'MainFormUnit.pas' {MainForm};
+  Main in 'Main.pas' {MainForm};
 
 {$R *.res}
 
 begin
   Application.Initialize;
+  Application.Title := 'Audio File Receiver (Client)';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.

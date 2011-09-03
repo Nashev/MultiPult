@@ -5,8 +5,8 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
-  MPlayer, mmSystem, WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO,
-  WaveIn, WaveRecorders, Gauges, Buttons, WaveTimer, Math, ComCtrls, FileCtrl, jpeg;
+  Gauges, Buttons, Math, ComCtrls, FileCtrl, jpeg, mmSystem, WaveUtils,
+  WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
 
 const
   ControlActionStackDeep = 10;

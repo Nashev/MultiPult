@@ -1,0 +1,2999 @@
+<html>
+<head>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<meta NAME="Author" CONTENT="Kambiz R. Khojasteh">
+<title>Wave Audio Package for Delphi</title>
+<style TYPE="text/css">
+<!--
+body, td, th { font-family: Verdana, Arial, sans-serif; font-size: 10pt; }
+a { text-decoration: none; color: #800; }
+a:hover { color: #f00; }
+-->
+</style>
+</head>
+<body BGCOLOR="#FFFFFF" TEXT="#000000">
+<table WIDTH="100%" BORDER="0" CELLSPACING="5" CELLPADDING="5" BGCOLOR="#660000">
+  <tr>
+    <th><font COLOR="#FFFFFF" SIZE="+3">Wave Audio Package v1.89</font></th>
+  </tr>
+</table>
+<p>Copyright &copy; <a HREF="mailto:kambiz@delphiarea.com">Kambiz R. Khojasteh</a>. All rights reserved.<br>
+  Get future package updates from <a HREF="http://www.delphiarea.com">http://www.delphiarea.com</a>.<br>
+  </p>
+<table BORDER="1" CELLSPACING="2" CELLPADDING="5" BORDERCOLOR="#FFFFFF" ALIGN="LEFT">
+  <tr BGCOLOR="#333333" ALIGN="CENTER" VALIGN="MIDDLE">
+    <td NOWRAP><b style="color: #fff;">Delphi 3</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 4</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 5</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 6</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 7</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 2005</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 2006</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 2007</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 2009</b></td>
+    <td NOWRAP><b style="color: #fff;">Delphi 2010</b></td>
+  </tr>
+</table>
+<p><br>
+  <br>
+  </p>
+<p><b><a NAME="DESCRIPTION"></a><br>
+  DESCRIPTION</b></p>
+<p>
+<p>The Wave Audio Package provides seven components for playing and recording of wave audio formats, two components for storing wave data as Delphi resources, one audio mixer component, and one high resolution multimedia timer. The package has also a set of useful functions for manipulating wave audio's.</p>
+<p>The package's components are:</p>
+<ul>
+  <li><b><a HREF="#TMultimediaTimer">TMultimediaTimer</a></b><br>
+    Is a high resolution timer.</li>
+  <li><b><a HREF="#TAudioMixer">TAudioMixer</a></b><br>
+    Provides an easy interface to manage audio mixer controls.</li>
+  <li><b><a HREF="#TWaveStorage">TWaveStorage</a></b><br>
+    Stores a single wave audio and provides access to its informational fields.</li>
+  <li><b><a HREF="#TWaveCollection">TWaveCollection</a></b><br>
+    Stores a collection of wave audio's as resource and provides access to their informational fields.</li>
+  <li><b><a HREF="#TAudioPlayer">TAudioPlayer</a></b><br>
+    Plays a wave audio, which is stored in the component.</li>
+  <li><b><a HREF="#TAudioRecorder">TAudioRecorder</a></b><br>
+    Records wave audio and stores it in the component.</li>
+  <li><b><a HREF="#TStockAudioPlayer">TStockAudioPlayer</a></b><br>
+    Plays wave audio from a <a HREF="#TWaveStorage">TWaveStorage</a> or <a HREF="#TWaveCollection">TWaveCollection</a> component, a stream, or a file.</li>
+  <li><b><a HREF="#TStockAudioRecorder">TStockAudioRecorder</a></b><br>
+    Records wave audio to a <a HREF="#TWaveStorage">TWaveStorage</a> or <a HREF="#TWaveCollection">TWaveCollection</a> component, a stream, or a file.</li>
+  <li><b><a HREF="#TLiveAudioPlayer">TLiveAudioPlayer</a></b><br>
+    Plays wave audio from user defined buffers.</li>
+  <li><b><a HREF="#TLiveAudioRecorder">TLiveAudioRecorder</a></b><br>
+    Records wave audio to user defined buffers.</li>
+  <li><b><a HREF="#TAudioRedirector">TAudioRedirector</a></b><br>
+    Records wave audio from an input audio device and plays it back on an output audio device.</li>
+</ul>
+<p><b><a NAME="INTERFACE"></a><br>
+  INTERFACE</b></p>
+<ul>
+</ul>
+<p>Although for using the components available in the Wave Audio package, you do not know to know about the details, however for some low level descriptions I've supposed you are familiar with Microsoft Multimedia terminology and API. To know more about details you can study &quot;Microsoft Multimedia Programmer's Reference&quot;.</p>
+<ul>
+  <ul>
+    <li><a HREF="#DataTypes">Data Types</a> </li>
+    <li><a HREF="#EventTypes">Event Types</a> </li>
+    <li><a HREF="#ExceptionClasses">Exception Classes</a> </li>
+    <li><a HREF="#WaveStorageClasses">Wave Storage Classes</a></li>
+    <li><a HREF="#WaveAudioPlayerRecorderClasses">Wave Audio Player and Recorder Classes</a></li>
+    <li><a HREF="#AudioMixerClasses">Audio Mixer Classes</a> </li>
+    <li><a HREF="#TimerClass">Multimedia Timer Class</a></li>
+    <li><a HREF="#GlobalProcedures">Global Procedures</a><br>
+      </li>
+  </ul>
+</ul>
+<ul>
+  <li><b><a NAME="DataTypes"></a>DATA TYPES </b><br>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="PRawWave"></a><a NAME="TRawWave"></a>PRawWave = ^TRawWave<br>
+          TRawWave = record<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;pData: Pointer;<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;dwSize: DWORD;<br>
+          end;<br>
+          </b>Stores a pointer to the raw wave audio data, including size of data in bytes.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TPCMChannel"></a>TPCMChannel = (cMono, cStereo);<br>
+            </b>Audio channels for PCM format.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TPCMSamplesPerSec"></a>TPCMSamplesPerSec = (ss8000Hz, ss11025Hz, ss22050Hz, ss44100Hz, ss48000Hz);<br>
+            </b>Samples per soconds for PCM format.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TPCMBitsPerSample"></a>TPCMBitsPerSample = (bs8Bit, bs16Bit);<br>
+            </b>Bits per sample for PCM format.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TPCMFormat"></a>TPCMFormat = (nonePCM, Mono8Bit8000Hz, Stereo8bit8000Hz, Mono16bit8000Hz, Stereo16bit8000Hz, Mono8bit11025Hz, Stereo8bit11025Hz, Mono16bit11025Hz, Stereo16bit11025Hz, Mono8bit22050Hz, Stereo8bit22050Hz, Mono16bit22050Hz, Stereo16bit22050Hz, Mono8bit44100Hz, Stereo8bit44100Hz, Mono16bit44100Hz, Stereo16bit44100Hz, Mono8bit48000Hz, Stereo8bit48000Hz, Mono16bit48000Hz,<br>
+            Stereo16bit48000Hz);<br>
+            </b>Santandard PCM formats.<br>
+            </p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>nonePCM</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>None PCM audio format</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono8Bit8000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 8.000 kHz, 8 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo8bit8000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td> PCM 8.000 kHz, 8 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono16bit8000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 8.000 kHz, 16 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo16bit8000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 8.000 kHz, 16 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono8bit11025Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 11.025 kHz, 8 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo8bit11025Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 11.025 kHz, 8 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono16bit11025Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 11.025 kHz, 16 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo16bit11025Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 11.025 kHz, 16 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono8bit22050Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 22.050 kHz, 8 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo8bit22050Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 22.050 kHz, 8 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono16bit22050Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 22.050 kHz, 16 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo16bit22050Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 22.050 kHz, 16 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono8bit44100Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 44.100 kHz, 8 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo8bit44100Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 44.100 kHz, 8 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono16bit44100Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 44.100 kHz, 16 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo16bit44100Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 44.100 kHz, 16 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono8bit48000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 48.000 kHz, 8 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo8bit48000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 48.000 kHz, 8 Bit, Stereo</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Mono16bit48000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 48.000 kHz, 16 Bit, Mono</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>Stereo16bit48000Hz</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>PCM 48.000 kHz, 16 Bit, Stereo</td>
+            </tr>
+          </table>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveDeviceFormats"></a>TWaveDeviceFormats = set of <a HREF="#TPCMFormat">TPCMFormat</a>;<br>
+            </b>Supported PCM formats by a wave audio device.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveOutDeviceSupport"></a>TWaveOutDeviceSupport = (dsVolume, dsStereoVolume, dsPitch, dsPlaybackRate, dsPosition, dsAsynchronize, dsDirectSound);<br>
+            </b>Possible features of a wave out audio device.<br>
+            </p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsVolume</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Supports volume control.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsStereoVolume</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Supports separate left and right volume control.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsPitch</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td> Supports pitch control.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsPlaybackRate</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Supports playback rate control.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsPosition</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Returns sample-accurate position information.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsAsynchronize</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The driver is asynchronous and will not block the caller thread while playing a buffer.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>dsDirectSound</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Supports Direct Sound.</td>
+            </tr>
+          </table>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b> <a NAME="TWaveOutDeviceSupports"></a>TWaveOutDeviceSupports = set of <a HREF="#TWaveOutDeviceSupport">TWaveOutDeviceSupport</a>;<br>
+            </b>Supported features by a wave out audio device.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveOutOption"></a>TWaveOutOption = (woSetVolume, woSetPitch, woSetPlaybackRate);<br>
+            </b>Possible options for a wave out audio device.<br>
+            </p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>woSetVolume</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>If the wave out audio device supports volume control, the volume should be set by the component.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>woSetPitch</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>If the wave out audio device supports pitch control, the pich should be set by the component.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>woSetPlaybackRate</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td> If the wave out audio device supports playback rate control, the playback rate should be set by the component.</td>
+            </tr>
+          </table>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveOutOptions"></a>TWaveOutOptions = set of <a HREF="#TWaveOutOption">TWaveOutOption</a>;<br>
+            </b>Selected options for a wave out audio device.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveStreamState" id="TWaveStreamState"></a>TWaveStreamState = (wssReady, wssReading, wssWriting);<br>
+            </b>Specifies state of a wave stream adapter. <br>
+            </p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>wssReady</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The wave stream is ready to use.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>wssReading</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The wave audio is being read.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>wssWriting</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td> The wave audio is being written.</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMS2StrFormat"></a>TMS2StrFormat = (msHMSh, msHMS, msMSh, msMS, msSh, msS, msAh, msA);</b><br>
+            Format specifiers for milliseconds to string convertor.</p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msHMSh</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Hour:Minute:Second.Hunderdth</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msHMS</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Hour:Minute:Second</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msMSh</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td> Minute:Second.Hunderdth</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msMS</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Minute:Second</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msSh</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Second.Hunderdth</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msS</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Second</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msAh</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Automatically chooses the best format with hunderdth of second</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>msA</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Automatically chooses the best format without hunderdth of second</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMixerControlType"></a>TMixerControlType = (mcVolume, mcMute, mcSelect, mcMix);</b><br>
+            Audio mixer control type.</p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>mcVolume</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>General volume fade control.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>mcMute</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Mutes an audio line (suppressing the data flow of the line) or allows the audio data to play.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>mcSelect</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Restricts the line selection to one source line at a time.</td>
+            </tr>
+            <tr>
+              <td VALIGN="TOP"><b>mcMix</b></td>
+              <td>&nbsp;</td>
+              <td>Selects the mixer channel.</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMixerControlTypes"></a>TMixerControlTypes = set of <a HREF="#TMixerControlType">TMixerControlType</a>;</b><br>
+            Set of available audio mixer control types.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMixerLineTargetType"></a>TMixerLineTargetType = (tgUndefined, tgWaveOut, tgWaveIn, tgMidiOut, tgMidiIn, tgAux);</b><br>
+            Target media device type associated with the audio line.</p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgUndefined</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is not strictly bound to a defined media type.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgWaveOut</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is strictly bound to the waveform-audio output device.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgWaveIn</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is strictly bound to the waveform-audio input device.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgMidiOut</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is strictly bound to the MIDI output device.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgMidiIn</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is strictly bound to the MIDI input device.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>tgAux</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>The audio line is strictly bound to the auxiliary device.</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMixerLineComponentType"></a>TMixerLineComponentType = (cmDstUndefined, cmDstDigital, cmDstLine, cmDstMonitor, cmDstSpeakers, cmDstHeadphones, cmDstTelephone, cmDstWaveIn, cmDstVoiceIn, cmSrcUndefined, cmSrcDigital, cmSrcLine, cmSrcMicrophone, cmSrcSynthesizer, cmCompactDisc, cmSrcTelephone, cmSrcPCSpeaker, cmSrcWaveOut, cmSrcAuxiliary, cmSrcAnalog);</b><br>
+            Component type for this audio line. An application can use this information to display tailored graphics or to search for a particular component.</p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstUndefined</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a destination that cannot be defined by one of the standard component types. A mixer device is required to use this component type for line component types that have not been defined by Microsoft Corporation.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstDigital</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a digital destination (for example, digital input to a DAT or CD audio device).</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstLine</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a line level destination (for example, line level input from a CD audio device) that will be the final recording source for the analog-to-digital converter (ADC). Because most audio cards for personal computers provide some sort of gain for the recording audio source line, the mixer device will use the <b>cmDstWaveIn</b> type.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstMonitor</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a destination used for a monitor.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstSpeakers</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is an adjustable (gain and/or attenuation) destination intended to drive speakers. This is the typical component type for the audio output of audio cards for personal computers.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstHeadphones</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is an adjustable (gain and/or attenuation) destination intended to drive headphones. Most audio cards use the same audio destination line for speakers and headphones, in which case the mixer device simply uses the <b>cmDstSpeakers</b> type.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstTelephone</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a destination that will be routed to a telephone line.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstWaveIn</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a destination that will be the final recording source for the waveform-audio input (ADC). This line typically provides some sort of gain or attenuation. This is the typical component type for the recording line of most audio cards for personal computers.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmDstVoiceIn</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a destination that will be the final recording source for voice input. This component type is exactly like <b>cmDstWaveIn</b> but is intended specifically for settings used during voice recording/recognition. Support for this line is optional for a mixer device. Many mixer devices provide only <b>cmDstWaveIn</b>.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcUndefined</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source that cannot be defined by one of the standard component types. A mixer device is required to use this component type for line component types that have not been defined by Microsoft Corporation.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcDigital</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a digital source (for example, digital output from a DAT or audio CD).</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcLine</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a line-level source (for example, line-level input from an external stereo) that can be used as an optional recording source. Because most audio cards for personal computers provide some sort of gain for the recording source line, the mixer device will use the <b>cmSrcAuxiliary</b> type.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcMicrophone</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a microphone recording source. Most audio cards for personal computers provide at least two types of recording sources: an auxiliary audio line and microphone input. A microphone audio line typically provides some sort of gain. Audio cards that use a single input for use with a microphone or auxiliary audio line should use the <b>cmSrcMicrophone</b> component type.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcSynthesizer</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from the output of an internal synthesizer. Most audio cards for personal computers provide some sort of MIDI synthesizer (for example, an Adlib&reg;-compatible or OPL/3 FM synthesizer).</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmCompactDisc</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from the output of an internal audio CD. This component type is provided for audio cards that provide an audio source line intended to be connected to an audio CD (or CD-ROM playing an audio CD).</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcTelephone</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from an incoming telephone line.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcPCSpeaker</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from personal computer speaker. Several audio cards for personal computers provide the ability to mix what would typically be played on the internal speaker with the output of an audio card. Some audio cards support the ability to use this output as a recording source.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcWaveOut</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from the waveform-audio output digital-to-analog converter (DAC). Most audio cards for personal computers provide this component type as a source to the <b>cmDstSpeakers</b> destination. Some cards also allow this source to be routed to the <b>cmDstWaveIn</b> destination.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcAuxiliary</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is a source originating from the auxiliary audio line. This line type is intended as a source with gain or attenuation that can be routed to the <b>cmDstSpeakers</b> destination and/or recorded from the <b>cmDstWaveIn</b> destination.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>cmSrcAnalog</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is an analog source (for example, analog output from a video-cassette tape).</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMixerLineFlags"></a>TMixerLineFlags = set of (lfActive, lfDisconnected, lfSource);</b><br>
+            Status and support flags for the audio line.</p>
+          <table WIDTH="90%" BORDER="0" CELLSPACING="5" CELLPADDING="0" ALIGN="CENTER">
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>lfActive</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is active. An active line indicates that a signal is probably passing through the line.</td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>lfDisconnected</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is disconnected. A disconnected line's associated controls can still be modified, but the changes have no effect until the line is connected. </td>
+            </tr>
+            <tr>
+              <td WIDTH="15%" VALIGN="TOP"><b>lfSource</b></td>
+              <td WIDTH="20">&nbsp;</td>
+              <td>Audio line is an audio source line associated with a single audio destination line. If this flag is not set, this line is an audio destination line associated with zero or more audio source lines.</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> <br>
+    </li>
+  <li><a NAME="EventTypes"></a><b>EVENT TYPES <br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveAudioEvent"></a>TWaveAudioEvent = procedure(Sender: TObject) of object;</b><br>
+            This event is used for wave audio events that do not require parameters.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b> <a NAME="TWaveAudioGetFormatEvent"></a>TWaveAudioGetFormatEvent = procedure(Sender: TObject; var pWaveFormat: PWaveFormatEx; var FreeIt: Boolean) of object;<br>
+            </b>This event is used for wave audio events that get wave audio format from their handler. The handler should set pWaveFormat parameter to the address of a TWaveFormatEx structure. If the FreeIt parameter set to True, the memory allocated for wave format structure will be freed automatically, when it is no more needed.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b> <a NAME="TWaveAudioGetDataEvent"></a>TWaveAudioGetDataEvent = function(Sender: TObject; const Buffer: Pointer; BufferSize: DWORD; var NumLoops: DWORD): DWORD of object;<br>
+            </b>This event is used for wave audio events that get the wave audio data for playback. The handler should fill the buffer specified by the Buffer parameter with the wave data. The maximum data that can be written in the buffer is specified by the BufferSize parameter. The handler must return the number of bytes actually written in the buffer. Optionally the handler can determine the number of times the buffer should be played by using the NumLoop parameter.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b> <a NAME="TWaveAudioGetDataPtrEvent"></a>TWaveAudioGetDataPtrEvent = function(Sender: TObject; var Buffer: Pointer; var NumLoops: DWORD; var FreeIt: Boolean): DWORD of object;<br>
+            </b>This event is used for wave audio events that get the wave audio data for playback. The handler should set the pointer specified by the Buffer to the address of wave data and return the size of the buffer. If the FreeIt parameter set to True, the component will automatically free the memory allocated for buffer. Optionally the handler can determine the number of times the buffer should be played by using the NumLoop parameter.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="TWaveAudioDataReadyEvent"></a>TWaveAudioDataReadyEvent = procedure(Sender: TObject; const Buffer: Pointer; BufferSize: DWORD; var FreeIt: Boolean) of object;<br>
+          </b>This event is used for wave audio events that informs the caller about the recorded wave audio data. The wave data stored in buffer specified by the Buffer parameter, and the size of the actual data in the buffer is specified by the BufferSize parameter. If the FreeIt parameter set to True, the component will release the memory allocated for the buffer, otherwise your application must release it. </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="TWaveAudioLevelEvent"></a>TWaveAudioLevelEvent = procedure(Sender: TObject; Level: Integer) of object;<br>
+          </b>This event is used for wave audio events that informs the caller about the peak level of the audio buffer in percent.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="TWaveAudioFilterEvent"></a>TWaveAudioFilterEvent = procedure(Sender: TObject; const Buffer: Pointer; BufferSize: DWORD) of object;<br>
+          </b>This event is used for wave audio events that offers to the caller to filter wave data. The wave data stored in the buffer specified by the Buffer parameter, and the size of the actual data in the buffer is specified by the BufferSize parameter. The event handler only can change the data, not the size of the data.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="TMixerLineNotifyEvent"></a>TMixerLineNotifyEvent = procedure(Sender: TObject; MixerLine: <a HREF="#TAudioMixerLine">TAudioMixerLine</a>) of object;<br>
+          </b>This event notifies the application that the state of an audio line has changed. </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="TMixerControlNotifyEvent"></a>TMixerControlNotifyEvent = procedure(Sender: TObject; MixerLine: <a HREF="#TAudioMixerLine">TAudioMixerLine</a>; ControlType: <a HREF="#TMixerControlType">TMixerControlType</a>) of object;<br>
+          </b>This event notifies the application that the state of a control associated with an audio line has changed. </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> <br>
+    </li>
+  <li><b><a NAME="ExceptionClasses"></a>EXCEPTION CLASSES <br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"> <b><a NAME="EWaveAudioError"></a>EWaveAudioError = class(Exception)<br>
+          </b>This class is the base exception class for wave audio exceptions.</td>
+      </tr>
+    </table>
+    <b><br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"> <b><a NAME="EWaveAudioSysError"></a>EWaveAudioSysError = class(<a HREF="#EWaveAudioError">EWaveAudioError</a>)<br>
+          </b>This exception is raised if the operating system returns an error code for a wave audio device. The exception dialog contains the system message associated with the error. </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"> <b><a NAME="EWaveAudioInvalidOperation"></a>EWaveAudioInvalidOperation = class(<a HREF="#EWaveAudioError">EWaveAudioError</a>)<br>
+          </b>This exception is raised if the when a component receives a request for an invalid operation. For example, if an application attempts to open an already open wave audio device, or change its wave format an EWaveAudioInvalidOperation exception is raised.</td>
+      </tr>
+    </table>
+    <b><br>
+    </b> <br>
+    </li>
+  <li><b><a NAME="WaveStorageClasses"></a>WAVE STORAGE CLASSES<br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveStreamAdapter" id="TWaveStreamAdapter"></a>TWaveStreamAdapter = class(TPersistent);<br>
+            </b>This class encapsulates a Delphi stream as a wave audio and provides easy access to its informational fields.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td BGCOLOR="#660000"><b>Key Properties </b></td>
+            </tr>
+            <tr>
+              <td> <b>AudioFormat: Strings; </b><sup>(Read-Only)</sup><br>
+                Determines the string description of the wave format.</td>
+            </tr>
+            <tr>
+              <td><b>BitRate: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the bit rate of the wave audio in kbps (kilo bits per second). </td>
+            </tr>
+            <tr>
+              <td> <b>DataSize: DWORD; </b><sup>(Read-Only)</sup><b><br>
+                </b>Indicates the size of wave data in bytes.</td>
+            </tr>
+            <tr>
+              <td><b>DataOffset: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the offset of wave data from the begining of the stream.</td>
+            </tr>
+            <tr>
+              <td><b>Empty: Boolean; </b><sup>(Read-Only)</sup><br>
+                Indicates whether the associated stream is empty.</td>
+            </tr>
+            <tr>
+              <td><b>Length: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the lenght of the wave in milliseconds.</td>
+            </tr>
+            <tr>
+              <td><b>Ownership: TStreamOwnership;</b><br>
+                Specifies whether the TWaveStreamAdapter should act as the Owner of the associated stream object. TWaveStreamAdaptor frees the owned associated stream from its own destructor.</td>
+            </tr>
+            <tr>
+              <td> <b>PeakLevel: Integer; </b><sup>(Read-Only)</sup><b><br>
+                </b>Indicates the peak level of the volume for the wave audio in percent.</td>
+            </tr>
+            <tr>
+              <td><b>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the standard PCM format of the wave audio.</td>
+            </tr>
+            <tr>
+              <td> <b>Position: Integer;<br>
+                </b>Determines the current wave data offset in bytes while wave data is being read or write. </td>
+            </tr>
+            <tr>
+              <td><b><a name="State"></a>State: <a href="#TWaveStreamState">TWaveStreamState</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the current state of the wave stream. </td>
+            </tr>
+            <tr>
+              <td><b>Stream: TStream</b><b>; </b><sup>(Read-Only)</sup><br>
+                Identifies the associated TStream object that TWaveStreamAdapter uses. Read Stream to directly access the TStream object that the wave stream adapter represents. This object is associated with the TStream object in the TWaveStreamAdapter constructor.</td>
+            </tr>
+            <tr>
+              <td><b>Valid: Boolean ; </b><sup>(Read-Only)</sup><br>
+                Indicates whether the wave audio is valid.</td>
+            </tr>
+            <tr>
+              <td> <b>WaveFormat: PWaveFormatEx; </b><sup>(Read-Only)</sup><br>
+                Pointer to the wave format structure of the wave audio. Although the fields of wave format structure are not read-only, however you must not change them.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Event</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnChanging: TNotifyEvent;</b> <br>
+                Occurs just before a change is made to the stream.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnChange: TNotifyEvent;</b> <br>
+                Occurs when the content of the stream is changed.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td BGCOLOR="#660000"><b>Key Method</b></td>
+            </tr>
+            <tr>
+              <td><b>procedure Assign(Source: TPersistent);</b> <br>
+                Copies a new wave audio in to the associated stream object.</td>
+            </tr>
+            <tr>
+              <td><b><a name="BeginRewrite"></a>function BeginRewrite(const pWaveFormat: PWaveFormatEx): Boolean;</b> <br>
+                Initiates creating of a new wave audio in the specified format. Use <a href="#write">Write</a> method to write raw wave data, and then call <a href="#EndRewrite">EndRewrite</a> to finalize creating of the new wave audio. Calling this method clears the previous content of the associated stream. </td>
+            </tr>
+            <tr>
+              <td><b><a name="BeginRewritePCM"></a>function BeginRewritePCM(Format: <a HREF="#TPCMFormat">TPCMFormat</a>): Boolean;</b> <br>
+                Initiates creating of a new wave audio in the specified PCM format. Use <a href="#write">Write</a> method to write raw wave data, and then call <a href="#EndRewrite">EndRewrite</a> to finalize creating of the new wave audio. Calling this method clears the previous content of the associated stream. </td>
+            </tr>
+            <tr>
+              <td> <b>function ChangeVolume(Percent: Integer): Boolean;</b><br>
+                Increases or decreases the volume of the wave audio by the specified percentage (PCM format only).</td>
+            </tr>
+            <tr>
+              <td> <b>procedure Clear;</b><br>
+                Sets size of the associated stream to zero.</td>
+            </tr>
+            <tr>
+              <td> <b>constrator Create(AStream: TStream; AOwnership: TStreamOwnership);<br>
+                </b>Creates an instance of a TWaveStreamAdapter object. </td>
+            </tr>
+            <tr>
+              <td> <b>function Concat(const Sources: array of <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a>; Gap: DWORD);<br>
+                </b>Concatenates several wave audio streams with the same audio format to generate a single wave audio. The function inserts silence between waves, which its amount is specified by the Gap parameter in milliseconds. If the Gap parameter is not zero, the source waves should be PCM format only.</td>
+            </tr>
+            <tr>
+              <td><b><a name="ConvertTo"></a>function ConvertTo(const pTargetWaveFormat: PWaveFormatEx): Boolean;</b> <br>
+                Converts the wave audio to the specified format. If the function succeeds to convert the wave, it returns True, otherwise it returns False. For more information, please read <a HREF="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/multimed/htm/_win32_multistep_format_conversion.asp">Multistep Format Conversion</a> on MSDN.</td>
+            </tr>
+            <tr>
+              <td><b><a name="ConvertToPCM"></a>function ConvertToPCM(TargetFormat: <a HREF="#TPCMFormat">TPCMFormat</a>): Boolean;</b> <br>
+                Converts the wave audio to the specified PCM format. If the function succeeds to convert the wave, it returns True, otherwise it returns False.</td>
+            </tr>
+            <tr>
+              <td><b><a name="Copy" id="Copy"></a>function Copy(Source: <a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>; Pos: DWORD = 0; Len: DWORD = $FFFFFFFF): Boolean;</b> <br>
+                Copies portion of a new wave audio in to the assosiated stream object.</td>
+            </tr>
+            <tr>
+              <td><b>procedure Crop;<br>
+                </b>If the stream size is more than the actual wave audio size, this method truncates the size to the actual size.</td>
+            </tr>
+            <tr>
+              <td><b>function Delete(Pos: DWORD; Len: DWORD): Boolean;</b><br>
+                Deletes a portion of the wave audio from the position specified by the Pos parameter in milliseconds, and by the length specified by the Len parameter in milliseconds.</td>
+            </tr>
+            <tr>
+              <td><b><a name="EndRead"></a>function EndRead: Boolean;</b> <br>
+                Finalizes reading of raw wave audio data.</td>
+            </tr>
+            <tr>
+              <td><b><a name="EndRewrite"></a>function EndRewrite: Boolean;</b> <br>
+                Finalizes creation of a new wave audio.</td>
+            </tr>
+            <tr>
+              <td> <b>function Equals(</b><b>Wave: <a HREF="#TWave">TWave</a>): Boolean;</b><br>
+                Returns True if the content of the wave object specified by the Wave parameter equals to this object.</td>
+            </tr>
+            <tr>
+              <td><b>function Insert(Pos: DWORD; Wave: <a HREF="#TWave">TWave</a>): Boolean;<br>
+                </b>Inserts another wave audio specified by the Wave parameter at the position specified by the Pos parameter in milliseconds. The audio format of the waves should be identical.</td>
+            </tr>
+            <tr>
+              <td>
+                <p><b>function InsertSilence(Pos: DWORD; Len: DWORD): Boolean;</b><br>
+                  Inserts silence at the position specified by the Pos parameter in milliseconds, and by the duration specified by the Len parameter in milliseconds. The audio format of the wave should be PCM format. </p>
+              </td>
+            </tr>
+            <tr>
+              <td><b>function Invert: Boolean;</b><br>
+                Inverts the wave audio (PCM format only).</td>
+            </tr>
+            <tr>
+              <td><b>procedure LoadFromFile(const AFileName: String);</b><br>
+                Copies content of the specified file in to the assiociated stream.</td>
+            </tr>
+            <tr>
+              <td><b>procedure LoadFromStream(AStream: TStream);</b><br>
+                Copies content of the specified stream in to the assiociated stream.</td>
+            </tr>
+            <tr>
+              <td><b><a name="Mix"></a>function Mix(const Sources: array of <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a>): Boolean;</b><br>
+                Mixes several wave audio streams with the same audio format (PCM format only) as a single wave audio.</td>
+            </tr>
+            <tr>
+              <td><b><a name="Write"></a>function Read(const Buffer: Pointer; Count: Integer): Integer;</b><br>
+                Reads raw wave data from the wave audio. The reading process should be initialized by calling <a href="#BeginRead">BeginRead</a> method. </td>
+            </tr>
+            <tr>
+              <td>
+                <p><b>function SameFormat(Wave: <a HREF="#TWave">TWave</a>): Boolean;<br>
+                  </b>Returns True if the audio format of the wave object specified by the Wave parameter equals to this object.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p><b>function SameWaveFormat(const pWaveFormat: PWaveFormatEx): Boolean;<br>
+                  </b>Returns True if the associated wave audio has the same format of the specified wave format.</p>
+              </td>
+            </tr>
+            <tr>
+              <td><b>procedure SaveToFile(const AFileName: String);</b><br>
+                Copies content of the assiociated stream in to the specified file.</td>
+            </tr>
+            <tr>
+              <td><b>procedure SaveToStream(AStream: TStream);</b><br>
+                Copies content of the assiociated stream in to the specified stream.</td>
+            </tr>
+            <tr>
+              <td><b><a name="Sub"></a>function Sub(Pos, Len: DWORD): Boolean;</b><br>
+                Keeps the portion of wave audio specified by starting position and length in milliseconds and deletes the rest.</td>
+            </tr>
+            <tr>
+              <td><b><a name="TrimStart"></a>function TrimStart(Len: DWORD): Boolean;</b><br>
+                Deletes the start of wave audio by the specified length in milliseconds.</td>
+            </tr>
+            <tr>
+              <td><b><a name="TrimEnd"></a>function TrimEnd(Len: DWORD): Boolean;</b><br>
+                Deletes the end of wave audio by the specified length in milliseconds.</td>
+            </tr>
+            <tr>
+              <td><b><a name="Write"></a>function Write(const Buffer: Pointer; Count: Integer): Integer;</b><br>
+                Appends raw wave data to the end of the wave audio initialized by calling <a href="#beginRewrite">BeginRewrite</a> or <a href="#beginRewritePCM">BeginRewritePCM</a> method. </td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <b><br>
+</b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveStreamConverter" id="TWaveStreamConverter"></a>TWaveStreamConverter = class(<a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>);<br>
+            </b>This class like its ancestor encapsulates a Delphi stream as a wave audio and provides easy access to its informational fields. In addition, this class can convert wave audio format while reading/writing buffers on the fly.</p>
+          <p><b>Warning:</b> While reading data, depends on the source and target wave formats, and size of the buffer, the actual read bytes can be less than the requested size (even zero). In this case it means that the conversion of the whole amount of bytes was impossible. However, the class will cache the left bytes and includes them on the next calls. This situation also may occur while writing buffers. But the write function writes the left bytes in an internal cache, and if there is no error, the return value of write metod is equal to the provided buffer size.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td BGCOLOR="#660000"><b>Key Properties </b></td>
+            </tr>
+            <tr>
+              <td> <b><a name="BufferFormat"></a>BufferFormat: PWaveFormatEx; </b><sup>(Read-Only)</sup><br>
+                Determines the the wave format of read/write buffers.</td>
+            </tr>
+          </table>
+          <p>&nbsp;</p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td BGCOLOR="#660000"><b>Key Method</b></td>
+            </tr>
+            <tr>
+              <td><b>function CanRead: Boolean;</b><br>
+                Returns True if the accosiated wave stream can be converted to the wave format specified by the <a href="#BufferFormat">BufferFormat</a> property. </td>
+            </tr>
+            <tr>
+              <td><b>function CanRewrite(pWaveFormat: PWaveFormatEx): Boolean;</b><br>
+                Returns True if the wave format specified by the <a href="#BufferFormat">BufferFormat</a> property can be converted to the specified wave format. </td>
+            </tr>
+            <tr>
+              <td><b>function CanRewritePCM(Format: <a href="#TPCMFormat">TPCMFormat</a>): Boolean;</b><br>
+                Returns True if the wave format specified by the <a href="#BufferFormat">BufferFormat</a> property can be converted to the specified PCM wave format. </td>
+            </tr>
+            <tr>
+              <td><b>procedure SetBufferFormat (const pWaveFormat: PWaveFormatEx);</b> <br>
+                Selects the desired wave format for read/write buffers.</td>
+            </tr>
+            <tr>
+              <td><b>procedure SetBufferFormatPCM(Format: <a HREF="#TPCMFormat">TPCMFormat</a>);</b> <br>
+                Selects the desired wave format for read/write buffers as a PCM format. </td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWave" id="TWave"></a>TWave = class(<a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>);</b><br>
+            This object implements a wave audio in memory.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method </b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>constructor Create;</b><br>
+                Creates an instance of a TWave object.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveFile" id="TWaveFile"></a>TWaveFile = class(<a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>);</b><br>
+            This object implements a wave audio in a file.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method </b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>constructor Create(const FileName: String; Mode: Word);</b><br>
+                Creates an instance of a TWaveFile object. The parameters are indentical to TFileStream constructor. </td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveConverter" id="TWaveConverter"></a>TWaveConverter = class(<a HREF="#TWaveStreamConverter">TWaveStreamConverter</a>);</b><br>
+                This object implements a wave audio in memory for format conversion purpose.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method </b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>constructor Create;</b><br>
+            Creates an instance of a TWaveConverter object.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p>     
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveFileConverter" id="TWaveFileConverter"></a>TWaveFileConverter = class(<a HREF="#TWaveStreamConverter">TWaveStreamConverter</a>);</b><br>
+                This object implements a wave audio in a file for format conversion purpose.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method </b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>constructor Create(const FileName: String; Mode: Word);</b><br>
+            Creates an instance of a TWaveFileConverter object. The parameters are indentical to TFileStream constructor. </td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p>     
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TCustomWaveStorage"></a>TCustomWaveStorage = class(TComponent);</b><sup> (Abstract)</sup><b><br>
+            </b>This class is the base class for wave storage classes.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Property</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b> property WaveStream[Index: Integer]: TStream; </b><sup>(Read-Only)</sup><br>
+                Returns the wave stream associated to the spcified index.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>function Equals(Another: TCustomWaveStorage): Boolean;<br>
+                </b>Returns True if the content of the another wave storage object specified by the Another parameter equals to this object.</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveStorage"></a>TWaveStorage = class(<a HREF="#TCustomWaveStorage">TCustomWaveStorage</a>);</b><br>
+            This components stores one single wave audio.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Property</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>Wave: <a HREF="#TWave">TWave</a>;</b><br>
+                Specifies the wave audio data.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveCollection"></a>TWaveCollection = class(<a HREF="#TCustomWaveStorage">TCustomWaveStorage</a>);</b><br>
+            This components stores multiple wave audio's.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Property</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>Waves: <a HREF="#TWaveItems">TWaveItems</a>;</b><br>
+                The collection of wave audio data.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>function ExportWaveNames(const List: TStrings): Integer;</b><br>
+                Fills the list with the name of wave audio's stored in the component, and returns the number of added items to the list.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function IndexOfName(const AName: String): Integer;</b><br>
+                Returns the index of the wave audio in the collection by its name.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveItems"></a>TWaveItems = class(TCollection);</b><br>
+            This class is a collection of wave audio data.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Property</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>property Items[Index: Integer]: <a HREF="#TWaveItem">TWaveItem</a>; </b><sup>(Default)</sup><br>
+                Determines the collection items.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>function Add: <a HREF="#TWaveItem">TWaveItem</a>;</b><br>
+                Adds a new item to the collection, and returns the item.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function Insert(Index: Integer): <a HREF="#TWaveItem">TWaveItem</a>;</b><br>
+                Inserts a new item to the collection at the specified index, and returns the item.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveItem"></a>TWaveItem = class(TCollectionItem);</b><br>
+            This class reperesents an item of wave audio collection.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>Wave: <a HREF="#TWave">TWave</a>;</b><br>
+                Specifies the wave audio data.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Name: String; </b><br>
+                Stores the name of the item.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Tag: Integer;</b> <br>
+                Stores an integer value as part of the item. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">  <b>function Add: <a HREF="#TWaveItem">TWaveItem</a>;</b><br>
+                Adds a new item to the collection, and returns the item.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function Insert(Index: Integer): <a HREF="#TWaveItem">TWaveItem</a>;</b><br>
+                Inserts a new item to the collection at the specified index, and returns the item.</td>
+            </tr>
+          </table>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> <br>
+    </li>
+  <li><b><a NAME="WaveAudioPlayerRecorderClasses"></a>WAVE AUDIO PLAYER AND RECORDER CLASSES<br>
+    </b><br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveAudioIO"></a>TWaveAudioIO = class(TComponent);</b><sup> (Abstract)</sup><b><br>
+            </b>The base abstract class for both wave audio player and recorder components.</p>
+          <p></p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>function Query(pWaveFormat: PWaveFormatEx): Boolean;<br>
+                </b>Returns true if the device supports the wave format specified by the pWaveFormat parameter.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function QueryPCM(PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>): Boolean; </b><br>
+                Returns true if the device supports the PCM wave format specified by the PCMFormat parameter.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b><a NAME="WaitForStart"></a>procedure WaitForStart;</b><br>
+                Blockes the caller thread until the audio device starts its operation. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>procedure WaitForStop;</b><br>
+                Blockes the caller thread until the audio device completes its operation and stops.</td>
+            </tr>
+          </table>
+          <br>
+          </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveAudioOut"></a>TWaveAudioOut = class(<a HREF="#TWaveAudioIO">TWaveAudioIO</a>);</b><sup> (Abstract)</sup><b><br>
+            </b>The base abstract class for wave audio player components.</p>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <b><br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TWaveAudioIn"></a>TWaveAudioIn = class(<a HREF="#TWaveAudioIO">TWaveAudioIO</a>);</b><sup> (Abstract)</sup><b><br>
+            </b>The base abstract class for wave audio recorder components.</p>
+          <p></p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioPlayer"></a>TAudioPlayer = class(<a HREF="#TWaveAudioOut">TWaveAudioOut</a>);<br>
+            </b>This component stores a wave audio and plays it on the specified wave audio output device.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio output device will be opened, and audio playback starts.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio output device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio output device capable of playing the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio output device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceSupports: <a HREF="#TWaveOutDeviceSupports">TWaveOutDeviceSupports</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the supported features by the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio output devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Options: <a HREF="#TWaveOutOptions">TWaveOutOptions</a>;<br>
+                </b>Determines whether the component should initialize volume, pitch, and playback rate of the opened wave out audio device with their respective properties.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD;</b><br>
+                Indicates the current position of playing audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, audio playback on the opened wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Pitch: Double;<br>
+                </b>Specifies the pitch for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>PlaybackRate: Double;<br>
+                </b>Specifies the playback rate for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Volume: WORD; <br>
+                </b>Specifies the volume in percent for the both left and right channels of the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a name="VolumeLeft"></a>VolumeLeft: WORD; <br>
+                </b>Specifies the volume in percent for the left channel of the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a name="VolumeRight"></a>VolumeRight: WORD; <br>
+                </b>Specifies the volume in percent for the right channel of the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Wave: <a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>;<br>
+                </b>Stores the wave audio that will be played.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just before the wave data buffer sends to the audio device. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+          </table>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TStockAudioPlayer"></a>TStockAudioPlayer = class(<a HREF="#TWaveAudioOut">TWaveAudioOut</a>);<br>
+            </b>This component plays a wave audio from a file, stream, resource, or a <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a> on the specified wave audio output device.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio output device will be opened, and audio playback starts. The component gets the wave audio that will be played from the <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a> component specified by the <a HREF="#OutStock">Stock</a> property.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio output device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio output device capable of playing the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio output device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceSupports: <a HREF="#TWaveOutDeviceSupports">TWaveOutDeviceSupports</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the supported features by the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio output devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Options: <a HREF="#TWaveOutOptions">TWaveOutOptions</a>;<br>
+                </b>Determines whether the component should initialize volume, pitch, and playback rate of the opened wave out audio device with their respective properties.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD;</b><br>
+                Indicates the current position of playing audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, playback on the opened wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Pitch: Double;<br>
+                </b>Specifies the pitch for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>PlaybackRate: Double;<br>
+                </b>Specifies the playback rate for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="OutStock"></a>Stock: <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a>;<br>
+                </b>Specfies the wave storage that shoud be used as source of data for the component.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Volume: WORD; <br>
+                </b>Specifies the volume in percent for both left and right channels of the opened wave audio output device. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just before the wave data buffer sends to the audio device. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b> function PlayStream(AStream: TStream): Boolean;<br>
+                </b>Plays the wave audio stored in the stream specified by the AStream parameter. The function returns True on success, otherwise it returns false.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function PlayFile(const FileName: String): Boolean;<br>
+                </b>Plays the wave audio file specified by the FileName parameter. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function PlayResName(Instance: THandle; const ResName: String): Boolean;<br>
+                </b>Plays the wave audio stored as a resource in the module specified by the Instance parameter, and with the resource name specified by ResName parameter. The function returns True on success, otherwise it returns false.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function PlayResID(Instance: THandle; ResID: Integer): Boolean;<br>
+                </b>Plays the wave audio stored as a resource in the module specified by the Instance parameter, and with the resource ID specified by ResID parameter. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function PlayStock(Index: Integer): Boolean;<br>
+                </b>Plays the wave audio stored in the <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a> specified by the <a HREF="#OutStock">Stock</a> property. If the component assigned to the <a HREF="#OutStock">Stock</a> property is a multi-storage component, the Index parameter specifies the storage's index, otherwise the parameter will be ignored. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function Stop: Boolean;<br>
+                </b>Stops the current playback. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+          </table>
+          <p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TLiveAudioPlayer"></a>TLiveAudioPlayer = class(<a HREF="#TWaveAudioOut">TWaveAudioOut</a>);</b><b><br>
+            </b>This component plays wave audio from a user defined buffer on the specified wave audio output device.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio output device will be opened, and audio playback starts.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="OutBufferInternally"></a>BufferInternally: Boolean;<br>
+                </b>If this property is True, the component allocates the memory required for the audio buffers and generates <a HREF="#OutOnData">OnData</a> events to fill them. If this property is False, the component generates <a HREF="#OutOnDataPtr">OnDataPtr</a> events to get audio buffers provided by the application.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio output device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio output device capable of playing the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio output device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceSupports: <a HREF="#TWaveOutDeviceSupports">TWaveOutDeviceSupports</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the supported features by the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio output devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Options: <a HREF="#TWaveOutOptions">TWaveOutOptions</a>;<br>
+                </b>Determines whether the component should initialize volume, pitch, and playback rate of the opened wave out audio device with their respective properties.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="OutPCMFormat"></a>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+                Specifies the format of wave audio, which is going to be supplied to the component. If this property set to <a HREF="#TPCMFormat">nonePCM</a>, the component generates one <a HREF="#OutOnFormat">OnFormat</a> event to get the wave audio format. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the current position of playing audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, audio playback on the opened wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Pitch: Double;<br>
+                </b>Specifies the pitch for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>PlaybackRate: Double;<br>
+                </b>Specifies the playback rate for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Volume: WORD; <br>
+                </b>Specifies the volume in percent for both left and right channels of the opened wave audio output device. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio output device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just before the wave data buffer sends to the audio device. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <a NAME="OutOnFormat"></a><b>OnFormat: <a HREF="#TWaveAudioGetFormatEvent">TWaveAudioGetFormatEvent</a>;</b><br>
+                Occurs when the <a HREF="#OutPCMFormat">PCMFormat</a> property set to <a HREF="#TPCMFormat">nonePCM</a> and component needs to know about the format of the wave audio data.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="OutOnData"></a><b>OnData: <a HREF="#TWaveAudioGetDataEvent">TWaveAudioGetDataEvent</a>;</b><br>
+                Occurs when the <a HREF="#OutBufferInternally">BufferInternally</a> property set to True and component needs an audio data buffer to be filled. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="OutOnDataPtr"></a><b>OnDataPtr: <a HREF="#TWaveAudioGetDataPtrEvent">TWaveAudioGetDataPtrEvent</a>;</b><br>
+                Occurs when the <a HREF="#OutBufferInternally">BufferInternally</a> property set to False and component needs an audio data buffer. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td><b> <a NAME="BreakLoop"></a>function BreakLoop: Boolean;<br>
+                </b>Breaks a loop on the given audio output device and allows playback to continue with the next buffer. The function returns True on success, otherwise returns false.</td>
+            </tr>
+          </table>
+          <p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioRecorder"></a>TAudioRecorder = class(<a HREF="#TWaveAudioIn">TWaveAudioIn</a>);<br>
+            </b>This component records audio from the specified wave audio input device, and stores it as one of its properties.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio input device will be opened, and audio recording starts.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio input device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio input device capable of recording with the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio input device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio input device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio input devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="In1PCMFormat"></a>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+                Specifies the format of wave audio, which is going to be recorded. If this property set to <a HREF="#TPCMFormat">nonePCM</a>, the component generates one <a HREF="#In1OnFormat">OnFormat</a> event to get the wave audio format. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the current position of recorded audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, audio recording on the opened wave audio input device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Wave: <a HREF="#TWaveStreamAdapter">TWaveStreamAdapter</a>; </b><sup>(Read-Only)</sup><br>
+                Stores the recorded wave audio.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just after the audio device is filled a data buffer. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="In1OnFormat"></a><b>OnFormat: <a HREF="#TWaveAudioGetFormatEvent">TWaveAudioGetFormatEvent</a>;</b><br>
+                Occurs when the <a HREF="#In1PCMFormat">PCMFormat</a> property set to <a HREF="#TPCMFormat">nonePCM</a> and component needs to know about the format of the wave audio, which is going to be recorded.</td>
+            </tr>
+          </table>
+          <p>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TStockAudioRecorder"></a>TStockAudioRecorder = class(<a HREF="#TWaveAudioIn">TWaveAudioIn</a>);<br>
+            </b>This component records audio from the specified wave audio input device, and saves in a file, stream, or a <a HREF="#TCustomWaveStorage">TCustomWaveStorage.</a></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio input device will be opened, and audio recording starts. The recorded wave audio will be stored in the <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a> component specified by the <a HREF="#InStock">Stock</a> property.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio input device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio input device capable of recording with the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio input device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio input device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio input devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="In2PCMFormat"></a>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+                Specifies the format of wave audio, which is going to be recorded. If this property set to <a HREF="#TPCMFormat">nonePCM</a>, the component generates one <a HREF="#In2OnFormat">OnFormat</a> event to get the wave audio format. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the current position of recorded audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, audio recording on the opened wave audio input device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="InStock"></a>Stock: <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a>;</b><br>
+                Specfies the wave storage that recorded data will be saved in.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just after the audio device is filled a data buffer. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="In2OnFormat"></a><b>OnFormat: <a HREF="#TWaveAudioGetFormatEvent">TWaveAudioGetFormatEvent</a>;</b><br>
+                Occurs when the <a HREF="#In2PCMFormat">PCMFormat</a> property set to <a HREF="#TPCMFormat">nonePCM</a> and component needs to know about the format of the wave audio, which is going to be recorded.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Methods</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b> function RecordToStream(AStream: TStream): Boolean;<br>
+                </b>Records wave audio to the stream specified by the AStream parameter. The function returns True on success, otherwise it returns false.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function RecordToFile(const FileName: String): Boolean;<br>
+                </b>Records the wave audio to the file specified by the FileName parameter. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function RecordToStock(Index: Integer): Boolean;<br>
+                </b>Recordsthe wave audio to the <a HREF="#TCustomWaveStorage">TCustomWaveStorage</a> component specified bt the <a HREF="#InStock">Stock</a> property. If the component assigned to the <a HREF="#InStock">Stock</a> property is a multi-storage component, the Index parameter specifies the storage's index, otherwise the parameter will be ignored. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function Stop: Boolean;<br>
+                </b>Stops the current recording. The function returns True on success, otherwise it returns false. </td>
+            </tr>
+          </table>
+          <p>&nbsp;</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TLiveAudioRecorder"></a>TLiveAudioRecorder = class(<a HREF="#TWaveAudioIn">TWaveAudioIn</a>);</b><br>
+            This component records audio from the specified wave audio input device, and give it to the application as data buffers.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the wave audio input device will be opened, and audio recording starts.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio input device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio input device capable of recording with the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio input device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio input device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio input devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="In3PCMFormat"></a>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+                Specifies the format of wave audio, which is going to be recorded. If this property set to <a HREF="#TPCMFormat">nonePCM</a>, the component generates one <a HREF="#In3OnFormat">OnFormat</a> event to get the wave audio format. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Position: DWORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the current position of recorded audio in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Paused: Boolean;<br>
+                </b>When set to True, audio recording on the opened wave audio input device is paused.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is opened.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is closed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnPause: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is paused.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnResume: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the wave audio input device is resumed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just after the audio device is filled a data buffer. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="In3OnFormat"></a><b>OnFormat: <a HREF="#TWaveAudioGetFormatEvent">TWaveAudioGetFormatEvent</a>;</b><br>
+                Occurs when the <a HREF="#In3PCMFormat">PCMFormat</a> property set to <a HREF="#TPCMFormat">nonePCM</a> and component needs to know about the format of the wave audio, which is going to be recorded.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnData: <a HREF="#TWaveAudioDataReadyEvent">TWaveAudioDataReadyEvent</a>;</b><br>
+                Occurs when a data buffer is filled. </td>
+            </tr>
+          </table>
+          <p>&nbsp;</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioRedirector"></a>TAudioRedirector = class(TComponent);<br>
+            </b>This component records wave audio from an input audio device and plays it on an output audio device.</p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Active: Boolean;<br>
+                </b>When set to True, the component starts recording from the audio input device specified by the <a HREF="#AudioIn">AudioIn</a> property, and plays in on audio autput device specified by <a HREF="#AudioOut">AudioOut</a> property.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Async: Boolean;<br>
+                </b>Indicates whether the audio events occur in a separate thread.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferCount: WORD;<br>
+                </b>Determines the number of data buffers.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>BufferLength: WORD; <br>
+                </b>Determines the size of each data buffer in milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastErrorText: String; </b><sup>(Read-Only)</sup><br>
+                Contains the description of the last system error.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a name="TAudioRedirectorStream"></a>Stream: TStream;<br>
+                </b>Indicates the stream that the recorded audio should be stored into. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="AudioIn"></a><b>AudioIn: <a HREF="#TAudioInput">TAudioInput</a>;</b><br>
+                Represents the wave audio input device.<br>
+                Note: On Delphi 3, 4, and 5 the sub members of this property are not available at design time.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="AudioOut"></a><b>AudioOut: <a HREF="#TAudioOutput">TAudioOutput</a>;<br>
+                </b>Represent the wave audio output device.<br>
+                Note: On Delphi 3, 4, and 5 the sub members of this property are not available at design time. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnActivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the audio recording and playback is started.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnDeactivate: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;<br>
+                </b>Occurs when the audio recording and playback is stopped.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnError: <a HREF="#TWaveAudioEvent">TWaveAudioEvent</a>;</b><br>
+                Occurs when a system error is encountered. When this property is not assigned and a system error occurs, the component raises an <a HREF="#EWaveAudioSysError%20exception">EWaveAudioSysError</a> exception.</td>
+            </tr>
+          </table>
+          <p>&nbsp;</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioIn"></a>TAudioIn = class(<a HREF="#TWaveAudioIn">TWaveAudioIn</a>);</b><br>
+            This class represents and manages the audio inpiut device of the <a HREF="#TAudioRedirector">TAudioRedirector</a> component.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio input device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio input device capable of recording with the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio input device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio input device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio input devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="In4PCMFormat"></a>PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+                Specifies the format of wave audio, which is going to be recorded. If this property set to <a HREF="#TPCMFormat">nonePCM</a>, the component generates one <a HREF="#In4OnFormat">OnFormat</a> event to get the wave audio format. </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just after the audio input device is filled a data buffer. The event notifies the volume peak level of the data buffer, so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><a NAME="In4OnFormat"></a><b>OnFormat: TWaveAudioGetFormatEvent;</b><br>
+                Occurs when the <a HREF="#In4PCMFormat">PCMFormat</a> property set to <a HREF="#TPCMFormat">nonePCM</a> and component needs to know about the format of the wave audio, which is going to be recorded.</td>
+            </tr>
+          </table>
+          <p>&nbsp;</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioOutput"></a>TAudioOut = class(<a HREF="#TWaveAudioOut">TWaveAudioOut</a>);<br>
+            </b>This class represents and manages the audio output device of the <a HREF="#TAudioRedirector">TAudioRedirector</a> component.<b><br>
+            </b></p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceID: DWORD;<br>
+                </b>Specifies the identifier of wave audio output device. You can use WAVE_MAPPER (default value) instead of a device identifier. In this case, the component seleects a wave audio output device capable of playing the specified wave format.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceFormats: <a HREF="#TWaveDeviceFormats">TWaveDeviceFormats</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates wave audio formats, which the selected wave audio output device supports.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceName: String; </b><sup>(Read-Only)</sup><br>
+                Indicates the freindly name of the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DeviceSupports: <a HREF="#TWaveOutDeviceSupports">TWaveOutDeviceSupports</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the supported features by the selected wave audio output device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>NumDevs: DWORD</b><b>; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available wave audio output devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Options: <a HREF="#TWaveOutOptions">TWaveOutOptions</a>;<br>
+                </b>Determines whether the component should initialize volume, pitch, and playback rate of the opened wave out audio device with their respective properties.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Pitch: Double;<br>
+                </b>Specifies the pitch for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>PlaybackRate: Double;<br>
+                </b>Specifies the playback rate for the opened wave audio output device. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Volume: WORD; <br>
+                </b>Specifies the volume in percent for both left and right channels of the opened wave audio output device. </td>
+            </tr>
+          </table>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Events</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnLevel: <a HREF="#TWaveAudioLevelEvent">TWaveAudioLevelEvent</a>;</b><br>
+                If the audio format is a PCM format, this event occurs just before a data buffer sends to the audio output device. The event notifies the volume peak level of the data buffer (after applying a filter if any), so a smaller buffer length provides a more accurate notification mechanism.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="OnFilter"></a>OnFilter: <a HREF="#TWaveAudioFilterEvent">TWaveAudioFilterEvent</a>;</b><br>
+                Occurs just before the wave data buffer sends to the audio device. The event handler may change the buffer's content, however it might not change the size of the buffer.</td>
+            </tr>
+          </table>
+          <p> 
+        </td>
+      </tr>
+    </table>
+    <br>
+  </li>
+  <li><b><a NAME="AudioMixerClasses"></a>AUDIO MIXER CLASSES<br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioMixer"></a>TAudioMixer = class(TComponent);<br>
+            </b>This component provides an interface to manage audio mixer lines and their associated controls.<br>
+            </p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b><a NAME="DestinationCount"></a>DestinationCount: WORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of audio line destinations available through the currently selected audio mixer device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DestinationID: DWORD;</b><br>
+                Specifies the currently selected destination line index. This member ranges from zero to one less than the value specified in the <a HREF="#DestinationCount">DestinationCount</a> member.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>DestinationName: String;</b><br>
+                Determines the name of the currently selected destination line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Handle: THandle; </b><sup>(Read-Only)</sup><br>
+                Determines the handle of the currently selected audio mixer device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code for the audio mixer device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">
+                <p><b><a NAME="LineCount"></a>LineCount: WORD ; </b><sup>(Read-Only)</sup><br>
+                  Specifies the number audio line sources that are associated with the the currently selected destination line.</p>
+              </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Lines[LineID: DWORD]: <a HREF="#TAudioMixerLine">TAudioMixerLine</a>; </b><sup>(Read-Only)</sup><br>
+                Provides access to states and controls of the audio line sources that are associated with the the currently selected destination line. The LineID ranges from zero to one less than the value specified in the <a HREF="#LineCount">LineCount</a> member.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="MixerMasterLine"></a>Master: <a HREF="#TAudioMixerLine">TAudioMixerLine</a>; </b><sup>(Read-Only)</sup><br>
+                Provides acces to states and controls of the currently selected audio destination line. </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>MixerCaps: TMixerCaps; </b><sup>(Read-Only)</sup><br>
+                Specifies the record that describes the capabilities of the currently selected mixer device.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b><a NAME="MixerCount"></a>MixerCount: WORD; </b><sup>(Read-Only)</sup><br>
+                Indicates the number of available mixer devices.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>MixerID: DWORD;</b><br>
+                Specifies the currently selected mixer device. This member ranges from zero to one less than the value specified in the <a HREF="#MixerCount">MixerCount</a> member.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>MixerName: String;</b><br>
+                Determines the name of the currently selected mixer device..</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Event</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnLineChange: <a HREF="#TMixerLineNotifyEvent">TMixerLineNotifyEvent</a>;<br>
+                </b>Occurs when the state of an audio line has changed.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>OnControlChange: <a HREF="#TMixerControlNotifyEvent">TMixerControlNotifyEvent</a>;</b><br>
+                Occurs when the state of a control associated with an audio line has changed.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b> function FetchMixerNames(const Names: TStrings): DWORD;<br>
+                </b>Adds the name of available audio mixers to the list specified by the Names parameter. The method returns the number of list that are added to the list.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function FetchDestinationNames(const Names: TStrings): DWORD;<br>
+                </b>Adds the name of available destinations for the currently selected audio mixer to the list specified by the Names parameter. The method returns the number of list that are added to the list.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>function FindMixerLine(ComponentType: <a HREF="#TMixerLineComponentType">TMixerLineComponentType</a>; out ADestinationID, ALineID: Integer): Boolean;<br>
+                </b>Searches through audio lines of all destinations available for the currently select audio mixer to find an audio line, which maches to the specified component type.</td>
+            </tr>
+          </table>
+          <br>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TAudioMixerLine"></a>TAudioMixerLine = class(TObject);<br>
+            </b>This class encapsulates controls and information associated with an audio line.<br>
+            </p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>AvailableControls: <a HREF="#TMixerControlTypes">TMixerControlTypes</a>; </b><sup>(Read-Only)</sup><br>
+                Indicates the controls that are available through the audio line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>ComponentType: <a HREF="#TMixerLineComponentType">TMixerLineComponentType</a>; </b><sup>(Read-Only)</sup><br>
+                Specifies the component type for this audio line..</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Flags: <a HREF="#TMixerLineFlags">TMixerLineFlags</a>; </b><sup>(Read-Only)</sup><br>
+                Determines the status and support flags for the audio line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">
+                <p><b>ID: Integer; </b><sup>(Read-Only)</sup><br>
+                  Indicates the index of the audio line.</p>
+              </td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>LastError: MMRESULT; </b><sup>(Read-Only)</sup><br>
+                Contains the last system error code for the audio line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Mixer: <a HREF="#TAudioMixer">TAudioMixer</a>; </b><sup>(Read-Only)</sup><br>
+                Specifies the mixer device of the audio line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Mute: Boolean;</b><br>
+                Indicates whether the line output is mute.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Name: String; </b><sup>(Read-Only)</sup><br>
+                Determines the name of the audio line.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>SelectedLine: Integer;</b><br>
+                For a destination audio line (<a HREF="#MixerMasterLine">Master</a>), indicates which source audio line is selected for recording.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>TargetType: <a HREF="#TMixerLineTargetType">TMixerLineTargetType</a>; </b><sup>(Read-Only)</sup><br>
+                Specifies the target media device type associated with the audio line..</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Volume: Integer;</b><br>
+                Determines volume level of the audio line in precent.</td>
+            </tr>
+          </table>
+          <br>
+        </td>
+      </tr>
+    </table>
+    <b><br>
+    </b>  <br>
+    </li>
+  <li><b><a NAME="TimerClass"></a>MULTIMEDIA TIMER CLASS<br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b><a NAME="TMultimediaTimer"></a>TMultimediaTimer = class(TComponent);<br>
+            </b>This component is a wrapper to the Windows' Multimedia Timer, which is a high resolution thread base timer.<br>
+            </p>
+          <p>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Properties</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Enabled: Boolean;<br>
+                </b>Controls whether the timer generates OnTimer events periodically.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"><b>Interval: WORD; </b><br>
+                Determines the amount of time, in milliseconds, that passes before the component initiates another OnTimer event.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>Resolution: WORD;</b><br>
+                Specifies the minimum timer resolution, in milliseconds. For example, if you specify a resolution of 5 and an interval of 100, the timer services generates OnTimer event after an interval ranging from 95 to 105 milliseconds.</td>
+            </tr>
+            <tr>
+              <td COLSPAN="2">
+                <p><b>TimerID: Integer</b><b>; </b><sup>(Read-Only)</sup><br>
+                  Indicates the timer identifier when it is active, otherwise it is zero.</p>
+              </td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Event</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>OnTimer: TNotifyEvent;<br>
+                </b>Occurs when a specified amount of time, determined by the Interval property, has passed.</td>
+            </tr>
+          </table>
+          <br>
+          <table WIDTH="94%" BORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#FFFFCC" ALIGN="CENTER">
+            <tr>
+              <td COLSPAN="2" BGCOLOR="#660000"><b>Key Method</b></td>
+            </tr>
+            <tr>
+              <td COLSPAN="2"> <b>class function TimerCaps: TTimeCaps;<br>
+                </b>Returns capabilities of the Windows' Multimedia Timer, which are the minimum and maximum supported resolution for the timer.</td>
+            </tr>
+          </table>
+          <br>
+        </td>
+      </tr>
+    </table>
+    <b><br>
+    </b><br>
+    </li>
+  <li><a NAME="GlobalProcedures"></a><b>GLOBAL PROCEDURES <br>
+    <br>
+    </b> 
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function GetWaveAudioInfo(mmIO: HMMIO; out pWaveFormat: PWaveFormatEx; var DataSize, DataOffset: DWORD): Boolean;<br>
+            </b>Retrieves format, size, and offset of the wave audio for an open mmIO handle. On success when the the function returns true, it is the caller responsibility to free the memory allocated for the Wave Format structure via FreeMem procedure.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function CreateWaveAudio(mmIO: HMMIO; const pWaveFormat: PWaveFormatEx; out ckRIFF, ckData: TMMCKInfo): Boolean;</b><br>
+          Initializes a wave RIFF format in an open mmIO handle. The previous content of the mmIO will be lost.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>procedure CloseWaveAudio(mmIO: HMMIO; var ckRIFF, ckData: TMMCKInfo);</b><br>
+          Updates the chunks and closes an mmIO handle;</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function GetStreamWaveAudioInfo(Stream: TStream; out pWaveFormat: PWaveFormatEx; out DataSize, DataOffset: DWORD): Boolean;<br>
+            </b>Retrieves format, size, and offset of the wave audio for a stream. On success when the the function returns true, it is the caller responsibility to free the memory allocated for the Wave Format structure by <b>FreeMem</b> procedure.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function CreateStreamWaveAudio(Stream: TStream; const pWaveFormat: PWaveFormatEx; out ckRIFF, ckData: TMMCKInfo): HMMIO;<br>
+            </b>Initializes wave RIFF format in a stream and returns the mmIO handle. After calling this function, the previous content of the stream will be lost.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function OpenStreamWaveAudio(Stream: TStream): HMMIO ;<br>
+            </b>Opens wave RIFF format in a stream for read and write operations and returns the mmIO handle.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="CalcWaveBufferSize"></a>function CalcWaveBufferSize(const pWaveFormat: PWaveFormatEx; Duration: DWORD): DWORD;</b><br>
+          Returns the number of bytes required to store wave data for the specified wave format and duration in milliseconds.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function GetAudioFormat(FormatTag: Word): String;</b><br>
+          Returns the string representation of the wave form format ID.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function GetWaveAudioFormat(const pWaveFormat: PWaveFormatEx): String;</b><br>
+          Returns the string representation of a wave audio format.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function GetWaveAudioLength(const pWaveFormat: PWaveFormatEx; DataSize: DWORD): DWORD;</b><br>
+          Returns the wave's length in milliseconds.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function GetWaveAudioBitRate(const pWaveFormat: PWaveFormatEx): DWORD;</b><br>
+          Returns the wave's bit rate in kbps (kilo bits per socond).</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a name="GetWaveAudioPeakLevel"></a>function GetWaveAudioPeakLevel(const Data: Pointer; DataSize: DWORD; const pWaveFormat: PWaveFormatEx): Integer;</b><br>
+          Returns the volume peak level in percent for the specified wave data (PCM format only). If the function fails, it returns -1.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a name="InvertWaveAudio"></a>function InvertWaveAudio(const Data: Pointer; DataSize: DWORD; const pWaveFormat: PWaveFormatEx): Boolean;</b><br>
+          Reverses the direction of the wave audio (PCM format only).</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><a NAME="SilenceWaveAudio"></a><b>function SilenceWaveAudio(const Data: Pointer; DataSize: DWORD; const pWaveFormat: PWaveFormatEx): Boolean;</b><br>
+          Fills the specified buffer with the silence data (PCM format only).</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function ChangeWaveAudioVolume(const Data: Pointer; DataSize: DWORD; const pWaveFormat: PWaveFormatEx; Percent: Integer): Boolean;</b><br>
+          Increases or decreases the wave data volume by the specified percentage (PCM format only).</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="MixWaveAudio"></a>function MixWaveAudio(const RawWaves: <a href="#PRawWave">PRawWave</a>; Count: Integer; const pWaveFormat: PWaveFormatEx; Buffer: Pointer; BufferSize: DWORD): Boolean;<br>
+          </b>Mixes several waves with the same format (PCM format only) as a single wave and stores it in to the supplied buffer.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b><a NAME="ConvertWaveFormat"></a>function ConvertWaveFormat(const srcFormat: PWaveFormatEx; srcData: Pointer; srcDataSize: DWORD; const dstFormat: PWaveFormatEx; out dstData: Pointer; out dstDataSize: DWORD): Boolean;<br>
+          </b>Converts the format of a waveform audio. If the function succeeds and returns True, it is the caller's responsiblity to release the memory allocated for the output wave data buffer by <b>ReallocMem</b> procedure. <br>
+          For more information, please read <a HREF="http://msdn.microsoft.com/library/default.asp?url=/library/en-us/multimed/htm/_win32_multistep_format_conversion.asp">Multistep Format Conversion</a> on MSDN. </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>procedure SetPCMAudioFormat(const pWaveFormat: PWaveFormatEx; Channels: <a HREF="#TPCMChannel">TPCMChannel</a>; SamplesPerSec: <a HREF="#TPCMSamplesPerSec">TPCMSamplesPerSec</a>; BitsPerSample: <a HREF="#TPCMBitsPerSample">TPCMBitsPerSample</a>);<br>
+          </b>Initializes a standard PCM wave format header. The size of memory referenced by the pWaveFormat parameter must not be less than the size of TWaveFormatEx record.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>procedure SetPCMAudioFormatS(const pWaveFormat: PWaveFormatEx; PCMFormat: <a HREF="#TPCMFormat">TPCMFormat</a>);</b><br>
+          Initializes a standard PCM wave format header (shorcut form). The size of memory referenced by the pWaveFormat parameter must not be less than the size of TWaveFormatEx record.</td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function GetPCMAudioFormat(const pWaveFormat: PWaveFormatEx): <a HREF="#TPCMFormat">TPCMFormat</a>;</b><br>
+          Returns the standard PCM format specifier of a wave format.</td>
+      </tr>
+    </table>
+    <br>
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function GetWaveDataPositionOffset(const pWaveFormat: PWaveFormatEx; Position: DWORD): DWORD;</b><br>
+            Returns the byte offset (zero base) of the wave audio specified by the pWaveFormat parameter at the position specified by the Position parameter in milliseconds.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE">
+          <p><b>function MS2Str(Milliseconds: DWORD; Fmt: <a HREF="#TMS2StrFormat">TMS2StrFormat</a>): String;</b><br>
+            Converts milliseconds to string.</p>
+        </td>
+      </tr>
+    </table>
+    <br>
+    
+    <table WIDTH="90%" BORDER="0" CELLSPACING="0" CELLPADDING="5">
+      <tr>
+        <td WIDTH="15">&nbsp;</td>
+        <td BGCOLOR="#EEEEEE"><b>function mmioStreamProc(lpmmIOInfo: PMMIOInfo; uMsg, lParam1, lParam2: DWORD): LRESULT; stdcall;</b><br>
+          User defined mmIOProc to handle Delphi;s streams by Windows' mmIO API functions.<br>
+          <br>
+          To open a stream using mmIO API functions, use the following code as sample:<br>
+          <br>
+          FillChar(mmioInfo, SizeOf(mmioInfo), 0);<br>
+          mmioInfo.pIOProc := @mmioStreamProc;<br>
+          mmioInfo.adwInfo[0] := DWORD(your_stream_instance);<br>
+          mmIO := mmioOpen(nil, @mmioInfo, dwOpenFlags);<br>
+          <br>
+          The flags specified by the dwOpenFlags parameter of mmioOpen function can be only one of MMIO_READ, MMIO_WRITE, and MMIO_READWRITE flags. If you use another flags, they will be ignored by this user defined function.</td>
+      </tr>
+    </table>
+  </li>
+</ul>
+<p><b><a NAME="HISTORY"></a><br>
+  HISTORY</b><b><br>
+  </b> </p>
+<ul>
+  <li><b>Version 1.89 (November 7, 2008)<br></b>
+    - Upgraded for Delphi 2009 support.<br>
+    <br>
+  </li>
+  <li><b>Version 1.88 (April 18, 2008)<br></b>
+    - Fixed memory leak in <a href="#TAudioMixer">TAudioMixer</a> class (Thanks to <a href="mailto:dch0719@msn.com">Dan Hancock</a>).<br>
+    - Added <a href="#Concat">Concat</a> and <a href="#Mix">Mix</a> methods to <a href="#TAudioStreamAdapter">TAudioStreamAdapter</a> class.<br>
+    - As of now, <a href="#ConvertTo">ConvertTo</a> and <a href="#ConvertToPCM">ConvertToPCM</a> methods of <a href="#TAudioStreamAdapter">TAudioStreamAdapter</a> class if fail to convert the wave audio directly to the target format, try to do the conversion using an intermediate format.<br>
+    <br>
+  </li>
+  <li><b>Version 1.87 (March 1, 2008)<br>
+    </b>- Fixed a bug in <a href="#Sub">Sub</a> method of <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a>, and added missing <a href="#Copy">Copy</a> method of that class.
+    <br>
+    <br>
+  </li>
+  <li><b>Version 1.86 (February 25, 2008)<br>
+    </b>- Added <a href="#Copy">Copy</a>, <a href="#Sub">Sub</a>, <a href="#TrimStart">TrimStart</a>, and <a href="#TrimEnd">TrimEnd</a> methods to <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a>.
+    <br>
+    <br>
+  </li>
+  <li><b>Version 1.85 (November 9, 2007)<br>
+    </b>- Fixed bug in storing audio in <a href="#TAudioRedirector">TAudioRedirector</a>.<br>
+    - Fixed some compatibility issues with BCB.
+    <br>
+    <br>
+  </li>
+  <li><b>Version 1.84 (May 22, 2007)<br>
+    </b>- Fixed bug regarding convesion of milliseconds to byte offset of wave data. <br>
+  <br>
+  </li>
+  <li><b>Version 1.83 (May 21, 2007)<br>
+    </b>- Added <a href="#TWaveConverter">TWaveConverter</a> and <a href="#TWaveFile">TWaveFileConverter</a> classes. <br>
+  - Fixed the bug in setting position property of <a href="#TStockAudioPlayer">TStockAudioPlayer</a>. <br>
+  <br>
+    </li>
+  <li><b>Version 1.82 (May 17, 2007)<br>
+    </b>- Added <a href="#TWaveStreamConverter">TWaveStreamConverter</a> and <a href="#TWaveFile">TWaveFile</a> classes. <br>
+    - Some minor tweaks. <br>
+    <br>
+  </li>
+  <li><b>Version 1.81 (May 3, 2007)<br>
+    </b>- Fixed the compatilibity issue with Delphi 3. <br>
+    <br>
+    </li>
+  <li><b>Version 1.80 (March 17, 2007)<br>
+    </b>- Added <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a> class. Using this class any wave audio stream can be manipulated easily. As of now, <a href="#TWave">TWave</a> class is a descendent of <a href="#TWaveStreamAdapter">TWaveStreamAdapter</a> class. <br>
+    - Added <a href="#TAudioRedirectorStream">Stream</a> property to <a href="#TAudioRedirector">TAudioRedirector</a> component. Use this property to record audio while redirecting it. <br>
+    - Fixed a bug while selecting the recording source in <a href="#TAudioMixerLine">TAudioMixerLine</a> class (Thanks to <a href="mailto:zbacsko@freemail.hu">Falco</a>). <br>
+    - Changed prototype of <a href="#GetWaveAudioPeakLevel">GetWaveAudioPeakLevel</a>, <a href="#InvertWaveAudio">InvertWaveAudio</a>, and <a href="#SilenceWaveAudio">SilenceWaveAudio</a> functions. <br>
+    <br>
+    </li>
+  <li><b>Version 1.70 (February 4, 2007)<br>
+    </b>- Added <a href="#BeginRewrite">BeginRewrite</a> and <a href="#EndRewrite">EndRewrite</a> methods to <a href="#TWave">TWave</a> class. These methods enables you to easily create a wave audio. <br>
+    - Added <a href="#VolumeLeft">VolumeLeft</a> and <a href="#VolumeRight">VolumeRight</a> properties to the wave player components. <br>
+    <b> </b>- Fixed bug in reporting audio position of <a HREF="#TAudioPlayer">TAudioPlayer</a> and <a HREF="#TStockAudioPlayer">TStockAudioPlayer</a> components. In addition, as of this release, the position propertey of these components can be set even when they are not activated yet. <b><br>
+    </b>- Fixed racing problem in asynchronous mode (Thanks to <a href="http://forum.delphiarea.com/memberlist.php?mode=viewprofile&amp;u=802">Paw</a>)<b> <br>
+    </b><b><br>
+    </b></li>
+  <li><b>Version 1.63 (March 14, 2006)<br>
+    </b>- Fixed a bug in validating devce ID (Thanks to <a HREF="mailto:edwin@freeradionetwork.nl">Edwin</a>). <b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.62 (November 7, 2005)<br>
+    </b>- Added <a HREF="#BreakLoop">BreakLoop</a> method to <a HREF="#TLiveAudioPlayer">TLiveAudioPlayer</a>. <b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.61 (October 10, 2005)<br>
+    </b>- The Position property of <a HREF="#TAudioPlayer">TAudioPlayer</a> and <a HREF="#TStockAudioPlayer">TStockAudioPlayer</a> components chenged from read-only to read/write. <b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.60.3 (September 21, 2005)<br>
+    </b>- Adapted to support Delphi 2005. <b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.60.2 (February 21, 2005)<br>
+    </b>- Delphi 3.0 compatibility issue fixed. <b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.60.1 (November 25, 2004)<br>
+    </b>- A minor bug in <a HREF="#TWaveAudioOut">TWaveAudioOut</a> class fixed.<b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.60 (September 23, 2004)<br>
+    </b>- The new <i>Async</i> property added to the interface of <a HREF="#WaveAudioPlayerRecorderClasses">players</a>, <a HREF="#WaveAudioPlayerRecorderClasses">recorders</a>, and <a HREF="#WaveAudioPlayerRecorderClasses">redirector</a> components. When this property is True, the events occur in a separate thread, so the event handlers should be thread-safe.<b><br>
+    </b>- The new <a HREF="#WaitForStart">WaitForStart</a> method added to the interface of <a HREF="#TWaveAudioIO">TWaveAudioIO</a> component.<br>
+    <b><br>
+    </b></li>
+  <li><b>Version 1.53 (August 9, 2004)<br>
+    </b>- <a HREF="#CalcWaveBufferSize">CalcWaveBufferSize</a> and <a HREF="#SilenceWaveAudio">SilenceWaveAudio</a> added to the list of global procedures.<br>
+    - Some minor tweaks<br>
+    - A TCP Client/Server set of applications included in the package to show how to use <a HREF="#TLiveAudioPlayer">TLiveAudioPlayer</a> and <a HREF="#TLiveAudioRecorder">TLiveAudioRecorder</a> components. The programs use Delphi's TServerSocket and TClientSocket for TCP connection.<br>
+    <br>
+  </li>
+  <li><b>Version 1.52.1 (January 19, 2004)</b><br>
+    - Some minor tweaks<br>
+    <br>
+  </li>
+  <li><b>Version 1.52 (January 15, 2004)<br>
+    </b>- A minor bug in wave manipulation methods of <a HREF="#TWave">TWave</a> class fixed.<b><br>
+    <br>
+    </b></li>
+  <li><b> Version 1.51 (December 8, 2003)<br>
+    </b>- The <a HREF="#ConvertWaveFormat">ConvertWaveFormat</a> procedure fully implemented.<b><br>
+    <br>
+    </b></li>
+  <li><b>Version 1.50 (December 7, 2003)<br>
+    </b>- New component <a HREF="#TAudioMixer">TAudioMixer</a> added to the package.<b><br>
+    </b>- Some new propeties and methods added to the <a HREF="#TWave">TWave</a> class.<br>
+    - New <a HREF="#TWaveAudioLevelEvent">OnLevel</a> event added to all audio playback and recording components.<br>
+    - New <a HREF="#OnFilter">OnFilter</a> event added to the <a HREF="#AudioOut">TAudioRedirector.AudioOut</a> sub component property.<br>
+    - Some new <a HREF="#GlobalProcedures">Global Procedures</a> added.<br>
+    <br>
+    </li>
+  <li><b>Version 1.02 (August 10, 2003)<br>
+    </b>- Bug fix: On Delphi 3 the definition of TPCMWaveFormat is wrong, and because of that some components could not reterive the wave format of the wave to playback. <br>
+    <b><br>
+    </b></li>
+  <li><b>Version 1.01 (August 10, 2003)<br>
+    </b>- The package's documentation (this file) updated.<b><br>
+    <br>
+    </b></li>
+  <li><b> Version 1.0. (July 19, 2003)</b><br>
+    - Initial release to public domain. </li>
+</ul>
+<p><b><a NAME="ACKNOWLEDGMENT"></a><br>
+  ACKNOWLEDGMENT</b></p>
+<blockquote>
+  <p>Special thanks to: </p>
+  <ul>
+    <li>Inprise for his help on wave format conversion.</li>
+    <li>Edwin Arts &lt;<a HREF="mailto:edwin@freeradionetwork.nl">edwin@freeradionetwork.nl</a>&gt; for providing mixer control demo and fixing a bug.</li>
+    <li><a href="http://forum.delphiarea.com/memberlist.php?mode=viewprofile&amp;u=802">Paw</a> for fixing a racing problem. </li>
+    <li>Falco &lt;<a href="mailto:zbacsko@freemail.hu">zbacsko@freemail.hu</a>&gt; for fixing the line selection problem of Audio Mixer. <br>
+    </li>
+  </ul>
+</blockquote>
+<p><b><a NAME="LICENSE"></a><br>
+  LICENSE</b></p>
+<p>The Wave Audio Package is freeware. You may copy package's files AS LONG AS YOU COPY ALL OF THEM. If you want to change the source code in order to improve the components' features, performance, etc. please send me the new source code so that I can have a look at it. The changed source code should contain descriptions what you have changed, and of course your name. The only thing you MAY NOT CHANGE is the ORIGINAL COPYRIGHT INFORMATION. 
+<p></p>
+<p><b><a NAME="DISCLAIMER"></a><br>
+  </b> <b> DISCLAIMER</b></p>
+<p> The Wave Audio Package is provided &quot;AS IS&quot; without any warranty of any kind, either express or implied. The entire risk as to the quality and performance of the software is with you. The author is NOT liable for any DAMAGES resulting from the use and misuse of the package, especially he is NOT liable for DAMAGES that were caused BY ANY VERSION WHICH HAS NOT BEEN PROGRAMMED BY THE AUTHOR HIMSELF.</p>
+<br>
+
+<table WIDTH="100%" BORDER="0" CELLSPACING="0" CELLPADDING="0">
+  <tr>
+    <td WIDTH="100%">
+      <hr NOSHADE>
+    </td>
+    <td NOWRAP><sup>&nbsp;END OF DOCUMENT</sup></td>
+  </tr>
+</table>
+</body>
+</html>

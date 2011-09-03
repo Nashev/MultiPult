@@ -1,13 +1,14 @@
-program MultPult;
+program SndRcrdr;
 
 uses
   Forms,
-  MainFormUnit in 'MainFormUnit.pas' {MainForm};
+  Main in 'Main.pas' {MainForm};
 
 {$R *.res}
 
 begin
   Application.Initialize;
+  Application.Title := 'Sound Recorder';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.
