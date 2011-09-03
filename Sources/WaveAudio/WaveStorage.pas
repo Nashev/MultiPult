@@ -49,13 +49,14 @@ type
     ckRIFF, ckData: TMMCKInfo;
     mmIO: HMMIO;
     function UpdateWaveInfo: Boolean; virtual;
-    function LockData(var pData: Pointer; ForceCopy: Boolean): Boolean; virtual;
-    function UnlockData(pData: Pointer; WriteData: Boolean): Boolean; virtual;
     function MSecToByte(MSec: DWORD): DWORD; virtual;
     procedure DoChanging; virtual;
     procedure DoChange; virtual;
     property Modified: Boolean read fModified;
   public
+    function LockData(var pData: Pointer; ForceCopy: Boolean): Boolean; virtual;
+    function UnlockData(pData: Pointer; WriteData: Boolean): Boolean; virtual;
+
     constructor Create(AStream: TStream; AOwnership: TStreamOwnership
       {$IFDEF COMPILER4_UP} = soReference {$ENDIF}); virtual;
     destructor Destroy; override;
@@ -110,6 +111,8 @@ type
     property Position: Integer read GetPosition write SetPosition;
     property OnChanging: TNotifyEvent read fOnChanging write fOnChanging;
     property OnChange: TNotifyEvent read fOnChange write fOnChange;
+
+    property InternalDataOffset:DWORD read FDataOffset;
   end;
 
   // Converts audio format of wave streams
@@ -402,7 +405,8 @@ function TWaveStreamAdapter.LockData(var pData: Pointer; ForceCopy: Boolean): Bo
 begin
   Result := False;
   pData := nil;
-  if UpdateWaveInfo and (fDataSize <> 0) then
+//  if UpdateWaveInfo and (fDataSize <> 0) then
+  if (fDataSize <> 0) then
   begin
     Result := True;
     if not ForceCopy and (Stream is TCustomMemoryStream) then
@@ -410,7 +414,8 @@ begin
       pData := TCustomMemoryStream(Stream).Memory;
       Inc(PByte(pData), fDataOffset);
     end
-    else
+//    else
+    else if UpdateWaveInfo then
     begin
       ReallocMem(pData, fDataSize);
       Stream.Seek(fDataOffset, soFromBeginning);

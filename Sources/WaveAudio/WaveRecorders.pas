@@ -18,6 +18,7 @@ uses
   Windows, Messages, Classes, mmSystem, WaveUtils, WaveStorage, WaveIn;
 
 type
+  TOnDatReadyEvent = procedure(const Buffer: Pointer; BufferSize: DWORD) of object;
 
   // Records wave into a wave stream
   TAudioRecorder = class(TWaveAudioIn)
@@ -56,6 +57,7 @@ type
     property OnError;
     property OnLevel;
     property OnFormat;
+    property OnFilter;
   end;
 
   // Records wave into user defined buffers
@@ -168,10 +170,12 @@ begin
     fWave.BeginRewrite(pWaveFormat);
 end;
 
-procedure TAudioRecorder.WaveDataReady(const Buffer: Pointer;
-  BufferSize: DWORD; var FreeIt: Boolean);
+procedure TAudioRecorder.WaveDataReady(const Buffer: Pointer; BufferSize: DWORD; var FreeIt: Boolean);
+var
+  WritedBytes: Integer;
 begin
-  if fWave.Write(Buffer^, BufferSize) <> Integer(BufferSize) then
+  WritedBytes := fWave.Write(Buffer^, BufferSize);
+  if WritedBytes <> Integer(BufferSize) then
     Success(MMSYSERR_ERROR); // Raises an OnError event
 end;
 

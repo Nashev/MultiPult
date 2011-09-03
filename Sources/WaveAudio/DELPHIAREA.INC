@@ -7,7 +7,7 @@
 {$T-} // Typed @ operator Off
 {$X+} // Extended Syntax On
 {$P+} // Open String Params On
-{$O+} // Optimization On
+{$O-} // Optimization On
 {$IFDEF WIN32}
 {$H+} // Use long strings by default
 {$ENDIF}
