@@ -1,68 +1,36 @@
 ﻿[Closed Files]
-File_0=TSourceModule,'E:\Develops\MultPult\Sources\MainFormUnit.pas',0,1,1,52,8,0,0,,{1,150,22}{2,485,22}
-File_1=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\win\MMSystem.pas',0,1,769,5,794,0,0,,
-File_2=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas',0,1,19628,1,19646,0,0,,
-File_3=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\jpeg.pas',0,1,949,92,962,0,0,,
-File_4=TSourceModule,'E:\Develops\MultPult\Downloads\avi_work\vfw.pas',0,1,325,1,1,0,0,,
-File_5=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Dialogs.pas',0,1,2031,1,2058,0,0,,
-File_6=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\System.pas',0,1,12150,1,12176,0,0,,
-File_7=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Forms.pas',0,1,3576,1,3604,0,0,,
-File_8=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Controls.pas',0,1,5635,3,5653,0,0,,
-File_9=TSourceModule,'E:\Develops\MultPult\MainFormUnit.dfm',0,1,1,1,1,0,0,,
-File_10=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Classes.pas',0,1,12967,1,12989,0,0,,
-File_11=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\ActnList.pas',0,1,1073,1,1095,0,0,,
-File_12=TSourceModule,'E:\Develops\MultPult\Researches\WaveRecorders.pas',0,1,8,34,16,0,0,,
-File_13=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Buttons.pas',0,1,1368,1,1390,0,0,,
-File_14=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Menus.pas',0,1,2456,31,2467,0,0,,
+File_0=TSourceModule,'E:\Develops\MultPult\Sources\MainFormUnit.dfm',0,1,1,1,1,0,0,,
+File_1=TSourceModule,'E:\Develops\MultPult\Sources\MainFormUnit.pas',0,1,1,1,1,0,0,,
+File_2=TSourceModule,'C:\MultPult\Sources\WaveAudio\WaveACM.pas',0,1,1,1,1,0,0,,
+File_3=TSourceModule,'E:\Develops\MultPult\Researches\MultiMediaTestUnit.pas',0,1,591,12,639,0,0,,
+File_4=TSourceModule,'C:\MultPult\Sources\avi_work\AVICompression.pas',0,1,86,7,106,0,0,,
+File_5=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\win\MMSystem.pas',0,1,769,5,794,0,0,,
+File_6=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\SysUtils.pas',0,1,19628,1,19646,0,0,,
+File_7=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\jpeg.pas',0,1,949,92,962,0,0,,
+File_8=TSourceModule,'E:\Develops\MultPult\Downloads\avi_work\vfw.pas',0,1,325,1,1,0,0,,
+File_9=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Dialogs.pas',0,1,2031,1,2058,0,0,,
+File_10=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\RTL\SYS\System.pas',0,1,12150,1,12176,0,0,,
+File_11=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Forms.pas',0,1,3576,1,3604,0,0,,
+File_12=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Controls.pas',0,1,5635,3,5653,0,0,,
+File_13=TSourceModule,'E:\Develops\MultPult\MainFormUnit.dfm',0,1,1,1,1,0,0,,
+File_14=TSourceModule,'c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Classes.pas',0,1,12967,1,12989,0,0,,
 
 [Modules]
-Module0=C:\MultPult\Sources\MainFormUnit.pas
-Module1=C:\MultPult\Sources\avi_work\AVICompression.pas
-Module2=C:\MultPult\Sources\MultPult.dproj
-Module3=C:\MultPult\Sources\WaveAudio\WaveACM.pas
-Module4=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
-Module5=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
-Module6=E:\Develops\MultPult\Researches\MultiMediaTestUnit.pas
-Module7=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas
-Module8=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
-Module9=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Graphics.pas
-Count=10
+Module0=E:\Develops\MultPult\Sources\MainFormUnit.pas
+Module1=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
+Module2=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
+Module3=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas
+Module4=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
+Module5=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Graphics.pas
+Count=6
 EditWindowCount=1
 
-[C:\MultPult\Sources\MainFormUnit.pas]
+[E:\Develops\MultPult\Sources\MainFormUnit.pas]
 ModuleType=TSourceModule
 FormState=1
 FormOnTop=0
 
-[C:\MultPult\Sources\avi_work\AVICompression.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\MultPult.dproj]
-ModuleType=TBaseProject
-
-[C:\MultPult\Sources\WaveAudio\WaveACM.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
 [E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[E:\Develops\MultPult\Researches\MultiMediaTestUnit.pas]
-ModuleType=TSourceModule
-FormState=0
-FormOnTop=0
-
-[c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
@@ -72,93 +40,45 @@ ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
+[c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
+[E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
 [c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Graphics.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
-[C:\MultPult\Sources\WaveAudio\WaveIn.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveIO.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveMixer.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveOut.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WavePlayers.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveRecorders.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveRedirector.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveReg.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveStorage.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveTimer.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\WaveAudio\WaveUtils.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\avi_work\AVIFile32.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\avi_work\AVIReading.pas]
-FormState=0
-FormOnTop=0
-
-[C:\MultPult\Sources\avi_work\vfw.pas]
-FormState=0
-FormOnTop=0
-
 [EditWindow0]
-ViewCount=10
-CurrentEditView=C:\MultPult\Sources\MainFormUnit.pas
+ViewCount=6
+CurrentEditView=E:\Develops\MultPult\Sources\MainFormUnit.pas
 View0=0
 View1=1
 View2=2
 View3=3
 View4=4
 View5=5
-View6=6
-View7=7
-View8=8
-View9=9
 PercentageSizes=1
 Create=1
 Visible=1
 Docked=0
-State=0
+State=2
 Left=2056
 Top=1143
-Width=7000
-Height=8754
+Width=6031
+Height=8574
 MaxLeft=-6
-MaxTop=-9
-ClientWidth=6950
-ClientHeight=8432
+MaxTop=-25
+MaxWidth=10050
+MaxHeight=10076
+ClientWidth=10000
+ClientHeight=9754
 DockedToMainForm=0
 BorlandEditorCodeExplorer=BorlandEditorCodeExplorer@EditWindow0
 TopPanelSize=0
@@ -167,44 +87,22 @@ LeftPanelClients=BorlandEditorCodeExplorer@EditWindow0
 LeftPanelData=0000080001000100000019000000426F726C616E64456469746F72436F64654578706C6F726572B30C00000000000000DE01000000000000FFFFFFFF
 RightPanelSize=0
 BottomPanelSize=0
-BottomMiddlePanelSize=2185
+BottomMiddlePanelSize=1359
 BottomMiddlePanelClients=DockSite0,ToDo List,MessageView
-BottomMiddelPanelData=0000080001020200000009000000446F636B53697465300E000000546F446F4C69737457696E646F77E3270000000000000289080000000000000100000000E32700000F0000004D65737361676556696577466F726DFFFFFFFF
+BottomMiddelPanelData=0000080001020200000009000000446F636B53697465300E000000546F446F4C69737457696E646F776439000000000000024F050000000000000100000000643900000F0000004D65737361676556696577466F726DFFFFFFFF
 
 [View0]
 CustomEditViewType=TEditView
-Module=C:\MultPult\Sources\MainFormUnit.pas
-CursorX=29
-CursorY=508
-TopLine=488
+Module=E:\Develops\MultPult\Sources\MainFormUnit.pas
+CursorX=37
+CursorY=777
+TopLine=752
 LeftCol=1
 Elisions=
-Bookmarks=
-EditViewName=C:\MultPult\Sources\MainFormUnit.pas
+Bookmarks={1,1249,1}{2,773,73}
+EditViewName=E:\Develops\MultPult\Sources\MainFormUnit.pas
 
 [View1]
-CustomEditViewType=TEditView
-Module=C:\MultPult\Sources\avi_work\AVICompression.pas
-CursorX=7
-CursorY=106
-TopLine=86
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\MultPult\Sources\avi_work\AVICompression.pas
-
-[View2]
-CustomEditViewType=TEditView
-Module=C:\MultPult\Sources\MultPult.dpr
-CursorX=1
-CursorY=18
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\MultPult\Sources\MultPult.dpr
-
-[View3]
 CustomEditViewType=TEditView
 Module=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Graphics.pas
 CursorX=3
@@ -215,51 +113,18 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\Graphics.pas
 
-[View4]
+[View2]
 CustomEditViewType=TEditView
-Module=E:\Develops\MultPult\Researches\MultiMediaTestUnit.pas
-CursorX=12
-CursorY=639
-TopLine=591
+Module=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
+CursorX=21
+CursorY=1110
+TopLine=1087
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=E:\Develops\MultPult\Researches\MultiMediaTestUnit.pas
+EditViewName=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
 
-[View5]
-CustomEditViewType=TEditView
-Module=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
-CursorX=17
-CursorY=967
-TopLine=952
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
-
-[View6]
-CustomEditViewType=TEditView
-Module=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
-CursorX=3
-CursorY=165
-TopLine=150
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
-
-[View7]
-CustomEditViewType=TEditView
-Module=C:\MultPult\Sources\WaveAudio\WaveACM.pas
-CursorX=1
-CursorY=1
-TopLine=1
-LeftCol=1
-Elisions=
-Bookmarks=
-EditViewName=C:\MultPult\Sources\WaveAudio\WaveACM.pas
-
-[View8]
+[View3]
 CustomEditViewType=TEditView
 Module=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas
 CursorX=1
@@ -270,16 +135,27 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files\embarcadero\rad studio\8.0\source\rtl\common\Math.pas
 
-[View9]
+[View4]
 CustomEditViewType=TEditView
-Module=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
-CursorX=21
-CursorY=1110
-TopLine=1087
+Module=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
+CursorX=17
+CursorY=967
+TopLine=952
 LeftCol=1
 Elisions=
 Bookmarks=
-EditViewName=c:\program files\embarcadero\rad studio\8.0\SOURCE\VCL\MPlayer.pas
+EditViewName=E:\Develops\MultPult\Sources\WaveAudio\WaveUtils.pas
+
+[View5]
+CustomEditViewType=TEditView
+Module=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
+CursorX=3
+CursorY=165
+TopLine=150
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=E:\Develops\MultPult\Sources\WaveAudio\WaveIO.pas
 
 [Watches]
 Count=1
@@ -338,11 +214,11 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=1762
+Width=1619
 Height=7866
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=1762
+ClientWidth=1619
 ClientHeight=7866
 TBDockHeight=274
 LRDockWidth=2725
@@ -357,13 +233,13 @@ Docked=1
 State=0
 Left=0
 Top=23
-Width=6950
-Height=2030
+Width=10000
+Height=1180
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=6950
-ClientHeight=2030
-TBDockHeight=2030
+ClientWidth=10000
+ClientHeight=1180
+TBDockHeight=1180
 LRDockWidth=2575
 Dockable=1
 StayOnTop=0
@@ -581,22 +457,22 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2006
+Width=1888
 Height=8187
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2006
+ClientWidth=1888
 ClientHeight=8187
 TBDockHeight=5807
 LRDockWidth=1131
 Dockable=1
 StayOnTop=0
-SplitPos=121
+SplitPos=116
 
 [PropInspDesignerSelection]
 ArrangeBy=Name
-SelectedItem=Name,OnClick
-ExpandedItems=Anchors=0,Constraints=0,Font=0,Margins=0,Action=0,BorderIcons=0,GlassFrame=0,HorzScrollBar=0,Menu=0,Options=1,OptionsEx=1,Touch=0,BevelEdges=0,Padding=0
+SelectedItem=Name,OnDeactivate
+ExpandedItems=Anchors=0,Constraints=0,Font=0,Margins=0,Action=0,Touch=0,Menu=0
 
 [DataExplorer]
 PercentageSizes=1
@@ -727,11 +603,11 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=2006
+Width=1888
 Height=8187
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=2006
+ClientWidth=1888
 ClientHeight=8187
 TBDockHeight=3466
 LRDockWidth=1225
@@ -981,13 +857,13 @@ Create=1
 Visible=1
 Docked=0
 State=0
-Left=8106
+Left=8250
 Top=1190
-Width=1812
+Width=1669
 Height=8347
 MaxLeft=-6
 MaxTop=-9
-ClientWidth=1762
+ClientWidth=1619
 ClientHeight=8102
 TBDockHeight=3182
 LRDockWidth=1056
@@ -1006,11 +882,11 @@ Docked=0
 State=0
 Left=62
 Top=1133
-Width=2056
+Width=1938
 Height=8669
 MaxLeft=-6
 MaxTop=-9
-ClientWidth=2006
+ClientWidth=1888
 ClientHeight=8423
 TBDockHeight=8669
 LRDockWidth=1938

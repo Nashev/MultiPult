@@ -101,6 +101,8 @@ type
     mmiToggleTeleport0: TMenuItem;
     mmiMode: TMenuItem;
     mmiDoubleFramerate: TMenuItem;
+    bvl1: TBevel;
+    LiveAudioRecorder: TLiveAudioRecorder;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -113,7 +115,6 @@ type
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actRecordExecute(Sender: TObject);
-    procedure AudioLevelChanged(Sender: TObject; Level: Integer);
     procedure actPlayExecute(Sender: TObject);
     procedure pbRecordPaint(Sender: TObject);
     procedure actPlayBackwardExecute(Sender: TObject);
@@ -139,6 +140,14 @@ type
     procedure actToggleTeleport0Execute(Sender: TObject);
     procedure pbIndicatorClick(Sender: TObject);
     procedure mmiDoubleFramerateClick(Sender: TObject);
+    procedure AudioRecorderActivate(Sender: TObject);
+    procedure AudioRecorderDeactivate(Sender: TObject);
+    procedure LiveAudioRecorderData(Sender: TObject; const Buffer: Pointer;
+      BufferSize: Cardinal; var FreeIt: Boolean);
+    procedure FormDestroy(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure StockAudioPlayerActivate(Sender: TObject);
+    procedure StockAudioPlayerDeactivate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -241,6 +250,17 @@ begin
   inherited Destroy;
 end;
 
+procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  actSave.Update;
+  if actSave.Enabled then
+    case MessageDlg('Вы закрываете программу, в то время как записанный Вами мультик ещё не сохранён.'+#13+#10+'Если его не сохранить сейчас, то он пропадёт.'+#13+#10+'Желаете его сохранить, прежде чем закрыть программу?', mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+      mrYes: begin actSave.Execute; CanClose := Saved; end;
+      mrNo: CanClose := True;
+      mrCancel: CanClose := False;
+    end;
+end;
+
 procedure TMainForm.FormCreate(Sender: TObject);
 var
   i: Integer;
@@ -285,6 +305,13 @@ begin
 
   mmiToggleBookmark0.Action.Free;
   mmiGotoBookmark0.Action.Free;
+  LiveAudioRecorder.Active := True;
+end;
+
+procedure TMainForm.FormDestroy(Sender: TObject);
+begin
+  LiveAudioRecorder.Active := False;
+  LiveAudioRecorder.WaitForStop;
 end;
 
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -365,7 +392,7 @@ procedure TMainForm.mmiAboutClick(Sender: TObject);
 begin
   ShowMessage(
     'МультПульт'#13#10 +
-    'Версия 0.9.1'#13#10 +
+    'Версия 0.9.2'#13#10 +
     'Автор: Илья Ненашев (I.N.Nenashev@gmail.com)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -649,6 +676,7 @@ begin
     end;
   if FramesCount > 0 then
     ShowFrame(0);
+  Saved := True;
   pbRecord.Invalidate;
   pbAudio.Invalidate;
   UpdateActions;
@@ -698,6 +726,26 @@ begin
     SetCaption(Frames[CurrentFrameIndex].FileName);
   pbDisplay.Repaint;
   pbTimeLine.Repaint;
+end;
+
+procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
+begin
+  btnPlay.Down := True;
+  ReplaceControlActions(caNone);
+  btnPlayForward.Down := False;
+  btnPlayBackward.Down := False;
+  CurrentRecordPosition := 0;
+  Interval := 0;
+  Playing := True;
+end;
+
+procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
+begin
+  btnPlay.Down := False;
+
+  CurrentRecordPosition := 0;
+  Interval := 0;
+  Playing := False;
 end;
 
 procedure TMainForm.LoadPhoto(Index: Integer);
@@ -766,31 +814,9 @@ end;
 
 procedure TMainForm.actRecordExecute(Sender: TObject);
 begin
-  if not Recording then
-    begin
-      Recording := True;
-      btnRecord.Down := True;
-      AudioRecorder.Active := True;
-    end
-  else
-    begin
-      Recording := False;
-      btnRecord.Down := False;
-      ReplaceControlActions(caNone);
-
-      btnPlayForward.Down := NextControlAction = caPlayForward;
-      btnPlayBackward.Down := NextControlAction = caPlayBackward;
-
-      AudioRecorder.Active := False;
-      Application.ProcessMessages;
-
-      if WaveStorage.Wave.Empty then
-        WaveStorage.Wave.Assign(AudioRecorder.Wave)
-      else
-        WaveStorage.Wave.Insert(MAXDWORD, AudioRecorder.Wave);
-      AudioRecorder.Wave.Clear;
-      Saved := False;
-    end;
+  // запись кадров начнётся в AudioRecorderActivate
+  // а закончится - в AudioRecorderDeactivate
+  AudioRecorder.Active := not Recording
 end;
 
 procedure TMainForm.pbDisplayPaint(Sender: TObject);
@@ -960,6 +986,24 @@ end;
 procedure TMainForm.ListBoxClick(Sender: TObject);
 begin
 //  ShowFrame(ListBox.ItemIndex);
+end;
+
+procedure TMainForm.LiveAudioRecorderData(Sender: TObject; const Buffer: Pointer; BufferSize: Cardinal; var FreeIt: Boolean);
+type
+  TVolumeArray = array [0..1600] of Byte;
+var
+  MaxVolume: Integer;
+  i: Integer;
+  Volumes: ^TVolumeArray;
+begin
+  // Готовы очередные 200 милисекунд звука с микрофона.
+  // Посчитаем максимум, и нарисуем его.
+  Volumes := Buffer;
+  MaxVolume := 0;
+  for i := 0 to BufferSize - 1 do
+    if MaxVolume < Abs(Volumes^[i] - 128) then
+      MaxVolume := Abs(Volumes^[i] - 128);
+  LevelGauge.Progress := Round(MaxVolume / 128 * 100);
 end;
 
 procedure TMainForm.pbTimeLinePaint(Sender: TObject);
@@ -1200,26 +1244,14 @@ end;
 procedure TMainForm.actPlayExecute(Sender: TObject);
 begin
   if Recording then
-    actRecord.Execute;
-  if Playing then
     begin
-      Playing := False;
-      btnPlay.Down := False;
-      StockAudioPlayer.Active := False;
-      CurrentRecordPosition := 0;
-      Interval := 0;
-    end
-  else
-    begin
-      Playing := True;
-      btnPlay.Down := True;
-      ReplaceControlActions(caNone);
-      btnPlayForward.Down := False;
-      btnPlayBackward.Down := False;
-      StockAudioPlayer.PlayStock(0);
-      CurrentRecordPosition := 0;
-      Interval := 0;
+      actRecord.Execute;
+      AudioRecorder.WaitForStop;
     end;
+
+  StockAudioPlayer.Active := not Playing;
+  // Запуск самого воспроизведения и остановка -
+  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate
 end;
 
 procedure TMainForm.ApplicationIdle(Sender: TObject; var Done: Boolean);
@@ -1237,9 +1269,27 @@ begin
       end;
 end;
 
-procedure TMainForm.AudioLevelChanged(Sender: TObject; Level: Integer);
+procedure TMainForm.AudioRecorderActivate(Sender: TObject);
 begin
-  LevelGauge.Progress := Level;
+  Recording := True;
+  btnRecord.Down := True;
+end;
+
+procedure TMainForm.AudioRecorderDeactivate(Sender: TObject);
+begin
+  Recording := False;
+  btnRecord.Down := False;
+  ReplaceControlActions(caNone);
+
+  btnPlayForward.Down := NextControlAction = caPlayForward;
+  btnPlayBackward.Down := NextControlAction = caPlayBackward;
+
+  if WaveStorage.Wave.Empty then
+    WaveStorage.Wave.Assign(AudioRecorder.Wave)
+  else
+    WaveStorage.Wave.Insert(MAXDWORD, AudioRecorder.Wave);
+  AudioRecorder.Wave.Clear;
+  Saved := False;
 end;
 
 procedure TMainForm.AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;

@@ -14,7 +14,9 @@ object MainForm: TMainForm
   Menu = MainMenu
   OldCreateOrder = False
   ShowHint = True
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   OnKeyUp = FormKeyUp
   PixelsPerInch = 96
@@ -31,15 +33,15 @@ object MainForm: TMainForm
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
-      Width = 375
+      Width = 372
       Height = 408
       Align = alClient
       OnPaint = pbDisplayPaint
-      ExplicitWidth = 860
-      ExplicitHeight = 420
+      ExplicitLeft = 0
+      ExplicitTop = -3
     end
     object pbRecord: TPaintBox
-      Left = 381
+      Left = 378
       Top = 1
       Width = 216
       Height = 408
@@ -63,7 +65,7 @@ object MainForm: TMainForm
     end
     object Splitter1: TSplitter
       AlignWithMargins = True
-      Left = 377
+      Left = 374
       Top = 2
       Height = 406
       Margins.Left = 1
@@ -78,6 +80,15 @@ object MainForm: TMainForm
       ExplicitLeft = 400
       ExplicitTop = 136
       ExplicitHeight = 100
+    end
+    object bvl1: TBevel
+      Left = 594
+      Top = 1
+      Width = 3
+      Height = 408
+      Align = alRight
+      Visible = False
+      ExplicitLeft = 547
     end
   end
   object pnlTimeLine: TPanel
@@ -144,6 +155,7 @@ object MainForm: TMainForm
         Height = 22
         Action = actStepPrev
         AllowAllUp = True
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000E30E0000E30E0000000100000001000010630000006B
@@ -196,6 +208,7 @@ object MainForm: TMainForm
         Action = actPlay
         AllowAllUp = True
         GroupIndex = 2
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000130B0000130B00000001000000010000004A00000052
@@ -248,6 +261,7 @@ object MainForm: TMainForm
         Action = actRecord
         AllowAllUp = True
         GroupIndex = 2
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000130B0000130B0000000100000001000000630000007B
@@ -299,6 +313,7 @@ object MainForm: TMainForm
         Height = 22
         Action = actStepNext
         AllowAllUp = True
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000E30E0000E30E0000000100000001000010630000006B
@@ -351,6 +366,7 @@ object MainForm: TMainForm
         Action = actPlayForward
         AllowAllUp = True
         GroupIndex = 1
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000130F0000130F00000001000000010000000094000000
@@ -403,6 +419,7 @@ object MainForm: TMainForm
         Action = actPlayBackward
         AllowAllUp = True
         GroupIndex = 1
+        Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
           08000000000000010000130F0000130F00000001000000010000000094000000
@@ -697,7 +714,8 @@ object MainForm: TMainForm
     PCMFormat = Stereo16bit44100Hz
     BufferLength = 500
     BufferCount = 4
-    OnLevel = AudioLevelChanged
+    OnActivate = AudioRecorderActivate
+    OnDeactivate = AudioRecorderDeactivate
     OnFilter = AudioRecorderFilter
     Left = 16
     Top = 104
@@ -706,7 +724,8 @@ object MainForm: TMainForm
     Stock = WaveStorage
     BufferLength = 500
     BufferCount = 4
-    OnLevel = AudioLevelChanged
+    OnActivate = StockAudioPlayerActivate
+    OnDeactivate = StockAudioPlayerDeactivate
     Left = 48
     Top = 72
   end
@@ -730,5 +749,12 @@ object MainForm: TMainForm
     Options = [ofOverwritePrompt, ofHideReadOnly, ofNoChangeDir, ofPathMustExist, ofNoReadOnlyReturn, ofEnableSizing]
     Left = 160
     Top = 40
+  end
+  object LiveAudioRecorder: TLiveAudioRecorder
+    PCMFormat = Mono8Bit8000Hz
+    BufferLength = 200
+    OnData = LiveAudioRecorderData
+    Left = 16
+    Top = 136
   end
 end
