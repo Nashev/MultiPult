@@ -1,5 +1,9 @@
 unit AVICompression;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 { MeeSoft AVI compression unit
   Michael Vinther 1999
 
@@ -104,7 +108,7 @@ begin
   SetLength (pStreams, 2);
   pStreams[0] := Self.AVIStream;
   CheckOSError(AVIStreamOpenFromFile(pStreams[1], PChar(AFileToMergeName), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
-  DeleteFile (AOutFileName);
+  DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(AOutFileName); { *Converted from DeleteFile*  }
   CheckOSError(AVISaveV (PChar(AOutFileName), PClsID(nil^), nil, 2, pStreams[0], PAVICOMPRESSOPTIONS(nil^)));
   CheckOSError(AVIStreamRelease (pStreams[1]));
 end;
@@ -117,7 +121,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   bmiHeader     : TBitmapInfoHeader;
   clsidHandler  : ^TClsID;
  begin
-  DeleteFile(Name);
+  DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Name); { *Converted from DeleteFile*  }
   Result := AVIFileOpen(AVIFile, @Name[1], OF_CREATE or OF_WRITE, nil);
   if Result<>0 then begin Close; Exit; end;
 
@@ -175,7 +179,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
      begin
       Result:=-1;
       Close;
-      DeleteFile(Name);
+      DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Name); { *Converted from DeleteFile*  }
       Exit;
      end;
     end;

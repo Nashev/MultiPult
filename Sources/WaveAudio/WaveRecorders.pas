@@ -12,6 +12,10 @@
 
 unit WaveRecorders;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses

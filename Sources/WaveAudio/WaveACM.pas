@@ -14,6 +14,10 @@
 
 unit WaveACM;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses

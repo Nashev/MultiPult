@@ -12,6 +12,10 @@
 
 unit WaveIn;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses

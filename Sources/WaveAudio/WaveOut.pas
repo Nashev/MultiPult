@@ -12,6 +12,10 @@
 
 unit WaveOut;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses

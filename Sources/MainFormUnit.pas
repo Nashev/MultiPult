@@ -1,11 +1,19 @@
 unit MainFormUnit;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 {$WARN UNIT_PLATFORM OFF}
 uses
+{$IFNDEF FPC}
+  jpeg,
+{$ELSE}
+{$ENDIF}
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
-  Gauges, Buttons, Math, ComCtrls, FileCtrl, jpeg, mmSystem,
+  Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs, 
+  Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
 
 const
@@ -185,7 +193,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function IsShortCut(var Message: TWMKey): Boolean; override;
+    function IsShortCut(var Message: TWMKey): Boolean; {$IFNDEF FPC} override;{$ELSE}{$ENDIF}
     procedure SetCaption(const Value: TCaption);
   end;
 
@@ -373,7 +381,7 @@ begin
 //  BufferIndexes.Clear;
   HaveBuffers := True;
 
-  if FindFirst(PhotoFolder + '*.*', faAnyFile, Rec) = 0 then
+  if FindFirst{$IFDEF FPC}UTF8{$ENDIF}(PhotoFolder + '*.*', faAnyFile, Rec) = 0 then
     begin
       repeat
         ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
@@ -381,8 +389,8 @@ begin
           begin
             FFrames.Add(TFrame.Create(Rec.Name));
           end;
-      until FindNext(Rec) <> 0;
-      FindClose(Rec);
+      until FindNext{$IFDEF FPC}UTF8{$ENDIF}(Rec) <> 0;
+      FindClose{$IFDEF FPC}UTF8{$ENDIF}(Rec); 
     end;
 //  ListBox.Items.Assign(FileNames);
   UpdateActions;
@@ -535,8 +543,8 @@ begin
         Compressor.MergeSoundAndSaveAs(Dir + 'Audio.wav', SaveToAVIDialog.FileName);
         Compressor.Close;
         Compressor.Destroy;
-        DeleteFile(Dir + 'Audio.wav');
-        DeleteFile(Dir + 'Video.avi');
+        DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Dir + 'Audio.wav');
+        DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Dir + 'Video.avi');
       finally
         Exporting := False;
       end;
@@ -630,7 +638,7 @@ begin
       if WaveStorage.Wave.Empty and (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
-          if FileExists(PhotoFolder + WaveFileName) then
+          if FileExists{$IFDEF FPC}UTF8{$ENDIF}(PhotoFolder + WaveFileName) then
             WaveStorage.Wave.LoadFromFile(PhotoFolder + WaveFileName);
         end;
       inc(i);

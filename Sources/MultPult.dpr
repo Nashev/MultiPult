@@ -1,7 +1,16 @@
 program MultPult;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 uses
+{$IFNDEF FPC}
+{$ELSE}
+  Interfaces,
+{$ENDIF}
   Forms,
+  Gauges in 'Gauges.pas',
   MainFormUnit in 'MainFormUnit.pas' {MainForm},
   WaveACM in 'WaveAudio\WaveACM.pas',
   WaveIn in 'WaveAudio\WaveIn.pas',

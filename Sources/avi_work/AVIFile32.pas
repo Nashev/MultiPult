@@ -1,4 +1,9 @@
 unit AVIFile32; // AVIFIL32WrapperJER
+
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
  {AVIFIL32.DLL - Delphi Wrapper
  This code is supplied as is with no guarantees
  It has been used successfully for a number of projects
@@ -17,9 +22,15 @@ unit AVIFile32; // AVIFIL32WrapperJER
 
  See MM.HLP
  }
-interface     
+interface
 
-uses WinTypes;
+uses
+{$IFNDEF FPC}
+  WinTypes;
+{$ELSE}
+  Types;
+{$ENDIF}
+
 
 const
   {All-Purpose Key Frame Constant}

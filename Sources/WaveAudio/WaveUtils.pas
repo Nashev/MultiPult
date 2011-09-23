@@ -12,6 +12,10 @@
 
 unit WaveUtils;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
@@ -1026,7 +1030,7 @@ begin
     until Result <> WAIT_OBJECT_0 + 1;
   finally
     if SyncObject <> Handle then
-      CloseHandle(Handle);
+      FileClose(Handle); { *Converted from CloseHandle*  }
   end;
 end;
 

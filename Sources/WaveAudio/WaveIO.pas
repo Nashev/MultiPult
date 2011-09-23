@@ -12,6 +12,10 @@
 
 unit WaveIO;
 
+{$IFDEF FPC}
+  {$MODE Delphi}
+{$ENDIF}
+
 interface
 
 uses
@@ -167,7 +171,7 @@ end;
 
 destructor TWaveThread.Destroy;
 begin
-  CloseHandle(WaveAudioIO.ThreadEvent);
+  FileClose(WaveAudioIO.ThreadEvent); { *Converted from CloseHandle*  }
   WaveAudioIO.ThreadEvent := 0;
   inherited Destroy;
 end;
@@ -490,7 +494,7 @@ begin
       else
         Result := 0;
     TIME_SMPTE:
-      Result := 1000 * ((mmTime.hour * 3600) + (mmTime.min * 60) + mmTime.sec);
+      Result := 1000 * ((mmTime.{$IFDEF FPC}smpte.{$ENDIF}hour * 3600) + (mmTime.{$IFDEF FPC}smpte.{$ENDIF}min * 60) + mmTime.{$IFDEF FPC}smpte.{$ENDIF}sec);
   else
     Result := 0;
   end;
