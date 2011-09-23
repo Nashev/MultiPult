@@ -46,10 +46,11 @@ object MainForm: TMainForm
       Width = 216
       Height = 408
       Align = alRight
+      OnMouseDown = pbRecordMouseDown
+      OnMouseMove = pbRecordMouseMove
       OnPaint = pbRecordPaint
-      ExplicitLeft = 487
+      ExplicitLeft = 375
       ExplicitTop = -3
-      ExplicitHeight = 384
     end
     object pbAudio: TPaintBox
       Left = 597

@@ -156,6 +156,10 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure StockAudioPlayerActivate(Sender: TObject);
     procedure StockAudioPlayerDeactivate(Sender: TObject);
+    procedure pbRecordMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -180,6 +184,7 @@ type
     Bookmarks: array [0..9] of Integer;
     Saved: Boolean;
     RecordedAudioCopy: TMemoryStream;
+    pbRecordOffset: Integer;
     function GetFrame(Index: Integer): TFrame;
     function GetFramesCount: Integer;
 //    Drawing: Boolean;
@@ -390,7 +395,7 @@ begin
             FFrames.Add(TFrame.Create(Rec.Name));
           end;
       until FindNext{$IFDEF FPC}UTF8{$ENDIF}(Rec) <> 0;
-      FindClose{$IFDEF FPC}UTF8{$ENDIF}(Rec); 
+      FindClose{$IFDEF FPC}UTF8{$ENDIF}(Rec);
     end;
 //  ListBox.Items.Assign(FileNames);
   UpdateActions;
@@ -400,8 +405,8 @@ procedure TMainForm.mmiAboutClick(Sender: TObject);
 begin
   ShowMessage(
     'МультПульт'#13#10 +
-    'Версия 0.9.2'#13#10 +
-    'Автор: Илья Ненашев (I.N.Nenashev@gmail.com)'#13#10 +
+    'Версия 0.9.3'#13#10 +
+    'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
     ''#13#10 +
@@ -742,7 +747,8 @@ begin
   ReplaceControlActions(caNone);
   btnPlayForward.Down := False;
   btnPlayBackward.Down := False;
-  CurrentRecordPosition := 0;
+  if CurrentRecordPosition >= RecordedFrames.Count - 1 then
+    CurrentRecordPosition := 0;
   Interval := 0;
   Playing := True;
 end;
@@ -751,7 +757,7 @@ procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
   btnPlay.Down := False;
 
-  CurrentRecordPosition := 0;
+  //CurrentRecordPosition := 0;
   Interval := 0;
   Playing := False;
 end;
@@ -918,20 +924,57 @@ begin
     end;
 end;
 
+procedure TMainForm.pbRecordMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if RecordedFrames.Count = 0 then
+    Exit;
+
+  CurrentRecordPosition := Y + pbRecordOffset;
+  if CurrentRecordPosition >= RecordedFrames.Count then
+    CurrentRecordPosition := RecordedFrames.Count - 1;
+
+  ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+  pbRecord.Invalidate;
+  pbAudio.Invalidate;
+  pbDisplay.Invalidate;
+  UpdateActions;
+end;
+
+procedure TMainForm.pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X,
+  Y: Integer);
+begin
+  if ssLeft in Shift then
+    pbRecordMouseDown(Sender, mbLeft, Shift, X, Y);
+end;
+
 procedure TMainForm.pbRecordPaint(Sender: TObject);
 var
   y: Integer;
 begin
+  pbRecordOffset := CurrentRecordPosition - (pbRecord.Height div 2);
+  if (pbRecordOffset + pbRecord.Height) > RecordedFrames.Count then
+    pbRecordOffset := RecordedFrames.Count - pbRecord.Height;
+  if pbRecordOffset < 0 then
+    pbRecordOffset := 0;
+
   pbRecord.Canvas.Brush.Color := clWindow;
   pbRecord.Canvas.FillRect(pbRecord.ClientRect);
+  pbRecord.Canvas.Brush.Color := clLtGray;
   for y := 0 to pbRecord.Height do
-    if y < RecordedFrames.Count then
-      pbRecord.Canvas.Pixels[MulDiv(Integer(RecordedFrames[RecordedFrames.Count - 1 - y]), pbRecord.Width, FramesCount), y] := clBlack
-    else
-      Break;
-  if Playing then
+    begin
+      if (y + pbRecordOffset) >= RecordedFrames.Count then
+        Break;
+      if (y + pbRecordOffset) mod FrameRate = 0 then
+        pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 1));
+      if (y + pbRecordOffset) mod (FrameRate * 10) = 0 then
+        pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 2));
+      pbRecord.Canvas.Pixels[MulDiv(Integer(RecordedFrames[y + pbRecordOffset]), pbRecord.Width, FramesCount), y] := clBlack;
+    end;
+
+  pbRecord.Canvas.Brush.Color := clWhite;
     if CurrentRecordPosition < RecordedFrames.Count then
-      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), pbRecord.Width, FramesCount), RecordedFrames.Count - 1 - CurrentRecordPosition) do
+      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), pbRecord.Width, FramesCount), CurrentRecordPosition - pbRecordOffset) do
         pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
 end;
 
@@ -1257,6 +1300,7 @@ begin
       AudioRecorder.WaitForStop;
     end;
 
+  StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
   StockAudioPlayer.Active := not Playing;
   // Запуск самого воспроизведения и остановка -
   // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate

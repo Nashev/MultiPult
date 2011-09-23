@@ -53,6 +53,7 @@
 			<DelphiCompile Include="MultPult.dpr">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="Gauges.pas"/>
 			<DCCReference Include="MainFormUnit.pas">
 				<Form>MainForm</Form>
 			</DCCReference>
@@ -70,7 +71,6 @@
 			<DCCReference Include="avi_work\AVICompression.pas"/>
 			<DCCReference Include="avi_work\AVIFile32.pas"/>
 			<DCCReference Include="avi_work\vfw.pas"/>
-			<DCCReference Include="Gauges.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -98,8 +98,8 @@
 						<VersionInfo Name="AutoIncBuild">True</VersionInfo>
 						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">9</VersionInfo>
-						<VersionInfo Name="Release">2</VersionInfo>
-						<VersionInfo Name="Build">1</VersionInfo>
+						<VersionInfo Name="Release">3</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">True</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -111,7 +111,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">0.9.2.1</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.9.3.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>
