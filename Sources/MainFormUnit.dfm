@@ -33,15 +33,16 @@ object MainForm: TMainForm
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
-      Width = 372
+      Width = 480
       Height = 408
       Align = alClient
       OnPaint = pbDisplayPaint
       ExplicitLeft = 0
       ExplicitTop = -3
+      ExplicitWidth = 372
     end
     object pbRecord: TPaintBox
-      Left = 378
+      Left = 486
       Top = 1
       Width = 216
       Height = 408
@@ -52,21 +53,9 @@ object MainForm: TMainForm
       ExplicitLeft = 375
       ExplicitTop = -3
     end
-    object pbAudio: TPaintBox
-      Left = 597
-      Top = 1
-      Width = 105
-      Height = 408
-      Align = alRight
-      Visible = False
-      OnPaint = pbAudioPaint
-      ExplicitLeft = 598
-      ExplicitTop = -3
-      ExplicitHeight = 386
-    end
     object Splitter1: TSplitter
       AlignWithMargins = True
-      Left = 374
+      Left = 482
       Top = 2
       Height = 406
       Margins.Left = 1
@@ -81,15 +70,6 @@ object MainForm: TMainForm
       ExplicitLeft = 400
       ExplicitTop = 136
       ExplicitHeight = 100
-    end
-    object bvl1: TBevel
-      Left = 594
-      Top = 1
-      Width = 3
-      Height = 408
-      Align = alRight
-      Visible = False
-      ExplicitLeft = 547
     end
   end
   object pnlTimeLine: TPanel

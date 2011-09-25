@@ -91,7 +91,6 @@ type
     mmiSeparatorSteps: TMenuItem;
     mmiPlay: TMenuItem;
     SaveDialog: TSaveDialog;
-    pbAudio: TPaintBox;
     OpenDialog: TOpenDialog;
     mmiHelp: TMenuItem;
     mmiAbout: TMenuItem;
@@ -109,7 +108,6 @@ type
     mmiToggleTeleport0: TMenuItem;
     mmiMode: TMenuItem;
     mmiDoubleFramerate: TMenuItem;
-    bvl1: TBevel;
     LiveAudioRecorder: TLiveAudioRecorder;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
@@ -135,7 +133,6 @@ type
     procedure actSaveUpdate(Sender: TObject);
     procedure AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;
       BufferSize: Cardinal);
-    procedure pbAudioPaint(Sender: TObject);
     procedure actOpenExecute(Sender: TObject);
     procedure actUpdate_HaveFiles(Sender: TObject);
     procedure actUpdate_HaveRecorded(Sender: TObject);
@@ -206,7 +203,7 @@ var
   MainForm: TMainForm;
 
 var
-  FrameRate: Integer = 25;
+  FrameRate: byte = 25;
 
 implementation
 uses AVICompression;
@@ -405,7 +402,7 @@ procedure TMainForm.mmiAboutClick(Sender: TObject);
 begin
   ShowMessage(
     'МультПульт'#13#10 +
-    'Версия 0.9.3'#13#10 +
+    'Версия 0.9.4'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -435,10 +432,10 @@ end;
 
 function CopyProgressHandler(
   TotalFileSize, TotalBytesTransferred, StreamSize, StreamBytesTransferred: LARGE_INTEGER;
-  dwStreamNumber, dwCallbackReason: DWORD;
+  dwStreamNumber, dwCallbackReason: Integer;
   hSourceFile, hDestinationFile: THANDLE;
   lpData: LPVOID
-): DWORD; stdcall;
+): Integer; stdcall;
 begin
 //  TMainForm(lpData).SetCaption('Копирование кадра: ' + FloatToStrF(TotalBytesTransferred / TotalFileSizeTotalFileSize) * 100, ffFixed, 0, 2) + '%';
   Result := PROGRESS_CONTINUE;
@@ -485,7 +482,6 @@ begin
             CurrentRecordPosition := i;
             ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
             pbRecord.Invalidate;
-            pbAudio.Invalidate;
             SetCaption('Экспорт. Копирование кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
             Application.ProcessMessages;
             Cancel := False;
@@ -537,7 +533,6 @@ begin
             CurrentRecordPosition := i;
             ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
             pbRecord.Invalidate;
-            pbAudio.Invalidate;
             SetCaption('Экспорт в AVI. Запись кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
             Application.ProcessMessages;
             Image := Frames[CurrentFrameIndex].OriginalJpeg;
@@ -582,7 +577,6 @@ begin
 
   ClearRecorded;
   pbRecord.Invalidate;
-  pbAudio.Invalidate;
   UpdateActions;
 end;
 
@@ -644,7 +638,12 @@ begin
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
           if FileExists{$IFDEF FPC}UTF8{$ENDIF}(PhotoFolder + WaveFileName) then
-            WaveStorage.Wave.LoadFromFile(PhotoFolder + WaveFileName);
+            begin
+              WaveStorage.Wave.LoadFromFile(PhotoFolder + WaveFileName);
+              WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
+              RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
+              WaveStorage.Wave.Position := 0;
+            end;
         end;
       inc(i);
       s := Strings[i];
@@ -691,7 +690,6 @@ begin
     ShowFrame(0);
   Saved := True;
   pbRecord.Invalidate;
-  pbAudio.Invalidate;
   UpdateActions;
 end;
 
@@ -933,10 +931,11 @@ begin
   CurrentRecordPosition := Y + pbRecordOffset;
   if CurrentRecordPosition >= RecordedFrames.Count then
     CurrentRecordPosition := RecordedFrames.Count - 1;
+  if CurrentRecordPosition < 0 then
+    CurrentRecordPosition := 0;
 
   ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
   pbRecord.Invalidate;
-  pbAudio.Invalidate;
   pbDisplay.Invalidate;
   UpdateActions;
 end;
@@ -949,8 +948,52 @@ begin
 end;
 
 procedure TMainForm.pbRecordPaint(Sender: TObject);
+type
+  TSampleArray = array [0..256] of SmallInt;
+  PSampleArray = ^TSampleArray;
 var
   y: Integer;
+  FrameIndex: Integer;
+
+  SamplesPerFrame: Integer;
+  WaveFormat: TWaveFormatEx;
+
+  procedure DrawSound;
+  var
+    FirstSample: Integer;
+    pSample: PSmallInt;
+    MaxData, MinData: SmallInt;
+    i: Integer;
+  begin
+    FirstSample := FrameIndex * SamplesPerFrame;
+    if (FirstSample + SamplesPerFrame) > (RecordedAudioCopy.Size div 2) then
+      Exit;
+
+    pSample := Pointer(PSampleArray(RecordedAudioCopy.Memory));
+    inc(pSample, FirstSample);
+    MaxData := PWordArray(pSample)^[0];
+    MinData := pSample^;
+    for i := 0 to SamplesPerFrame - 1 do
+      begin
+        MaxData := Max(MaxData, pSample^);
+        MinData := Min(MinData, pSample^);
+        Inc(pSample);
+        Inc(pSample); // stereo
+      end;
+    pbRecord.Canvas.MoveTo(pbRecord.Width div 2 + MulDiv(MinData, pbRecord.Width, $FFFF div 2),     y);
+    pbRecord.Canvas.LineTo(pbRecord.Width div 2 + MulDiv(MaxData, pbRecord.Width, $FFFF div 2) + 1, y);
+  end;
+
+  procedure DrawScaleMark;
+  begin
+    if FrameIndex mod FrameRate = 0 then
+      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 1));
+    if FrameIndex mod (FrameRate * 10) = 0 then
+      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 2));
+    if FrameIndex mod (FrameRate * 60) = 0 then
+      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 3));
+  end;
+
 begin
   pbRecordOffset := CurrentRecordPosition - (pbRecord.Height div 2);
   if (pbRecordOffset + pbRecord.Height) > RecordedFrames.Count then
@@ -958,80 +1001,39 @@ begin
   if pbRecordOffset < 0 then
     pbRecordOffset := 0;
 
+  SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
+
+  SamplesPerFrame := 2 * (WaveFormat.nSamplesPerSec div FrameRate);
+  Assert(WaveFormat.wBitsPerSample = 16, '{F90018C7-D187-41DE-A30C-CB8D15A72149}');
+  Assert(WaveFormat.nChannels = 2,       '{9655AC01-69A1-456D-B55E-027A9B04CA93}');
+
   pbRecord.Canvas.Brush.Color := clWindow;
   pbRecord.Canvas.FillRect(pbRecord.ClientRect);
+
   pbRecord.Canvas.Brush.Color := clLtGray;
+
+  pbRecord.Canvas.Pen.Color := clSkyBlue;
+  pbRecord.Canvas.Pen.Width := 1;
+  pbRecord.Canvas.Pen.Style := psSolid;
+
   for y := 0 to pbRecord.Height do
     begin
-      if (y + pbRecordOffset) >= RecordedFrames.Count then
-        Break;
-      if (y + pbRecordOffset) mod FrameRate = 0 then
-        pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 1));
-      if (y + pbRecordOffset) mod (FrameRate * 10) = 0 then
-        pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 2));
-      pbRecord.Canvas.Pixels[MulDiv(Integer(RecordedFrames[y + pbRecordOffset]), pbRecord.Width, FramesCount), y] := clBlack;
+      FrameIndex := y + pbRecordOffset;
+
+      DrawSound;
+
+      if FrameIndex >= RecordedFrames.Count then
+        Continue;
+
+      DrawScaleMark;
+
+      pbRecord.Canvas.Pixels[MulDiv(Integer(RecordedFrames[FrameIndex]), pbRecord.Width, FramesCount), y] := clBlack;
     end;
 
   pbRecord.Canvas.Brush.Color := clWhite;
     if CurrentRecordPosition < RecordedFrames.Count then
       with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), pbRecord.Width, FramesCount), CurrentRecordPosition - pbRecordOffset) do
         pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
-end;
-
-procedure TMainForm.pbAudioPaint(Sender: TObject);
-var
-  //Data: array of ShortInt;
-  MaxData, MinData: SmallInt;
-  SamplesPerGraph: Integer;
-  FirstSample: Integer;
-  DataSize: Integer;
-//  Position: Int64;
-  SamplesPerPixel: Integer;
-  y: Integer;
-//  MinY: Integer;
-  I: Integer;
-  pSample: PSmallInt;
-  WaveFormat: TWaveFormatEx;
-var
-  PixelPerSecond: Integer;
-begin
-  pbAudio.Canvas.Brush.Color := clSkyBlue;
-  pbAudio.Canvas.FillRect(pbAudio.ClientRect);
-
-  SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
-
-  PixelPerSecond := FrameRate;//trckbr1.Position;// ar1.Wave.WaveFormat.nSamplesPerSec div 100;
-  SamplesPerGraph := Round(pbAudio.Height * WaveFormat.nSamplesPerSec / PixelPerSecond);
-  SamplesPerPixel := Round(WaveFormat.nSamplesPerSec / PixelPerSecond);
-  DataSize := SamplesPerGraph * 2;
-  if DataSize > RecordedAudioCopy.Size then
-    begin
-      DataSize := RecordedAudioCopy.Size;
-      SamplesPerGraph := DataSize div 2;
-    end;
-
-//  MinY := pbAudio.Height - (SamplesPerGraph div SamplesPerPixel);
-  for y := 0 to SamplesPerGraph - 1 do
-    begin
-      FirstSample := round(y * WaveFormat.nSamplesPerSec / PixelPerSecond); // не пользуемся округлённым SamplesPerPixel, чтoб не множить ошибку округления.
-      if (FirstSample + SamplesPerPixel) > RecordedAudioCopy.Size div 2 then
-        break;
-//    Wave.InternalDataOffset
-//    TMemoryStream(Wave.Stream)
-
-      pSample := RecordedAudioCopy.Memory;
-      inc(pSample, FirstSample);
-      MaxData := pSample^;
-      MinData := pSample^;
-      for I := 0 to SamplesPerPixel - 1 do
-        begin
-          MaxData := Max(MaxData, pSample^);
-          MinData := Min(MinData, pSample^);
-          Inc(pSample);
-        end;
-      pbAudio.Canvas.MoveTo(pbAudio.Width div 2 + MulDiv(MaxData, pbAudio.Width, MaxWord div 4), y);
-      pbAudio.Canvas.LineTo(pbAudio.Width div 2 + MulDiv(MinData, pbAudio.Width, MaxWord div 4)+ 1, y);
-    end;
 end;
 
 procedure TMainForm.ListBoxClick(Sender: TObject);
@@ -1178,7 +1180,6 @@ begin
         begin
           ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
           pbRecord.Invalidate;
-          pbAudio.Invalidate;
           inc(CurrentRecordPosition);
         end
       else
@@ -1231,7 +1232,6 @@ begin
         begin
           RecordedFrames.Add(Pointer(CurrentFrameIndex));
           pbRecord.Invalidate;
-          pbAudio.Invalidate;
         end;
 
       if Interval <= 1 then
@@ -1347,7 +1347,7 @@ end;
 procedure TMainForm.AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;
   BufferSize: Cardinal);
 begin
-  //RecordedAudioCopy.Write(Buffer, BufferSize);
+  RecordedAudioCopy.Write(Buffer^, BufferSize);
 end;
 
 procedure TMainForm.pbIndicatorClick(Sender: TObject);
@@ -1372,6 +1372,7 @@ begin
   WaveStorage.Wave.Clear;
   RecordedAudioCopy.Clear;
   RecordedFrames.Clear;
+  CurrentRecordPosition := 0;
 end;
 
 { TFrame }
