@@ -109,6 +109,7 @@ type
     mmiMode: TMenuItem;
     mmiDoubleFramerate: TMenuItem;
     LiveAudioRecorder: TLiveAudioRecorder;
+    mmiPreviewMode: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -157,6 +158,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure mmiPreviewModeClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -192,6 +194,7 @@ type
     procedure ShowFrame(Index: Integer);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure ClearRecorded;
+    procedure RecalculatePreview;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -316,6 +319,8 @@ begin
   mmiToggleBookmark0.Action.Free;
   mmiGotoBookmark0.Action.Free;
   LiveAudioRecorder.Active := True;
+  pnlDisplay.DoubleBuffered := True;
+  DoubleBuffered := True;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -430,6 +435,14 @@ begin
 //  Invalidate;
 end;
 
+procedure TMainForm.mmiPreviewModeClick(Sender: TObject);
+begin
+  RecalculatePreview;
+end;
+
+type
+  LPVOID = Pointer;
+
 function CopyProgressHandler(
   TotalFileSize, TotalBytesTransferred, StreamSize, StreamBytesTransferred: LARGE_INTEGER;
   dwStreamNumber, dwCallbackReason: Integer;
@@ -467,8 +480,10 @@ var
 begin
   Dir := GetCurrentDir;
   if SelectDirectory(
-    'Выберите папку для экспорта', '', Dir,
-    [sdNewFolder, sdShowEdit, sdShowShares, sdNewUI, sdShowFiles, sdValidateDir]
+    'Выберите папку для экспорта', '', Dir
+    {$IFDEF DelphiXE}
+    , [sdNewFolder, sdShowEdit, sdShowShares, sdNewUI, sdShowFiles, sdValidateDir]
+    {$ENDIF}
   )
   then
     begin
@@ -492,7 +507,8 @@ begin
               @CopyProgressHandler,
               @Self,
               @Cancel,
-              COPY_FILE_ALLOW_DECRYPTED_DESTINATION or COPY_FILE_RESTARTABLE
+              {$IFDEF DelphiXE}COPY_FILE_ALLOW_DECRYPTED_DESTINATION or {$ENDIF}
+              COPY_FILE_RESTARTABLE
             ) then
               RaiseLastOSError;
             SetCurrentCreateDatetime(NewFileName);
@@ -502,6 +518,11 @@ begin
       end;
     end;
 end;
+
+ procedure CheckOSError(RetVal: Integer);
+ begin
+   Win32Check(LongBool(RetVal));
+ end;
 
 procedure TMainForm.actExportToAVIExecute(Sender: TObject);
 var
@@ -774,7 +795,13 @@ begin
 
   with Frames[Index] do
     begin
-      OriginalJpeg := Image;
+      if mmiPreviewMode.Checked then
+        begin
+          // TODO: scale
+          OriginalJpeg := Image;
+        end
+      else
+        OriginalJpeg := Image;
       Loaded := True;
     end;
 end;
@@ -831,6 +858,24 @@ begin
   AudioRecorder.Active := not Recording
 end;
 
+function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
+begin
+  Result.Right  := MulDiv(AWidth, ABoundsHeight, AHeight);
+  Result.Bottom := MulDiv(AHeight, ABoundsWidth, AWidth);
+  if Result.Right > ABoundsWidth then
+    begin
+      Result.Right := ABoundsWidth;
+      Result.Top := (ABoundsHeight - Result.Bottom) div 2;
+      Result.Bottom := Result.Bottom + Result.Top;
+    end;
+  if Result.Bottom > ABoundsHeight then
+    begin
+      Result.Bottom := ABoundsHeight;
+      Result.Left := (ABoundsWidth - Result.Right) div 2;
+      Result.Right := Result.Right + Result.Left;
+    end;
+end;
+
 procedure TMainForm.pbDisplayPaint(Sender: TObject);
 var
   R: TRect;
@@ -843,20 +888,7 @@ begin
       r.Top := 0;
       if (Image.Width > pbDisplay.Width) or (Image.Height > pbDisplay.Height) then
         begin
-          R.Right  := MulDiv(Image.Width, pbDisplay.Height, Image.Height);
-          R.Bottom := MulDiv(Image.Height, pbDisplay.Width, Image.Width);
-          if r.Right > pbDisplay.Width then
-            begin
-              r.Right := pbDisplay.Width;
-              r.Top := (pbDisplay.Height - r.Bottom) div 2;
-              r.Bottom := r.Bottom + r.Top;
-            end;
-          if r.Bottom > pbDisplay.Height then
-            begin
-              r.Bottom := pbDisplay.Height;
-              r.Left := (pbDisplay.Width - r.Right) div 2;
-              r.Right := r.Right + r.Left;
-            end;
+          R := StretchSize(Image.Width, Image.Height, pbDisplay.Width, pbDisplay.Height);
           pbDisplay.Canvas.StretchDraw(R, Image);
         end
       else
@@ -1067,6 +1099,7 @@ var
   x, y1, y2: Integer;
   BookmarkText: string;
   BookmarkRect: TRect;
+  TextSize: TSize;
 begin
   y1 := 4;
 
@@ -1099,8 +1132,10 @@ begin
         begin
           BookmarkText := IntToStr(BookmarkIndex);
           BookmarkRect := Rect(x - 20, y1, x + 21, pbTimeLine.Height);
-          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
-          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
+//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
+//          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
+          TextSize := pbTimeLine.Canvas.TextExtent(BookmarkText);
+          BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
           pbTimeLine.Canvas.Brush.Style := bsSolid;
           if FrameIndex = CurrentFrameIndex then
           begin
@@ -1113,18 +1148,22 @@ begin
             pbTimeLine.Canvas.Brush.Style := bsSolid;
             pbTimeLine.Canvas.Font.Color := clBtnText;
           end;
-          pbTimeLine.Canvas.RoundRect(BookmarkRect, 2, 2);
+          with BookmarkRect do
+            pbTimeLine.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
           Inc(BookmarkRect.Left, 2);
           pbTimeLine.Canvas.Brush.Style := bsClear;
-          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+          pbTimeLine.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
         end;
 
       if Frames[FrameIndex].Teleport <> -1 then
         begin
           BookmarkText := IntToStr(Frames[FrameIndex].Teleport);
           BookmarkRect := Rect(x - 20, y1, x + 21, pbTimeLine.Height);
-          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
-          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
+//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
+//          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
+          TextSize := pbTimeLine.Canvas.TextExtent(BookmarkText);
+          BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
           pbTimeLine.Canvas.Brush.Style := bsSolid;
           if FrameIndex = CurrentFrameIndex then
           begin
@@ -1137,10 +1176,12 @@ begin
             pbTimeLine.Canvas.Brush.Style := bsSolid;
             pbTimeLine.Canvas.Font.Color := clWhite;
           end;
-          pbTimeLine.Canvas.RoundRect(BookmarkRect, 2, 2);
+          with BookmarkRect do
+            pbTimeLine.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
           Inc(BookmarkRect.Left, 2);
           pbTimeLine.Canvas.Brush.Style := bsClear;
-          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+          pbTimeLine.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
         end;
     end;
 end;
@@ -1158,6 +1199,18 @@ begin
   else
     Inc(NextControlActionStackPosition);
   NextControlActionStack[NextControlActionStackPosition] := Value;
+end;
+
+procedure TMainForm.RecalculatePreview;
+var
+  i: Integer;
+begin
+  for i := 0 to FramesCount - 1 do
+    if Frames[i].Loaded then
+      begin
+        Frames[i].Loaded := False;
+        FreeAndNil(Frames[i].OriginalJpeg);
+      end;
 end;
 
 procedure TMainForm.ReplaceControlActions(Value: TControlAction);

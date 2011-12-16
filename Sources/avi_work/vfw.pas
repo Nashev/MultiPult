@@ -10,8 +10,7 @@ uses
     Windows,
     MMSystem,
     Messages,
-    CommDlg,
-    Ole2;
+    CommDlg {$IFDEF DelphiXE}, Ole2 {$ELSE}, ActiveX{$ENDIF};
 
 {== General ==================================================================}
 
@@ -1343,66 +1342,66 @@ const
 
 type
     PAVIStream      = ^IAVIStream;
-    IAVIStream      = class(IUnknown)
-    public
-        function    Create(lParam1, lParam2: LPARAM): HResult; virtual; stdcall; abstract;
-        function    Info(psi: PAVISTREAMINFOW; lSize: DWORD): HResult; virtual; stdcall; abstract;
-        function    FindSample(lPos: DWORD; lFlags: DWORD): DWORD; virtual; stdcall; abstract;
-        function    ReadFormat(lPos: DWORD; lpFormat: PVOID; lpcbFormat: PDWORD): HResult; virtual; stdcall; abstract;
-        function    SetFormat(lPos: DWORD; lpFormat: PVOID; cbFormat: DWORD): HResult; virtual; stdcall; abstract;
-        function    Read(lStart: DWORD; lSamples: DWORD; lpBuffer: PVOID; cbBuffer: DWORD; plBytes, plSamples: PDWORD): HResult; virtual; stdcall; abstract;
-        function    Write(lStart: DWORD; lSamples: DWORD; lpBuffer: PVOID; cbBuffer: DWORD; dwFlags: DWORD; plSampWritten, plBytesWritten: PDWORD): HResult; virtual; stdcall; abstract;
-        function    Delete(lStart: DWORD; lSamples: DWORD): HResult; virtual; stdcall; abstract;
-        function    ReadData(fcc: DWORD; lp: PVOID; lpcb: PDWORD): HResult; virtual; stdcall; abstract;
-        function    WriteData(fcc: DWORD; lp: PVOID; cb: DWORD): HResult; virtual; stdcall; abstract;
-        function    SetInfo(lpInfo: PAVISTREAMINFOW; cbInfo: DWORD): HResult; virtual; stdcall; abstract;
+    IAVIStream      = interface(IUnknown)
+//    public
+        function    Create(lParam1, lParam2: LPARAM): HResult; stdcall; // virtual; abstract;
+        function    Info(psi: PAVISTREAMINFOW; lSize: DWORD): HResult; stdcall; // virtual; abstract;
+        function    FindSample(lPos: DWORD; lFlags: DWORD): DWORD; stdcall; // virtual; abstract;
+        function    ReadFormat(lPos: DWORD; lpFormat: PVOID; lpcbFormat: PDWORD): HResult; stdcall; // virtual; abstract;
+        function    SetFormat(lPos: DWORD; lpFormat: PVOID; cbFormat: DWORD): HResult; stdcall; // virtual; abstract;
+        function    Read(lStart: DWORD; lSamples: DWORD; lpBuffer: PVOID; cbBuffer: DWORD; plBytes, plSamples: PDWORD): HResult; stdcall; // virtual; abstract;
+        function    Write(lStart: DWORD; lSamples: DWORD; lpBuffer: PVOID; cbBuffer: DWORD; dwFlags: DWORD; plSampWritten, plBytesWritten: PDWORD): HResult; stdcall; // virtual; abstract;
+        function    Delete(lStart: DWORD; lSamples: DWORD): HResult; stdcall; // virtual; abstract;
+        function    ReadData(fcc: DWORD; lp: PVOID; lpcb: PDWORD): HResult; stdcall; // virtual; abstract;
+        function    WriteData(fcc: DWORD; lp: PVOID; cb: DWORD): HResult; stdcall; // virtual; abstract;
+        function    SetInfo(lpInfo: PAVISTREAMINFOW; cbInfo: DWORD): HResult; stdcall; // virtual; abstract;
     end;
 
-    PAVIStreaming   = ^IAVIStreaming;
-    IAVIStreaming   = class(IUnknown)
-    public
-        function    _Begin(
-                            lStart,         // start of what we expect to play
-                            lEnd  : DWORD;   // expected end, or -1
-                            lRate : DWORD    // Should this be a float?
-                          ): HResult; virtual; stdcall; abstract;
-        function    _End: HResult; virtual; stdcall; abstract;
-    end;
+//    PAVIStreaming   = ^IAVIStreaming;
+//    IAVIStreaming   = class(TObject, IUnknown)
+//    public
+//        function    _Begin(
+//                            lStart,         // start of what we expect to play
+//                            lEnd  : DWORD;   // expected end, or -1
+//                            lRate : DWORD    // Should this be a float?
+//                          ): HResult; virtual; stdcall; abstract;
+//        function    _End: HResult; virtual; stdcall; abstract;
+//    end;
 
-    PAVIEditStream  = ^IAVIEditStream;
-    IAVIEditStream  = class(IUnknown)
-    public
-        function    Cut(plStart, plLength: PDWORD; var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
-        function    Copy(plStart, plLength: PDWORD; var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
-        function    Paste(plPos: PDWORD; plLength: PDWORD; pstream: PAVISTREAM; lStart, lEnd: DWORD): HResult; virtual; stdcall; abstract;
-        function    Clone(var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
-        function    SetInfo(lpInfo: PAVISTREAMINFOW; cbInfo: DWORD): HResult; virtual; stdcall; abstract;
-    end;
+//    PAVIEditStream  = ^IAVIEditStream;
+//    IAVIEditStream  = class(TObject, IUnknown)
+//    public
+//        function    Cut(plStart, plLength: PDWORD; var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
+//        function    Copy(plStart, plLength: PDWORD; var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
+//        function    Paste(plPos: PDWORD; plLength: PDWORD; pstream: PAVISTREAM; lStart, lEnd: DWORD): HResult; virtual; stdcall; abstract;
+//        function    Clone(var ppResult: PAVISTREAM): HResult; virtual; stdcall; abstract;
+//        function    SetInfo(lpInfo: PAVISTREAMINFOW; cbInfo: DWORD): HResult; virtual; stdcall; abstract;
+//    end;
 
 {-- AVIFile ------------------------------------------------------------------}
 
     PAVIFile        = ^IAVIFile;
-    IAVIFile        = class(IUnknown)
-        function    Info(pfi: PAVIFILEINFOW; lSize: DWORD): HResult; virtual; stdcall; abstract;
-        function    GetStream(var ppStream: PAVISTREAM; fccType: DWORD; lParam: DWORD): HResult; virtual; stdcall; abstract;
-        function    CreateStream(var ppStream: PAVISTREAM; psi: PAVISTREAMINFOW): HResult; virtual; stdcall; abstract;
-        function    WriteData(ckid: DWORD; lpData: PVOID; cbData: DWORD): HResult; virtual; stdcall; abstract;
-        function    ReadData(ckid: DWORD; lpData: PVOID; lpcbData: PDWORD): HResult; virtual; stdcall; abstract;
-        function    EndRecord: HResult; virtual; stdcall; abstract;
-        function    DeleteStream(fccType: DWORD; lParam: DWORD): HResult; virtual; stdcall; abstract;
+    IAVIFile        = interface(IUnknown)
+        function    Info(pfi: PAVIFILEINFOW; lSize: DWORD): HResult; stdcall; // virtual; abstract;
+        function    GetStream(var ppStream: PAVISTREAM; fccType: DWORD; lParam: DWORD): HResult; stdcall; // virtual; abstract;
+        function    CreateStream(var ppStream: PAVISTREAM; psi: PAVISTREAMINFOW): HResult; stdcall; // virtual; abstract;
+        function    WriteData(ckid: DWORD; lpData: PVOID; cbData: DWORD): HResult; stdcall; // virtual; abstract;
+        function    ReadData(ckid: DWORD; lpData: PVOID; lpcbData: PDWORD): HResult; stdcall; // virtual; abstract;
+        function    EndRecord: HResult; stdcall; // virtual; abstract;
+        function    DeleteStream(fccType: DWORD; lParam: DWORD): HResult; stdcall; // virtual; abstract;
     end;
 
 {-- GetFrame -----------------------------------------------------------------}
 
     PGetFrame       = ^IGetFrame;
-    IGetFrame       = class(IUnknown)
-    public
-        function    GetFrame(lPos: DWORD): PVOID; virtual; stdcall; abstract;
+    IGetFrame       = interface(IUnknown)
+//    public
+        function    GetFrame(lPos: DWORD): PVOID; stdcall; // virtual; abstract;
 
-        function    _Begin(lStart, lEnd: DWORD; lRate: DWORD): HResult; virtual; stdcall; abstract;
-        function    _End: HResult; virtual; stdcall; abstract;
+        function    _Begin(lStart, lEnd: DWORD; lRate: DWORD): HResult; stdcall; // virtual; abstract;
+        function    _End: HResult; stdcall; // virtual; abstract;
 
-        function    SetFormat(lpbi: PBITMAPINFOHEADER; lpBits: PVOID; x, y, dx, dy: int): HResult; virtual; stdcall; abstract;
+        function    SetFormat(lpbi: PBITMAPINFOHEADER; lpBits: PVOID; x, y, dx, dy: int): HResult; stdcall; // virtual; abstract;
 
         // STDMETHOD(DrawFrameStart) (THIS) PURE;
         // STDMETHOD(DrawFrame) (THIS_ DWORD lPos, HDC hdc, int x, int y, int dx, int dy) PURE;

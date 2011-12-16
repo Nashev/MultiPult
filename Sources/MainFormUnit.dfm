@@ -2,8 +2,8 @@ object MainForm: TMainForm
   Left = 397
   Top = 176
   Caption = 'MainForm'
-  ClientHeight = 468
-  ClientWidth = 703
+  ClientHeight = 458
+  ClientWidth = 687
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -24,83 +24,82 @@ object MainForm: TMainForm
   object pnlDisplay: TPanel
     Left = 0
     Top = 0
-    Width = 703
-    Height = 410
+    Width = 687
+    Height = 400
     Align = alClient
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
+    ExplicitWidth = 695
+    ExplicitHeight = 405
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
-      Width = 480
-      Height = 408
+      Width = 466
+      Height = 398
       Align = alClient
       OnPaint = pbDisplayPaint
-      ExplicitLeft = 0
-      ExplicitTop = -3
-      ExplicitWidth = 372
+      ExplicitWidth = 474
+      ExplicitHeight = 403
     end
     object pbRecord: TPaintBox
-      Left = 486
+      Left = 470
       Top = 1
       Width = 216
-      Height = 408
+      Height = 398
       Align = alRight
       OnMouseDown = pbRecordMouseDown
       OnMouseMove = pbRecordMouseMove
       OnPaint = pbRecordPaint
-      ExplicitLeft = 375
-      ExplicitTop = -3
+      ExplicitLeft = 478
+      ExplicitHeight = 403
     end
     object Splitter1: TSplitter
-      AlignWithMargins = True
-      Left = 482
-      Top = 2
-      Height = 406
-      Margins.Left = 1
-      Margins.Top = 1
-      Margins.Right = 1
-      Margins.Bottom = 1
+      Left = 467
+      Top = 1
+      Height = 398
       Align = alRight
       AutoSnap = False
       Beveled = True
       MinSize = 150
       ResizeStyle = rsUpdate
-      ExplicitLeft = 400
-      ExplicitTop = 136
-      ExplicitHeight = 100
+      ExplicitLeft = 475
+      ExplicitHeight = 403
     end
   end
   object pnlTimeLine: TPanel
     Left = 0
-    Top = 410
-    Width = 703
+    Top = 400
+    Width = 687
     Height = 24
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
+    ExplicitTop = 405
+    ExplicitWidth = 695
     object pbTimeLine: TPaintBox
       Left = 1
       Top = 1
-      Width = 701
+      Width = 685
       Height = 22
       Hint = #1050#1072#1076#1088#1099
       Align = alClient
       OnPaint = pbTimeLinePaint
-      ExplicitWidth = 860
+      ExplicitWidth = 693
     end
   end
   object pnlToolls: TPanel
     Left = 0
-    Top = 434
-    Width = 703
+    Top = 424
+    Width = 687
     Height = 34
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 429
+    ExplicitWidth = 695
     DesignSize = (
-      703
+      687
       34)
     object LevelGauge: TGauge
       Left = 585
@@ -188,7 +187,6 @@ object MainForm: TMainForm
         Height = 22
         Action = actPlay
         AllowAllUp = True
-        GroupIndex = 2
         Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
@@ -241,7 +239,6 @@ object MainForm: TMainForm
         Height = 22
         Action = actRecord
         AllowAllUp = True
-        GroupIndex = 2
         Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
@@ -346,7 +343,6 @@ object MainForm: TMainForm
         Height = 22
         Action = actPlayForward
         AllowAllUp = True
-        GroupIndex = 1
         Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
@@ -399,7 +395,6 @@ object MainForm: TMainForm
         Height = 22
         Action = actPlayBackward
         AllowAllUp = True
-        GroupIndex = 1
         Caption = ' '
         Glyph.Data = {
           36050000424D3605000000000000360400002800000010000000100000000100
@@ -662,6 +657,11 @@ object MainForm: TMainForm
       object mmiDoubleFramerate: TMenuItem
         Caption = #1059#1076#1074#1086#1077#1085#1085#1072#1103' '#1095#1072#1089#1090#1086#1090#1072' '#1082#1072#1088#1086#1074
         OnClick = mmiDoubleFramerateClick
+      end
+      object mmiPreviewMode: TMenuItem
+        AutoCheck = True
+        Caption = #1055#1086#1082#1072#1079#1099#1074#1072#1090#1100' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1091#1084#1077#1085#1100#1096#1077#1085#1085#1086#1075#1086' '#1088#1072#1079#1084#1077#1088#1072
+        OnClick = mmiPreviewModeClick
       end
     end
     object mmiHelp: TMenuItem

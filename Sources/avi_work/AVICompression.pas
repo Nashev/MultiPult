@@ -101,6 +101,11 @@ implementation
   inherited Destroy;
  end;
 
+ procedure CheckOSError(RetVal: Integer);
+ begin
+   Win32Check(LongBool(RetVal));
+ end;
+
 procedure TAVICompressor.MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
 var
   pStreams: array of PAVISTREAM;

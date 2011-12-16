@@ -5,7 +5,7 @@ program MultPult;
 {$ENDIF}
 
 uses
-{$IFNDEF FPC}
+ {$IFNDEF FPC}
 {$ELSE}
   Interfaces,
 {$ENDIF}
