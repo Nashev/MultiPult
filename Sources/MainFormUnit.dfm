@@ -1,6 +1,6 @@
 object MainForm: TMainForm
-  Left = 397
-  Top = 176
+  Left = 403
+  Top = 179
   Caption = 'MainForm'
   ClientHeight = 458
   ClientWidth = 687
@@ -30,8 +30,6 @@ object MainForm: TMainForm
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
-    ExplicitWidth = 695
-    ExplicitHeight = 405
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
@@ -75,8 +73,6 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 405
-    ExplicitWidth = 695
     object pbTimeLine: TPaintBox
       Left = 1
       Top = 1
@@ -96,15 +92,13 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 429
-    ExplicitWidth = 695
     DesignSize = (
       687
       34)
     object LevelGauge: TGauge
-      Left = 585
+      Left = 575
       Top = 7
-      Width = 108
+      Width = 105
       Height = 22
       Hint = #1059#1088#1086#1074#1077#1085#1100' '#1079#1074#1091#1082#1072
       Anchors = [akTop, akRight]

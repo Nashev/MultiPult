@@ -6,19 +6,20 @@
     <Transaction>1899.12.30 00:00:00.000.108,=C:\MultPult\Sources\avi_work\AVIFile32.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.168,=C:\MultPult\Sources\avi_work\vfw.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.747,E:\Develops\MultPult\MainFormUnit.dfm=E:\Develops\MultPult\Sources\MainFormUnit.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.010,=C:\MultPult\Sources\WaveAudio\WaveMixer.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.128,=C:\MultPult\Sources\avi_work\AVIReading.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.010,=C:\MultPult\Sources\WaveAudio\WaveMixer.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.210,=C:\MultPult\Sources\WaveAudio\WaveRedirector.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.088,=C:\MultPult\Sources\avi_work\AVICompression.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.410,=C:\MultPult\Sources\WaveAudio\WaveUtils.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.839,=C:\MultPult\Sources\WaveAudio\WaveACM.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.909,=C:\MultPult\Sources\WaveAudio\WaveIn.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.398,E:\Develops\MultPult\MultPult.dproj=E:\Develops\MultPult\Sources\MultPult.dproj</Transaction>
     <Transaction>1899.12.30 00:00:00.000.160,=C:\MultPult\Sources\WaveAudio\WaveRecorders.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.110,=C:\MultPult\Sources\WaveAudio\WavePlayers.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.260,=C:\MultPult\Sources\WaveAudio\WaveReg.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.839,=C:\MultPult\Sources\WaveAudio\WaveACM.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.960,=C:\MultPult\Sources\WaveAudio\WaveIO.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.300,=E:\Develops\MultPult\Sources\Gauges.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.960,=C:\MultPult\Sources\WaveAudio\WaveIO.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.461,=\\nashev3\d$\My\MultPult\Sources\Unit1.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.320,=C:\MultPult\Sources\WaveAudio\WaveStorage.pas</Transaction>
     <Transaction>1899.12.30 00:00:00.000.050,=C:\MultPult\Sources\WaveAudio\WaveOut.pas</Transaction>
   </Transactions>

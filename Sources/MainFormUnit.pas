@@ -12,7 +12,7 @@ uses
 {$ELSE}
 {$ENDIF}
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs, 
+  Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
 
@@ -20,15 +20,17 @@ const
   ControlActionStackDeep = 10;
 type
   TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward);
+
   TFrame = class
   private
-    FFileName: string;
+    FPath, FFileName: string;
   public
-    OriginalJpeg: TJPegImage;
+    Preview: TBitmap;
     Teleport: Integer;
     Loaded: Boolean;
+    function OriginalJpeg: TJPegImage;
     property FileName: string read FFileName;
-    constructor Create(AFileName: string);
+    constructor Create(APath, AFileName: string);
     destructor Destroy; override;
   end;
 
@@ -184,8 +186,10 @@ type
     Saved: Boolean;
     RecordedAudioCopy: TMemoryStream;
     pbRecordOffset: Integer;
+    OutOfMemoryRaised: Boolean;
     function GetFrame(Index: Integer): TFrame;
     function GetFramesCount: Integer;
+    procedure UnloadFrames;
 //    Drawing: Boolean;
     property Frames[Index: Integer]: TFrame read GetFrame;
     property FramesCount: Integer read GetFramesCount;
@@ -211,6 +215,26 @@ var
 implementation
 uses AVICompression;
 {$R *.dfm}
+
+function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
+begin
+  Result.Left   := 0;
+  Result.Top    := 0;
+  Result.Right  := MulDiv(AWidth, ABoundsHeight, AHeight);
+  Result.Bottom := MulDiv(AHeight, ABoundsWidth, AWidth);
+  if Result.Right > ABoundsWidth then
+    begin
+      Result.Right := ABoundsWidth;
+      Result.Top := (ABoundsHeight - Result.Bottom) div 2;
+      Result.Bottom := Result.Bottom + Result.Top;
+    end;
+  if Result.Bottom > ABoundsHeight then
+    begin
+      Result.Bottom := ABoundsHeight;
+      Result.Left := (ABoundsWidth - Result.Right) div 2;
+      Result.Right := Result.Right + Result.Left;
+    end;
+end;
 
 procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
 var
@@ -241,7 +265,6 @@ begin
   RecordedFrames := TList.Create;
   RecordedAudioCopy := TMemoryStream.Create;
   Application.OnIdle := ApplicationIdle;
-  pnlDisplay.DoubleBuffered := True;
   for i := 0 to 9 do
     Bookmarks[i] := -1;
 end;
@@ -319,8 +342,15 @@ begin
   mmiToggleBookmark0.Action.Free;
   mmiGotoBookmark0.Action.Free;
   LiveAudioRecorder.Active := True;
+
   pnlDisplay.DoubleBuffered := True;
-  DoubleBuffered := True;
+  pnlTimeLine.DoubleBuffered := True;
+  pnlToolls.DoubleBuffered := True;
+
+  pnlDisplay.ParentBackground := False;
+  pnlTimeLine.ParentBackground := False;
+  pnlToolls.ParentBackground := False;
+//  DoubleBuffered := True;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -376,6 +406,12 @@ begin
   Result := FFrames.Count;
 end;
 
+procedure TMainForm.UnloadFrames;
+begin
+  FFrames.Clear;
+  OutOfMemoryRaised := False;
+end;
+
 procedure TMainForm.LoadPhotoFolder(APath: string);
 var
   Rec: TSearchRec;
@@ -384,7 +420,7 @@ var
 begin
   SetCaption(APath);
   PhotoFolder := APath;
-  FFrames.Clear;
+  UnloadFrames;
 //  BufferIndexes.Clear;
   HaveBuffers := True;
 
@@ -394,7 +430,7 @@ begin
         ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
         if (ext = '.jpg') or (ext = '.jpeg') then
           begin
-            FFrames.Add(TFrame.Create(Rec.Name));
+            FFrames.Add(TFrame.Create(APath, Rec.Name));
           end;
       until FindNext{$IFDEF FPC}UTF8{$ENDIF}(Rec) <> 0;
       FindClose{$IFDEF FPC}UTF8{$ENDIF}(Rec);
@@ -558,6 +594,7 @@ begin
             Application.ProcessMessages;
             Image := Frames[CurrentFrameIndex].OriginalJpeg;
             Bmp.Assign(Image);
+            FreeAndNil(Image);
             Compressor.WriteFrame(Bmp);
           end;
         Bmp.Free;
@@ -648,7 +685,7 @@ begin
 
   ClearRecorded;
   PhotoFolder := ExtractFilePath(OpenDialog.FileName);
-  FFrames.Clear;
+  UnloadFrames;
 
   with TStringList.Create do
     try
@@ -675,7 +712,7 @@ begin
             s := Strings[i];
             if s = BookmarkSectionStart then
               Break;
-            FFrames.Add(TFrame.Create(s));
+            FFrames.Add(TFrame.Create(PhotoFolder, s));
           end;
       if s = BookmarkSectionStart then
         while i < (Count - 1) do
@@ -756,6 +793,8 @@ begin
   CurrentFrameIndex := Index;
   if not Exporting then
     SetCaption(Frames[CurrentFrameIndex].FileName);
+//  pnlDisplay.Repaint;
+//  pnlTimeLine.Repaint;
   pbDisplay.Repaint;
   pbTimeLine.Repaint;
 end;
@@ -784,26 +823,33 @@ end;
 procedure TMainForm.LoadPhoto(Index: Integer);
 var
   Image: TJPEGImage;
+  R: TRect;
 begin
-  if Frames[Index].Loaded then
+  if Frames[Index].Loaded or OutOfMemoryRaised then
     Exit;
-
-  Image := TJPEGImage.Create;
-  Image.LoadFromFile(PhotoFolder + Frames[Index].FileName);
-  Image.Performance := jpBestSpeed;
-  Image.DIBNeeded;
-
-  with Frames[Index] do
-    begin
-      if mmiPreviewMode.Checked then
-        begin
-          // TODO: scale
-          OriginalJpeg := Image;
-        end
-      else
-        OriginalJpeg := Image;
-      Loaded := True;
-    end;
+  try
+    with Frames[Index] do
+      begin
+        Image := OriginalJpeg;
+        Preview := TBitmap.Create;
+        if mmiPreviewMode.Checked then
+          begin
+            R := StretchSize(Image.Width, Image.Height, 640, 480);
+            Preview.SetSize(640,480);
+            Preview.Canvas.StretchDraw(R, Image);
+          end
+        else
+          Preview.Assign(Image);
+        FreeAndNil(Image);
+        Loaded := True;
+      end;
+  except
+    on EOutOfResources do
+      begin
+        OutOfMemoryRaised := True;
+        raise;
+      end;
+  end;
 end;
 
 procedure TMainForm.actToggleBookmarkExecute(Sender: TObject);
@@ -858,34 +904,20 @@ begin
   AudioRecorder.Active := not Recording
 end;
 
-function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
-begin
-  Result.Right  := MulDiv(AWidth, ABoundsHeight, AHeight);
-  Result.Bottom := MulDiv(AHeight, ABoundsWidth, AWidth);
-  if Result.Right > ABoundsWidth then
-    begin
-      Result.Right := ABoundsWidth;
-      Result.Top := (ABoundsHeight - Result.Bottom) div 2;
-      Result.Bottom := Result.Bottom + Result.Top;
-    end;
-  if Result.Bottom > ABoundsHeight then
-    begin
-      Result.Bottom := ABoundsHeight;
-      Result.Left := (ABoundsWidth - Result.Right) div 2;
-      Result.Right := Result.Right + Result.Left;
-    end;
-end;
-
 procedure TMainForm.pbDisplayPaint(Sender: TObject);
 var
   R: TRect;
-  Image: TJPEGImage;
+  Image: TBitmap;
 begin
   if CurrentFrameIndex < FramesCount then
     begin
-      Image := Frames[CurrentFrameIndex].OriginalJpeg;
-      r.Left :=  0;
-      r.Top := 0;
+      LoadPhoto(CurrentFrameIndex); // на всякий случай
+      if not Frames[CurrentFrameIndex].Loaded then
+        Exit;
+
+      Image := Frames[CurrentFrameIndex].Preview;
+      R.Left :=  0;
+      R.Top := 0;
       if (Image.Width > pbDisplay.Width) or (Image.Height > pbDisplay.Height) then
         begin
           R := StretchSize(Image.Width, Image.Height, pbDisplay.Width, pbDisplay.Height);
@@ -893,9 +925,9 @@ begin
         end
       else
         begin
-          r.Left := (pbDisplay.Width  - Image.Width ) div 2;
-          r.Top  := (pbDisplay.Height - Image.Height) div 2;
-          pbDisplay.Canvas.Draw(R.Left, r.Top, Image);
+          R.Left := (pbDisplay.Width  - Image.Width ) div 2;
+          R.Top  := (pbDisplay.Height - Image.Height) div 2;
+          pbDisplay.Canvas.Draw(R.Left, R.Top, Image);
         end;
     end;
 end;
@@ -1209,7 +1241,9 @@ begin
     if Frames[i].Loaded then
       begin
         Frames[i].Loaded := False;
-        FreeAndNil(Frames[i].OriginalJpeg);
+//        FreeAndNil(Frames[i].OriginalJpeg);
+        FreeAndNil(Frames[i].Preview);
+        OutOfMemoryRaised := False;
       end;
 end;
 
@@ -1364,14 +1398,15 @@ var
   i: integer;
 begin
   Done := True;
-  for i := 0 to FramesCount - 1 do
-    if not Frames[i].Loaded then
-      begin
-        LoadPhoto(i);
-        pbTimeLine.Repaint;
-        Done := False;
-        Exit;
-      end;
+  if not OutOfMemoryRaised then
+    for i := 0 to FramesCount - 1 do
+      if not Frames[i].Loaded then
+        begin
+          LoadPhoto(i);
+          pbTimeLine.Repaint;
+          Done := False;
+          Exit;
+        end;
 end;
 
 procedure TMainForm.AudioRecorderActivate(Sender: TObject);
@@ -1430,16 +1465,26 @@ end;
 
 { TFrame }
 
-constructor TFrame.Create(AFileName: string);
+constructor TFrame.Create(APath, AFileName: string);
 begin
+  FPath := APath;
   FFileName := AFileName;
   Teleport := -1;
 end;
 
 destructor TFrame.Destroy;
 begin
-  FreeAndNil(OriginalJpeg);
+//  FreeAndNil(OriginalJpeg);
+  FreeAndNil(Preview);
   inherited;
+end;
+
+function TFrame.OriginalJpeg: TJPegImage;
+begin
+  Result := TJPEGImage.Create;
+  Result.LoadFromFile(FPath + FFileName);
+  Result.Performance := jpBestSpeed;
+  Result.DIBNeeded;
 end;
 
 end.
