@@ -68,7 +68,7 @@ type
     actGotoBookmark0: TAction;
     mmiGotoBookmark0: TMenuItem;
     mmiSeparatorBookmarks: TMenuItem;
-    Timer: TMultimediaTimer;
+    Timer: TTimer;
     actPlayForward: TAction;
     mmiPlayingForward: TMenuItem;
     actExit: TAction;
@@ -112,6 +112,7 @@ type
     mmiDoubleFramerate: TMenuItem;
     LiveAudioRecorder: TLiveAudioRecorder;
     mmiPreviewMode: TMenuItem;
+    btnPressedStepsPrev: TSpeedButton;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -443,7 +444,7 @@ procedure TMainForm.mmiAboutClick(Sender: TObject);
 begin
   ShowMessage(
     'МультПульт'#13#10 +
-    'Версия 0.9.4'#13#10 +
+    'Версия 0.9.5'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -566,7 +567,7 @@ var
   Options: TAVIFileOptions;
   i: Integer;
   Bmp: Graphics.TBitmap;
-  Image: TJPEGImage;
+  Image: TGraphic;
   Dir: string;
 //  Cancel: BOOL;
 begin
@@ -592,7 +593,7 @@ begin
             pbRecord.Invalidate;
             SetCaption('Экспорт в AVI. Запись кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
             Application.ProcessMessages;
-            Image := Frames[CurrentFrameIndex].OriginalJpeg;
+            Image := Frames[CurrentFrameIndex].Preview;
             Bmp.Assign(Image);
             FreeAndNil(Image);
             Compressor.WriteFrame(Bmp);
@@ -1319,6 +1320,7 @@ begin
         begin
           RecordedFrames.Add(Pointer(CurrentFrameIndex));
           pbRecord.Invalidate;
+          CurrentRecordPosition := RecordedFrames.Count - 1;
         end;
 
       if Interval <= 1 then
