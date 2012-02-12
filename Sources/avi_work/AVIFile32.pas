@@ -26,7 +26,7 @@ interface
 
 uses
 {$IFNDEF FPC}
-  WinTypes;
+  Windows;
 {$ELSE}
   Types;
 {$ENDIF}
