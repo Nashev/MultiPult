@@ -14,7 +14,8 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
-  WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer;
+  WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
+  ToolWin;
 
 const
   ControlActionStackDeep = 10;
@@ -82,13 +83,6 @@ type
     StockAudioPlayer: TStockAudioPlayer;
     pnlToolls: TPanel;
     LevelGauge: TGauge;
-    pnlToolbar: TPanel;
-    btnStepPrev: TSpeedButton;
-    btnPlay: TSpeedButton;
-    btnRecord: TSpeedButton;
-    btnStepNext: TSpeedButton;
-    btnPlayForward: TSpeedButton;
-    btnPlayBackward: TSpeedButton;
     actPlay: TAction;
     mmiSeparatorSteps: TMenuItem;
     mmiPlay: TMenuItem;
@@ -104,7 +98,7 @@ type
     actBackwardWhilePressed: TAction;
     mmiBackwardWhilePressed: TMenuItem;
     SaveToAVIDialog: TSaveDialog;
-    Splitter1: TSplitter;
+    RecordSplitter: TSplitter;
     mmiN1: TMenuItem;
     actToggleTeleport0: TAction;
     mmiToggleTeleport0: TMenuItem;
@@ -112,7 +106,24 @@ type
     mmiDoubleFramerate: TMenuItem;
     LiveAudioRecorder: TLiveAudioRecorder;
     mmiPreviewMode: TMenuItem;
-    btnPressedStepsPrev: TSpeedButton;
+    ilActions: TImageList;
+    tlbNavigation: TToolBar;
+    btnPlayBackward: TToolButton;
+    btnPlayForward: TToolButton;
+    btnPlay: TToolButton;
+    btnRecord: TToolButton;
+    btnPrev: TToolButton;
+    btnNext: TToolButton;
+    btnBackwardWhilePressed: TToolButton;
+    btnForwardWhilePressed : TToolButton;
+    actPreviewMode: TAction;
+    actDoubleFramerate: TAction;
+    actAbout: TAction;
+    actFullScreenMode: TAction;
+    mmiFullScreenMode: TMenuItem;
+    ilActionsDisabled: TImageList;
+    actStretchImages: TAction;
+    mmiStretchImages: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -148,7 +159,7 @@ type
     procedure actExportToAVIExecute(Sender: TObject);
     procedure actToggleTeleport0Execute(Sender: TObject);
     procedure pbIndicatorClick(Sender: TObject);
-    procedure mmiDoubleFramerateClick(Sender: TObject);
+    procedure actDoubleFramerateExecute(Sender: TObject);
     procedure AudioRecorderActivate(Sender: TObject);
     procedure AudioRecorderDeactivate(Sender: TObject);
     procedure LiveAudioRecorderData(Sender: TObject; const Buffer: Pointer;
@@ -161,7 +172,21 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
-    procedure mmiPreviewModeClick(Sender: TObject);
+    procedure actPreviewModeExecute(Sender: TObject);
+    procedure actFullScreenModeExecute(Sender: TObject);
+    procedure btnBackwardWhilePressedMouseDown(Sender: TObject;
+      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure btnBackwardWhilePressedMouseUp(Sender: TObject;
+      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure btnBackwardWhilePressedMouseLeave(Sender: TObject);
+    procedure actBackwardWhilePressedExecute(Sender: TObject);
+    procedure btnForwardWhilePressedMouseDown(Sender: TObject;
+      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure btnForwardWhilePressedMouseLeave(Sender: TObject);
+    procedure btnForwardWhilePressedMouseUp(Sender: TObject;
+      Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -188,6 +213,7 @@ type
     RecordedAudioCopy: TMemoryStream;
     pbRecordOffset: Integer;
     OutOfMemoryRaised: Boolean;
+    PreviousBounds: TRect;
     function GetFrame(Index: Integer): TFrame;
     function GetFramesCount: Integer;
     procedure UnloadFrames;
@@ -335,8 +361,6 @@ var
   end;
 
 begin
-  for i := 0 to pnlToolbar.ControlCount - 1 do
-    TSpeedButton(pnlToolbar.Controls[i]).Caption := '';
   for i := 1 to 9 do
     AppendBookmarkMenu(i);
 
@@ -351,6 +375,13 @@ begin
   pnlDisplay.ParentBackground := False;
   pnlTimeLine.ParentBackground := False;
   pnlToolls.ParentBackground := False;
+
+  with btnBackwardWhilePressed do ControlStyle := ControlStyle - [csCaptureMouse];
+  with btnForwardWhilePressed  do ControlStyle := ControlStyle - [csCaptureMouse];
+  with btnPrev         do ControlStyle := ControlStyle - [csClickEvents];
+  with btnNext         do ControlStyle := ControlStyle - [csClickEvents];
+  with btnPlayBackward do ControlStyle := ControlStyle - [csClickEvents];
+  with btnPlayForward  do ControlStyle := ControlStyle - [csClickEvents];
 //  DoubleBuffered := True;
 end;
 
@@ -384,8 +415,8 @@ begin
         vk_Right: begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
       end;
 
-  btnPlayForward.Down  := NextControlAction = caPlayForward;
-  btnPlayBackward.Down := NextControlAction = caPlayBackward;
+  actPlayForward.Checked  := NextControlAction = caPlayForward;
+  actPlayBackward.Checked := NextControlAction = caPlayBackward;
 //  pbIndicator.Invalidate;
 //  pbIndicator.Refresh;
 end;
@@ -444,7 +475,7 @@ procedure TMainForm.mmiAboutClick(Sender: TObject);
 begin
   ShowMessage(
     'МультПульт'#13#10 +
-    'Версия 0.9.5'#13#10 +
+    'Версия 0.9.6'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -459,20 +490,25 @@ begin
  //
 end;
 
-procedure TMainForm.mmiDoubleFramerateClick(Sender: TObject);
+procedure TMainForm.actBackwardWhilePressedExecute(Sender: TObject);
+begin
+ //
+end;
+
+procedure TMainForm.actDoubleFramerateExecute(Sender: TObject);
 begin
   if FrameRate = 25 then
     FrameRate := 50
   else
     FrameRate := 25;
-  mmiDoubleFramerate.Checked := (FrameRate = 50);
+  actDoubleFramerate.Checked := (FrameRate = 50);
 
   Timer.Interval := 1000 div FrameRate;
   pnlToolls.Invalidate;
 //  Invalidate;
 end;
 
-procedure TMainForm.mmiPreviewModeClick(Sender: TObject);
+procedure TMainForm.actPreviewModeExecute(Sender: TObject);
 begin
   RecalculatePreview;
 end;
@@ -613,6 +649,34 @@ end;
 procedure TMainForm.actForwardWhilePressedExecute(Sender: TObject);
 begin
   //
+end;
+
+procedure TMainForm.actFullScreenModeExecute(Sender: TObject);
+begin
+  if actFullScreenMode.Checked then
+    begin
+      BorderStyle := bsNone;
+      PreviousBounds := BoundsRect;
+      BoundsRect := Self.Monitor.BoundsRect;
+      FormStyle := fsStayOnTop;
+      pnlDisplay.Align := alNone;
+      pnlDisplay.BringToFront;
+      Menu := nil;
+      with Self.ClientRect do
+        pnlDisplay.SetBounds(Left, Top, Right, Bottom);
+      pbRecord.Hide;
+      RecordSplitter.Hide;
+    end
+  else
+    begin
+      pnlDisplay.Align := alClient;
+      BorderStyle := bsSizeable;
+      BoundsRect := PreviousBounds;
+      FormStyle := fsNormal;
+      pbRecord.Show;
+      Menu := MainMenu;
+      RecordSplitter.Show;
+    end;
 end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
@@ -802,10 +866,10 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
-  btnPlay.Down := True;
+  actPlay.Checked := True;
   ReplaceControlActions(caNone);
-  btnPlayForward.Down := False;
-  btnPlayBackward.Down := False;
+  actPlayForward.Checked := False;
+  actPlayBackward.Checked := False;
   if CurrentRecordPosition >= RecordedFrames.Count - 1 then
     CurrentRecordPosition := 0;
   Interval := 0;
@@ -814,7 +878,7 @@ end;
 
 procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
-  btnPlay.Down := False;
+  actPlay.Checked := False;
 
   //CurrentRecordPosition := 0;
   Interval := 0;
@@ -833,7 +897,7 @@ begin
       begin
         Image := OriginalJpeg;
         Preview := TBitmap.Create;
-        if mmiPreviewMode.Checked then
+        if actPreviewMode.Checked then
           begin
             R := StretchSize(Image.Width, Image.Height, 640, 480);
             Preview.SetSize(640,480);
@@ -919,7 +983,7 @@ begin
       Image := Frames[CurrentFrameIndex].Preview;
       R.Left :=  0;
       R.Top := 0;
-      if (Image.Width > pbDisplay.Width) or (Image.Height > pbDisplay.Height) then
+      if actStretchImages.Checked or (Image.Width > pbDisplay.Width) or (Image.Height > pbDisplay.Height) then
         begin
           R := StretchSize(Image.Width, Image.Height, pbDisplay.Width, pbDisplay.Height);
           pbDisplay.Canvas.StretchDraw(R, Image);
@@ -1304,9 +1368,9 @@ begin
         caNone:
           if Interval <= 1 then
             begin
-              if GetAsyncKeyState(Ord('A')) < 0 then //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
+              if actBackwardWhilePressed.Checked or (GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0) then //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
                 dec(CurrentFrameIndex);
-              if GetAsyncKeyState(Ord('D')) < 0 then
+              if actForwardWhilePressed.Checked or (GetAsyncKeyState(Ord('D')) < 0)  or (GetAsyncKeyState(Ord('M')) < 0) then
                 inc(CurrentFrameIndex);
             end;
       end;
@@ -1339,6 +1403,7 @@ begin
     ReplaceControlActions(caPlayBackward)
   else
     ReplaceControlActions(caNone);
+  actPlayBackward.Checked := True;
   btnPlayBackward.Down := True;
 end;
 
@@ -1355,15 +1420,15 @@ end;
 procedure TMainForm.actStepNextExecute(Sender: TObject);
 begin
   PushControlAction(caStepForward);
-  btnPlayForward.Down := False;
-  btnPlayBackward.Down := False;
+  actPlayForward.Checked := False;
+  actPlayBackward.Checked := False;
 end;
 
 procedure TMainForm.actStepPrevExecute(Sender: TObject);
 begin
   PushControlAction(caStepBackward);
-  btnPlayForward.Down := False;
-  btnPlayBackward.Down := False;
+  actPlayForward.Checked := False;
+  actPlayBackward.Checked := False;
 end;
 
 procedure TMainForm.actPlayForwardExecute(Sender: TObject);
@@ -1372,7 +1437,7 @@ begin
     ReplaceControlActions(caPlayForward)
   else
     ReplaceControlActions(caNone);
-  btnPlayForward.Down := True;
+  actPlayForward.Checked := True;
 end;
 
 procedure TMainForm.actPlayUpdate(Sender: TObject);
@@ -1389,6 +1454,8 @@ begin
       AudioRecorder.WaitForStop;
     end;
 
+  if CurrentRecordPosition >= FramesCount then
+    CurrentRecordPosition := 0;
   StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
   StockAudioPlayer.Active := not Playing;
   // Запуск самого воспроизведения и остановка -
@@ -1414,17 +1481,17 @@ end;
 procedure TMainForm.AudioRecorderActivate(Sender: TObject);
 begin
   Recording := True;
-  btnRecord.Down := True;
+  actRecord.Checked := True;
 end;
 
 procedure TMainForm.AudioRecorderDeactivate(Sender: TObject);
 begin
   Recording := False;
-  btnRecord.Down := False;
+  actRecord.Checked := False;
   ReplaceControlActions(caNone);
 
-  btnPlayForward.Down := NextControlAction = caPlayForward;
-  btnPlayBackward.Down := NextControlAction = caPlayBackward;
+  actPlayForward.Checked := NextControlAction = caPlayForward;
+  actPlayBackward.Checked := NextControlAction = caPlayBackward;
 
   if WaveStorage.Wave.Empty then
     WaveStorage.Wave.Assign(AudioRecorder.Wave)
@@ -1440,6 +1507,46 @@ begin
   RecordedAudioCopy.Write(Buffer^, BufferSize);
 end;
 
+procedure TMainForm.btnBackwardWhilePressedMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  actBackwardWhilePressed.Checked := True;
+end;
+
+procedure TMainForm.btnBackwardWhilePressedMouseLeave(Sender: TObject);
+begin
+  actBackwardWhilePressed.Checked := False;
+end;
+
+procedure TMainForm.btnBackwardWhilePressedMouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  actBackwardWhilePressed.Checked := False;
+end;
+
+procedure TMainForm.btnForwardWhilePressedMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  actForwardWhilePressed.Checked := True;
+end;
+
+procedure TMainForm.btnForwardWhilePressedMouseLeave(Sender: TObject);
+begin
+  actForwardWhilePressed.Checked := False;
+end;
+
+procedure TMainForm.btnForwardWhilePressedMouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  actForwardWhilePressed.Checked := False;
+end;
+
+procedure TMainForm.btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  TToolButton(Sender).Click;
+end;
+
 procedure TMainForm.pbIndicatorClick(Sender: TObject);
 begin
   mmiDoubleFramerate.Click;
@@ -1449,8 +1556,8 @@ function TMainForm.IsShortCut(var Message: TWMKey): Boolean;
 begin
   if (Message.CharCode <> vk_Left)
     and (Message.CharCode <> vk_Right)
-    and (Message.CharCode <> ord('A'))
-    and (Message.CharCode <> ord('D'))
+    and (Message.CharCode <> ord('A')) and (Message.CharCode <> ord('C'))
+    and (Message.CharCode <> ord('D')) and (Message.CharCode <> ord('M'))
   then
     Result := inherited IsShortCut(Message)
   else

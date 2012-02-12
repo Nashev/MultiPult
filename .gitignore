@@ -1,2 +1,7 @@
 
 *.~*
+
+/Downloads
+/Researches
+*.local
+*.dsk
