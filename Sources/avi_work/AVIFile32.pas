@@ -25,10 +25,11 @@ unit AVIFile32; // AVIFIL32WrapperJER
 interface
 
 uses
+  Windows
 {$IFNDEF FPC}
-  Windows;
+  ;
 {$ELSE}
-  Types;
+  , Types;
 {$ENDIF}
 
 

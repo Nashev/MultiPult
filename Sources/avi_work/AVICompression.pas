@@ -22,7 +22,7 @@ unit AVICompression;
 
 interface
 
- uses Graphics, AVIFile32, Windows, Classes, Forms, SysUtils;
+ uses Graphics, AVIFile32, Windows, Classes, Forms, SysUtils {$IFDEF FPC}, FileUtil{$ENDIF};
 
  type
   TAVIFileOptions = object
@@ -53,7 +53,7 @@ interface
                      function Close: Integer;
 
                      function WriteFrame(Bitmap : PBitmapInfo): Integer;  overload;
-                     function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload;
+                     {$IFNDEF FPC}function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload; {$ENDIF}
                      procedure MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
                    end;
 
@@ -113,7 +113,7 @@ begin
   SetLength (pStreams, 2);
   pStreams[0] := Self.AVIStream;
   CheckOSError(AVIStreamOpenFromFile(pStreams[1], PChar(AFileToMergeName), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
-  DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(AOutFileName); { *Converted from DeleteFile*  }
+  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(AOutFileName); { *Converted from DeleteFile*  }
   CheckOSError(AVISaveV (PChar(AOutFileName), PClsID(nil^), nil, 2, pStreams[0], PAVICOMPRESSOPTIONS(nil^)));
   CheckOSError(AVIStreamRelease (pStreams[1]));
 end;
@@ -126,7 +126,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   bmiHeader     : TBitmapInfoHeader;
   clsidHandler  : ^TClsID;
  begin
-  DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Name); { *Converted from DeleteFile*  }
+  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Name); { *Converted from DeleteFile*  }
   Result := AVIFileOpen(AVIFile, @Name[1], OF_CREATE or OF_WRITE, nil);
   if Result<>0 then begin Close; Exit; end;
 
@@ -180,11 +180,11 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
     begin
      PCompOptions:=@CompOptions;
      dwFlags:=dwFlags or AVICOMPRESSF_VALID;
-     if not AVISaveOptions(Application.Handle,ICMF_CHOOSE_KEYFRAME or ICMF_CHOOSE_DATARATE,1,AVIStream,PCompOptions) then
+     if not AVISaveOptions(Application.MainForm.Handle,ICMF_CHOOSE_KEYFRAME or ICMF_CHOOSE_DATARATE,1,AVIStream,PCompOptions) then
      begin
       Result:=-1;
       Close;
-      DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Name); { *Converted from DeleteFile*  }
+      {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Name); { *Converted from DeleteFile*  }
       Exit;
      end;
     end;
@@ -212,6 +212,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   Inc(StreamSize);
  end;
 
+{$IFNDEF FPC} TODO: rewrite for FPC
  function TAVICompressor.WriteFrame(Bitmap: Graphics.TBitmap): Integer;
  var
 //    P: Pointer;
@@ -228,6 +229,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   Result:=AVIStreamWrite(CompStream,StreamSize,1,Bitmap.ScanLine[Bitmap.Height-1],Bitmap.Width*Bitmap.Height*Sze,0,@SamplesW,@BytesW);
   Inc(StreamSize);
  end;{}
+{$ENDIF}
 
  function TAVICompressor.Close;
  begin

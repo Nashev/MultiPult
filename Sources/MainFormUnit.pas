@@ -10,6 +10,7 @@ uses
 {$IFNDEF FPC}
   jpeg,
 {$ELSE}
+  lclproc, fileutil, JwaWinBase,
 {$ENDIF}
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
@@ -372,9 +373,11 @@ begin
   pnlTimeLine.DoubleBuffered := True;
   pnlToolls.DoubleBuffered := True;
 
+  {$IFNDEF FPC}
   pnlDisplay.ParentBackground := False;
   pnlTimeLine.ParentBackground := False;
   pnlToolls.ParentBackground := False;
+  {$ENDIF}
 
   with btnBackwardWhilePressed do ControlStyle := ControlStyle - [csCaptureMouse];
   with btnForwardWhilePressed  do ControlStyle := ControlStyle - [csCaptureMouse];
@@ -456,7 +459,7 @@ begin
 //  BufferIndexes.Clear;
   HaveBuffers := True;
 
-  if FindFirst{$IFDEF FPC}UTF8{$ENDIF}(PhotoFolder + '*.*', faAnyFile, Rec) = 0 then
+  if {$IFDEF FPC}FindFirstUTF8{$ELSE}FindFirst{$ENDIF}(PhotoFolder + '*.*', faAnyFile, Rec) = 0 then
     begin
       repeat
         ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
@@ -464,8 +467,8 @@ begin
           begin
             FFrames.Add(TFrame.Create(APath, Rec.Name));
           end;
-      until FindNext{$IFDEF FPC}UTF8{$ENDIF}(Rec) <> 0;
-      FindClose{$IFDEF FPC}UTF8{$ENDIF}(Rec);
+      until {$IFDEF FPC}FindNextUTF8{$ELSE}FindNext{$ENDIF}(Rec) <> 0;
+      {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
     end;
 //  ListBox.Items.Assign(FileNames);
   UpdateActions;
@@ -579,7 +582,7 @@ begin
               PChar(NewFileName),
               @CopyProgressHandler,
               @Self,
-              @Cancel,
+              {$IFNDEF FPC}@{$ENDIF}Cancel,
               {$IFDEF DelphiXE}COPY_FILE_ALLOW_DECRYPTED_DESTINATION or {$ENDIF}
               COPY_FILE_RESTARTABLE
             ) then
