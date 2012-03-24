@@ -212,7 +212,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   Inc(StreamSize);
  end;
 
-{$IFNDEF FPC} TODO: rewrite for FPC
+{$IFNDEF FPC}
  function TAVICompressor.WriteFrame(Bitmap: Graphics.TBitmap): Integer;
  var
 //    P: Pointer;
@@ -228,7 +228,9 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   end;
   Result:=AVIStreamWrite(CompStream,StreamSize,1,Bitmap.ScanLine[Bitmap.Height-1],Bitmap.Width*Bitmap.Height*Sze,0,@SamplesW,@BytesW);
   Inc(StreamSize);
- end;{}
+ end;
+{$ELSE}
+ TODO: rewrite for FPC
 {$ENDIF}
 
  function TAVICompressor.Close;

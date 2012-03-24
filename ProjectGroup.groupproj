@@ -6,7 +6,7 @@
 			<Projects Include="Sources\WaveAudio\WA2010.dproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="Sources\MultPult.dproj">
+			<Projects Include="Sources\MultiPult.dproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -26,23 +26,23 @@
 		<Target Name="WA2010:Make">
 			<MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Make"/>
 		</Target>
-		<Target Name="MultPult">
-			<MSBuild Projects="Sources\MultPult.dproj"/>
+		<Target Name="MultiPult">
+			<MSBuild Projects="Sources\MultiPult.dproj"/>
 		</Target>
-		<Target Name="MultPult:Clean">
-			<MSBuild Projects="Sources\MultPult.dproj" Targets="Clean"/>
+		<Target Name="MultiPult:Clean">
+			<MSBuild Projects="Sources\MultiPult.dproj" Targets="Clean"/>
 		</Target>
-		<Target Name="MultPult:Make">
-			<MSBuild Projects="Sources\MultPult.dproj" Targets="Make"/>
+		<Target Name="MultiPult:Make">
+			<MSBuild Projects="Sources\MultiPult.dproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="WA2010;MultPult"/>
+			<CallTarget Targets="WA2010;MultiPult"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="WA2010:Clean;MultPult:Clean"/>
+			<CallTarget Targets="WA2010:Clean;MultiPult:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="WA2010:Make;MultPult:Make"/>
+			<CallTarget Targets="WA2010:Make;MultiPult:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
