@@ -1,4 +1,4 @@
-program MultPult;
+program MultiPult;
 
 {$IFDEF FPC}
   {$MODE Delphi}
