@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.765,E:\Develops\MultPult\Researches\WaveRecorders.pas=E:\Develops\MultPult\Downloads\WaveRecorders.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.686,E:\Develops\MultPult\Downloads\WaveRecorders.pas=E:\Develops\MultPult\Researches\WaveRecorders.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.686,E:\Develops\MultPult\Researches\WaveRecorders.pas=E:\Develops\MultPult\Downloads\WaveRecorders.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.765,E:\Develops\MultPult\Downloads\WaveRecorders.pas=E:\Develops\MultPult\Researches\WaveRecorders.pas</Transaction>
   </Transactions>
 </BorlandProject>

@@ -20,8 +20,7 @@ uses
   WaveTimer in 'WaveAudio\WaveTimer.pas',
   WaveUtils in 'WaveAudio\WaveUtils.pas',
   AVICompression in 'avi_work\AVICompression.pas',
-  AVIFile32 in 'avi_work\AVIFile32.pas',
-  vfw in 'avi_work\vfw.pas';
+  AVIFile32 in 'avi_work\AVIFile32.pas';
 
 {$R *.res}
 

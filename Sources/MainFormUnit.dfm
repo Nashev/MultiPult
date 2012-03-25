@@ -30,6 +30,9 @@ object MainForm: TMainForm
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
+    DesignSize = (
+      673
+      400)
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
@@ -47,6 +50,7 @@ object MainForm: TMainForm
       Height = 398
       Align = alRight
       OnMouseDown = pbRecordMouseDown
+      OnMouseLeave = pbRecordMouseLeave
       OnMouseMove = pbRecordMouseMove
       OnPaint = pbRecordPaint
       ExplicitLeft = 478
@@ -64,6 +68,14 @@ object MainForm: TMainForm
       ExplicitLeft = 475
       ExplicitHeight = 403
     end
+    object pbFrameTip: TPaintBox
+      Left = 188
+      Top = 296
+      Width = 135
+      Height = 105
+      Anchors = [akLeft, akBottom]
+      OnPaint = pbFrameTipPaint
+    end
   end
   object pnlTimeLine: TPanel
     Left = 0
@@ -80,6 +92,9 @@ object MainForm: TMainForm
       Height = 22
       Hint = #1050#1072#1076#1088#1099
       Align = alClient
+      OnMouseDown = pbTimeLineMouseDown
+      OnMouseLeave = pbTimeLineMouseLeave
+      OnMouseMove = pbTimeLineMouseMove
       OnPaint = pbTimeLinePaint
       ExplicitLeft = 17
       ExplicitTop = 6
@@ -95,8 +110,6 @@ object MainForm: TMainForm
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
-    ExplicitLeft = 40
-    ExplicitTop = 429
     DesignSize = (
       673
       34)
@@ -361,6 +374,7 @@ object MainForm: TMainForm
     end
     object actAbout: TAction
       Caption = #1054' '#1087#1088#1086#1075#1088#1072#1084#1084#1077
+      OnExecute = actAboutExecute
     end
     object actFullScreenMode: TAction
       AutoCheck = True
@@ -480,7 +494,6 @@ object MainForm: TMainForm
       Caption = #1057#1087#1088#1072#1074#1082#1072
       object mmiAbout: TMenuItem
         Action = actAbout
-        OnClick = mmiAboutClick
       end
     end
   end

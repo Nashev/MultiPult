@@ -55,12 +55,43 @@ interface
                      function WriteFrame(Bitmap : PBitmapInfo): Integer;  overload;
                      {$IFNDEF FPC}function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload; {$ENDIF}
                      procedure MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
+                     procedure MergeFilesAndSaveAs(const AFileToMergeName1, AFileToMergeName2: string; const AOutFileName: string);
                    end;
 
  type TChar4 = array[0..3] of Char;
  function FourCC(S: ShortString): Integer;
 
+ type EAviError = class(Exception);
+
+ procedure CheckAVIError(CallResult: Integer);
+
 implementation
+
+procedure CheckAVIError(CallResult: Integer);
+begin
+  case CallResult of
+    AVIERR_OK                 :;
+    AVIERR_UNSUPPORTED        : raise EAviError.Create('AVIERR_UNSUPPORTED      ');
+    AVIERR_BADFORMAT          : raise EAviError.Create('AVIERR_BADFORMAT        ');
+    AVIERR_MEMORY             : raise EAviError.Create('AVIERR_MEMORY           ');
+    AVIERR_INTERNAL           : raise EAviError.Create('AVIERR_INTERNAL         ');
+    AVIERR_BADFLAGS           : raise EAviError.Create('AVIERR_BADFLAGS         ');
+    AVIERR_BADPARAM           : raise EAviError.Create('AVIERR_BADPARAM         ');
+    AVIERR_BADSIZE            : raise EAviError.Create('AVIERR_BADSIZE          ');
+    AVIERR_BADHANDLE          : raise EAviError.Create('AVIERR_BADHANDLE        ');
+    AVIERR_FILEREAD           : raise EAviError.Create('AVIERR_FILEREAD         ');
+    AVIERR_FILEWRITE          : raise EAviError.Create('AVIERR_FILEWRITE        ');
+    AVIERR_FILEOPEN           : raise EAviError.Create('AVIERR_FILEOPEN         ');
+    AVIERR_COMPRESSOR         : raise EAviError.Create('AVIERR_COMPRESSOR       ');
+    AVIERR_NOCOMPRESSOR       : raise EAviError.Create('AVIERR_NOCOMPRESSOR     ');
+    AVIERR_READONLY           : raise EAviError.Create('AVIERR_READONLY         ');
+    AVIERR_NODATA             : raise EAviError.Create('AVIERR_NODATA           ');
+    AVIERR_BUFFERTOOSMALL     : raise EAviError.Create('AVIERR_BUFFERTOOSMALL   ');
+    AVIERR_CANTCOMPRESS       : raise EAviError.Create('AVIERR_CANTCOMPRESS     ');
+    AVIERR_USERABORT          : raise EAviError.Create('AVIERR_USERABORT        ');
+    AVIERR_ERROR              : raise EAviError.Create('AVIERR_ERROR            ');
+  end;
+end;
 
  var AVIInitCount : Integer;
 
@@ -101,10 +132,23 @@ implementation
   inherited Destroy;
  end;
 
- procedure CheckOSError(RetVal: Integer);
- begin
-   Win32Check(LongBool(RetVal));
- end;
+// procedure CheckOSError(RetVal: Integer);
+// begin
+//   Win32Check(LongBool(RetVal));
+// end;
+
+procedure TAVICompressor.MergeFilesAndSaveAs(const AFileToMergeName1, AFileToMergeName2: string; const AOutFileName: string);
+var
+  pStreams: array of PAVISTREAM;
+begin
+  SetLength (pStreams, 2);
+  CheckAVIError(AVIStreamOpenFromFile(pStreams[0], PChar(AFileToMergeName1), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
+  CheckAVIError(AVIStreamOpenFromFile(pStreams[1], PChar(AFileToMergeName2), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
+  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(AOutFileName);
+  CheckAVIError(AVISaveV (PChar(AOutFileName), PClsID(nil^), nil, 2, pStreams[0], PAVICOMPRESSOPTIONS(nil^)));
+  CheckAVIError(AVIStreamRelease (pStreams[0]));
+  CheckAVIError(AVIStreamRelease (pStreams[1]));
+end;
 
 procedure TAVICompressor.MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
 var
@@ -112,10 +156,10 @@ var
 begin
   SetLength (pStreams, 2);
   pStreams[0] := Self.AVIStream;
-  CheckOSError(AVIStreamOpenFromFile(pStreams[1], PChar(AFileToMergeName), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
-  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(AOutFileName); { *Converted from DeleteFile*  }
-  CheckOSError(AVISaveV (PChar(AOutFileName), PClsID(nil^), nil, 2, pStreams[0], PAVICOMPRESSOPTIONS(nil^)));
-  CheckOSError(AVIStreamRelease (pStreams[1]));
+  CheckAVIError(AVIStreamOpenFromFile(pStreams[1], PChar(AFileToMergeName), 0, 0, OF_READ or OF_SHARE_DENY_WRITE, PClsID(nil^)));
+  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(AOutFileName);
+  CheckAVIError(AVISaveV (PChar(AOutFileName), PClsID(nil^), nil, 2, pStreams[0], PAVICOMPRESSOPTIONS(nil^)));
+  CheckAVIError(AVIStreamRelease (pStreams[1]));
 end;
 
 function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Integer;
@@ -126,7 +170,7 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   bmiHeader     : TBitmapInfoHeader;
   clsidHandler  : ^TClsID;
  begin
-  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Name); { *Converted from DeleteFile*  }
+  {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Name);
   Result := AVIFileOpen(AVIFile, @Name[1], OF_CREATE or OF_WRITE, nil);
   if Result<>0 then begin Close; Exit; end;
 
@@ -208,7 +252,16 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
 
  function TAVICompressor.WriteFrame(Bitmap: PBitmapInfo): Integer;
  begin
-  Result:=AVIStreamWrite(CompStream,StreamSize,1,Pointer(Integer(Bitmap)+SizeOf(TBitmapInfoHeader)),Bitmap^.bmiHeader.biSizeImage,0,@SamplesW,@BytesW);
+  Result:=AVIStreamWrite(
+    CompStream,
+    StreamSize,
+    1,
+    Pointer(Integer(Bitmap)+SizeOf(TBitmapInfoHeader)),
+    Bitmap^.bmiHeader.biSizeImage,
+    0,
+    @SamplesW,
+    @BytesW
+  );
   Inc(StreamSize);
  end;
 
@@ -226,7 +279,16 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   else
     Sze := 0;
   end;
-  Result:=AVIStreamWrite(CompStream,StreamSize,1,Bitmap.ScanLine[Bitmap.Height-1],Bitmap.Width*Bitmap.Height*Sze,0,@SamplesW,@BytesW);
+  Result:=AVIStreamWrite(
+    CompStream,
+    StreamSize,
+    1,
+    Bitmap.ScanLine[Bitmap.Height - 1],
+    Bitmap.Width * Bitmap.Height * Sze,
+    0,
+    @SamplesW,
+    @BytesW
+  );
   Inc(StreamSize);
  end;
 {$ELSE}

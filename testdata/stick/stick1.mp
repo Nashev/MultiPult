@@ -102,7 +102,7 @@ Wave = stick1.mp.wav
 000037.jpg
 ------------------- Bookmarks: --------------------
 Bookmark0 = -1
-Bookmark1 = -1
+Bookmark1 = 26
 Bookmark2 = -1
 Bookmark3 = -1
 Bookmark4 = -1
@@ -111,6 +111,8 @@ Bookmark6 = -1
 Bookmark7 = -1
 Bookmark8 = -1
 Bookmark9 = -1
+------------------- Teleports: --------------------
+45 = 1
 -------------------- Frames: ----------------------
 63
 63
