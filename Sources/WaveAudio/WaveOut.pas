@@ -467,6 +467,9 @@ begin
       try
         FreeWaveFormat := True;
         GetWaveFormat(pWaveFormat, FreeWaveFormat);
+        // <<-- Nashev: Wave may be empty
+        if pWaveFormat <> nil then
+        // -->>
         try
           if Success(WaveOutOpen(nil, DeviceID, pWaveFormat, 0, 0, WAVE_FORMAT_QUERY)) then
           begin

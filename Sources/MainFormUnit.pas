@@ -28,7 +28,8 @@ type
     Preview: TBitmap;
     Teleport: Integer;
     Loaded: Boolean;
-    function OriginalJpeg: TJPegImage;
+    function ImageFromDisc: TGraphic;
+    function StubJpeg(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
     constructor Create(APath, AFileName: string);
     destructor Destroy; override;
@@ -702,7 +703,9 @@ begin
               WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
               RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
               WaveStorage.Wave.Position := 0;
-            end;
+            end
+          else
+            WaveStorage.Wave.Clear;
         end;
       inc(i);
       s := Strings[i];
@@ -802,6 +805,7 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
+  // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
   btnPlay.Down := True;
   ReplaceControlActions(caNone);
   btnPlayForward.Down := False;
@@ -814,16 +818,17 @@ end;
 
 procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
-  btnPlay.Down := False;
-
-  //CurrentRecordPosition := 0;
-  Interval := 0;
-  Playing := False;
+//  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
+//  btnPlay.Down := False;
+//
+//  //CurrentRecordPosition := 0;
+//  Interval := 0;
+//  Playing := False;
 end;
 
 procedure TMainForm.LoadPhoto(Index: Integer);
 var
-  Image: TJPEGImage;
+  Image: TGraphic;
   R: TRect;
 begin
   if Frames[Index].Loaded or OutOfMemoryRaised then
@@ -831,7 +836,12 @@ begin
   try
     with Frames[Index] do
       begin
-        Image := OriginalJpeg;
+        try
+          Image := ImageFromDisc;
+        except
+          on e: Exception do
+            Image := StubJpeg(e.Message);
+        end;
         Preview := TBitmap.Create;
         if mmiPreviewMode.Checked then
           begin
@@ -1391,8 +1401,9 @@ begin
 
   StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
   StockAudioPlayer.Active := not Playing;
-  // Запуск самого воспроизведения и остановка -
-  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate
+  // Запуск самого воспроизведения и последующая остановка -
+  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate:
+  // запускаем воспроизведение кадров только после того, как звук будет готов воспроизводиться
 end;
 
 procedure TMainForm.ApplicationIdle(Sender: TObject; var Done: Boolean);
@@ -1481,12 +1492,26 @@ begin
   inherited;
 end;
 
-function TFrame.OriginalJpeg: TJPegImage;
+function TFrame.ImageFromDisc: TGraphic;
 begin
   Result := TJPEGImage.Create;
-  Result.LoadFromFile(FPath + FFileName);
-  Result.Performance := jpBestSpeed;
-  Result.DIBNeeded;
+  with TJPEGImage(Result) do
+    begin
+      LoadFromFile(FPath + FFileName);
+      Performance := jpBestSpeed;
+      DIBNeeded;
+    end;
+end;
+
+function TFrame.StubJpeg(ErrorMessage: string): TGraphic;
+begin
+  Result := TBitmap.Create;
+  with TBitmap(Result) do
+    begin
+      SetSize(640, 480);
+      Canvas.TextOut(20, 20, FPath + FFileName);
+      Canvas.TextOut(20, 80, ErrorMessage);
+    end;
 end;
 
 end.

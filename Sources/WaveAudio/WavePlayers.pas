@@ -380,7 +380,11 @@ begin
   begin
     pWaveFormat := Wave.WaveFormat;
     Wave.Position := GetWaveDataPositionOffset(pWaveFormat, StartPosition);
-  end;
+  end
+  // <<-- Nashev: to more correctly process unreadable waves
+  else
+    pWaveFormat := nil;
+  // -->> Nashev
 end;
 
 function TStockAudioPlayer.GetWaveData(const Buffer: Pointer;
