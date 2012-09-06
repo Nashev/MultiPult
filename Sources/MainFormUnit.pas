@@ -37,7 +37,8 @@ type
     Preview: TBitmap;
     Teleport: Integer;
     Loaded: Boolean;
-    function OriginalJpeg: TJPegImage;
+    function ImageFromDisc: TGraphic;
+    function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
     constructor Create(APath, AFileName: string);
     destructor Destroy; override;
@@ -221,7 +222,6 @@ type
     Interval, CurrentSpeedInterval: Integer;
     Recording, Playing, Exporting: Boolean;
     LoopMode: Boolean;
-    CurrentRecordPosition: Integer;
     RecordedFrames: TList;
     CurrentFrameIndex: Integer;
     FrameTipMode: TFrameTipMode;
@@ -233,6 +233,9 @@ type
     OutOfMemoryRaised: Boolean;
     PreviousBounds: TRect;
     FFrameTipIndex: Integer;
+    FCurrentRecordPosition: Integer;
+    procedure SetCurrentRecordPosition(const Value: Integer);
+    property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipIndex(const Value: Integer);
     function TeleportEnabled: Boolean;
     procedure OpenMovie(AFileName: string);
@@ -506,7 +509,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     'МультиПульт'#13#10 +
-    'Версия 0.9.7'#13#10 +
+    'Версия 0.9.8'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -780,7 +783,9 @@ begin
               WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
               RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
               WaveStorage.Wave.Position := 0;
-            end;
+            end
+          else
+            WaveStorage.Wave.Clear;
         end;
       inc(i);
       s := Strings[i];
@@ -895,6 +900,13 @@ begin
   Caption := Value + ' - МультПульт';
 end;
 
+procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
+begin
+  FCurrentRecordPosition := Value;
+  if Playing then
+    StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
+end;
+
 procedure TMainForm.SetFrameTipIndex(const Value: Integer);
 begin
   FFrameTipIndex := Value;
@@ -915,10 +927,12 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
+  // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
   actPlay.Checked := True;
   ReplaceControlActions(caNone);
   actPlayForward.Checked := False;
   actPlayBackward.Checked := False;
+  // на всякий случай. TODO надо ли, когда в actPlayExecute есть ?
   if CurrentRecordPosition >= RecordedFrames.Count - 1 then
     CurrentRecordPosition := 0;
   Interval := 0;
@@ -927,16 +941,17 @@ end;
 
 procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
-  actPlay.Checked := False;
-
-  //CurrentRecordPosition := 0;
-  Interval := 0;
-  Playing := False;
+//  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
+//  actPlay.Checked := False;
+//
+//  //CurrentRecordPosition := 0;
+//  Interval := 0;
+//  Playing := False;
 end;
 
 procedure TMainForm.LoadPhoto(Index: Integer);
 var
-  Image: TJPEGImage;
+  Image: TGraphic;
   R: TRect;
 begin
   if Frames[Index].Loaded or OutOfMemoryRaised then
@@ -944,7 +959,12 @@ begin
   try
     with Frames[Index] do
       begin
-        Image := OriginalJpeg;
+        try
+          Image := ImageFromDisc;
+        except
+          on e: Exception do
+            Image := GenerateStubFrame(e.Message);
+        end;
         Preview := TBitmap.Create;
         if actPreviewMode.Checked then
           begin
@@ -1139,17 +1159,21 @@ end;
 
 procedure TMainForm.pbRecordMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+var
+  NewPosition: Integer;
 begin
   if RecordedFrames.Count = 0 then
     Exit;
 
-  CurrentRecordPosition := Y + pbRecordOffset;
-  if CurrentRecordPosition >= RecordedFrames.Count then
-    CurrentRecordPosition := RecordedFrames.Count - 1;
-  if CurrentRecordPosition < 0 then
-    CurrentRecordPosition := 0;
+  NewPosition := Y + pbRecordOffset;
+  if NewPosition >= RecordedFrames.Count then
+    NewPosition := RecordedFrames.Count - 1;
+  if NewPosition < 0 then
+    NewPosition := 0;
 
+  CurrentRecordPosition := NewPosition;
   ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+
   pbRecord.Invalidate;
   pbDisplay.Invalidate;
   UpdateActions;
@@ -1162,17 +1186,17 @@ end;
 
 procedure TMainForm.pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  CurrentRecordPosition: Integer;
+  LocalCurrentRecordPosition: Integer;
 begin
   if ssLeft in Shift then
     pbRecordMouseDown(Sender, mbLeft, Shift, X, Y);
 
-  CurrentRecordPosition := Y + pbRecordOffset;
-  if (CurrentRecordPosition >= RecordedFrames.Count) or (CurrentRecordPosition < 0) then
+  LocalCurrentRecordPosition := Y + pbRecordOffset;
+  if (LocalCurrentRecordPosition >= RecordedFrames.Count) or (LocalCurrentRecordPosition < 0) then
     FrameTipIndex := -1
   else
     begin
-      FrameTipIndex := Integer(RecordedFrames[CurrentRecordPosition]);
+      FrameTipIndex := Integer(RecordedFrames[LocalCurrentRecordPosition]);
       FrameTipMode := ftmRecord;
       pbFrameTip.Width  := FrameTipT + FrameTipW + FrameTipD + FrameTipD + FrameTipT + 1;
       pbFrameTip.Height := FrameTipT + FrameTipH + FrameTipT + 1;
@@ -1517,7 +1541,7 @@ begin
         begin
           ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
           pbRecord.Invalidate;
-          inc(CurrentRecordPosition);
+          Inc(FCurrentRecordPosition);
         end
       else
         if LoopMode then
@@ -1639,12 +1663,24 @@ begin
       AudioRecorder.WaitForStop;
     end;
 
-  if CurrentRecordPosition >= FramesCount then
-    CurrentRecordPosition := 0;
-  StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
-  StockAudioPlayer.Active := not Playing;
-  // Запуск самого воспроизведения и остановка -
-  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate
+  Playing := not Playing; // это перед установкой CurrentRecordPosition, чтобы с ним установилась и позиция звука.
+  if CurrentRecordPosition >= RecordedFrames.Count then
+    CurrentRecordPosition := 0
+  else
+    CurrentRecordPosition := CurrentRecordPosition; // пинаем позиционирование звука. TODO: это кривовато как-то...
+
+  StockAudioPlayer.Active := Playing;
+  // Запуск самого воспроизведения и последующая остановка -
+  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate:
+  // запускаем воспроизведение кадров только после того, как звук будет готов воспроизводиться.
+  // Но вот останавливать вручную, на всякий случай, будем сразу, а не когда звук соизволит.
+  if not Playing then
+    begin
+      actPlay.Checked := False;
+
+      //CurrentRecordPosition := 0;
+      Interval := 0;
+    end;
 end;
 
 procedure TMainForm.ApplicationIdle(Sender: TObject; var Done: Boolean);
@@ -1759,7 +1795,7 @@ begin
   WaveStorage.Wave.Clear;
   RecordedAudioCopy.Clear;
   RecordedFrames.Clear;
-  CurrentRecordPosition := 0;
+  FCurrentRecordPosition := 0;
 end;
 
 { TFrame }
@@ -1778,12 +1814,26 @@ begin
   inherited;
 end;
 
-function TFrame.OriginalJpeg: TJPegImage;
+function TFrame.ImageFromDisc: TGraphic;
 begin
   Result := TJPEGImage.Create;
-  Result.LoadFromFile(FPath + FFileName);
-  Result.Performance := jpBestSpeed;
-  {$IFNDEF FPC}Result.DIBNeeded;{$ENDIF}
+  with TJPEGImage(Result) do
+    begin
+      LoadFromFile(FPath + FFileName);
+      Performance := jpBestSpeed;
+      {$IFNDEF FPC}DIBNeeded;{$ENDIF}
+    end;
+end;
+
+function TFrame.GenerateStubFrame(ErrorMessage: string): TGraphic;
+begin
+  Result := TBitmap.Create;
+  with TBitmap(Result) do
+    begin
+      SetSize(640, 480);
+      Canvas.TextOut(20, 20, FPath + FFileName);
+      Canvas.TextOut(20, 80, ErrorMessage);
+    end;
 end;
 
 end.
