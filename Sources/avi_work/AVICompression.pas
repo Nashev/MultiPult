@@ -22,7 +22,7 @@ unit AVICompression;
 
 interface
 
- uses Graphics, AVIFile32, Windows, Classes, Forms, SysUtils {$IFDEF FPC}, FileUtil{$ENDIF};
+ uses Graphics, AVIFile32, Windows, Classes, Forms, SysUtils {$IFDEF FPC}, FileUtil, IntfGraphics{$ENDIF};
 
  type
   TAVIFileOptions = object
@@ -53,7 +53,7 @@ interface
                      function Close: Integer;
 
                      function WriteFrame(Bitmap : PBitmapInfo): Integer;  overload;
-                     {$IFNDEF FPC}function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload; {$ENDIF}
+                     function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload;
                      procedure MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
                      procedure MergeFilesAndSaveAs(const AFileToMergeName1, AFileToMergeName2: string; const AOutFileName: string);
                    end;
@@ -292,7 +292,38 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
   Inc(StreamSize);
  end;
 {$ELSE}
- TODO: rewrite for FPC
+function TAVICompressor.WriteFrame(Bitmap: Graphics.TBitmap): Integer;
+ var
+//    P: Pointer;
+    Sze: integer;
+    RAW: TLazIntfImage;
+ begin
+  RAW := TLazIntfImage.Create(0,0);
+  try
+    RAW.LoadFromBitmap(Bitmap.Handle, 0);
+    case Bitmap.PixelFormat of
+      pf8bit: Sze := 1;
+      pf16bit: Sze := 2;
+      pf24bit: Sze := 3;
+      pf32bit: Sze := 4;
+    else
+      Sze := 0;
+    end;
+    Result:=AVIStreamWrite(
+      CompStream,
+      StreamSize,
+      1,
+      RAW.GetDataLineStart(Bitmap.Height - 1), // ?
+      Bitmap.Width * Bitmap.Height * Sze,
+      0,
+      @SamplesW,
+      @BytesW
+    );
+    Inc(StreamSize);
+  finally
+    RAW.Free;
+  end;
+ end;
 {$ENDIF}
 
  function TAVICompressor.Close;

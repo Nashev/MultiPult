@@ -10,7 +10,7 @@ uses
 {$IFNDEF FPC}
   jpeg,
 {$ELSE}
-  lclproc, fileutil, JwaWinBase,
+  lclproc, fileutil, JwaWinBase, lMessages, FPReadJPEG,
 {$ENDIF}
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
@@ -254,7 +254,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function IsShortCut(var Message: TWMKey): Boolean; {$IFNDEF FPC} override;{$ELSE}{$ENDIF}
+    function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     procedure SetCaption(const Value: TCaption);
   end;
 
@@ -671,8 +671,8 @@ begin
         Compressor.MergeFilesAndSaveAs(Dir + 'Video.avi', Dir + 'Audio.wav', SaveToAVIDialog.FileName);
 
         Compressor.Destroy;
-        DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Dir + 'Audio.wav');
-        DeleteFile{$IFDEF FPC}UTF8{$ENDIF}(Dir + 'Video.avi');
+        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + 'Audio.wav');
+        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + 'Video.avi');
       finally
         Exporting := False;
       end;
@@ -774,7 +774,7 @@ begin
       if WaveStorage.Wave.Empty and (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
-          if FileExists{$IFDEF FPC}UTF8{$ENDIF}(PhotoFolder + WaveFileName) then
+          if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
             begin
               WaveStorage.Wave.LoadFromFile(PhotoFolder + WaveFileName);
               WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
@@ -1737,7 +1737,7 @@ begin
   mmiDoubleFramerate.Click;
 end;
 
-function TMainForm.IsShortCut(var Message: TWMKey): Boolean;
+function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
   if (Message.CharCode <> vk_Left)
     and (Message.CharCode <> vk_Right)
@@ -1783,7 +1783,7 @@ begin
   Result := TJPEGImage.Create;
   Result.LoadFromFile(FPath + FFileName);
   Result.Performance := jpBestSpeed;
-  Result.DIBNeeded;
+  {$IFNDEF FPC}Result.DIBNeeded;{$ENDIF}
 end;
 
 end.

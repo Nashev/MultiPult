@@ -189,6 +189,11 @@ const
 { TAudioMixerLine }
 
 type
+  {$IFDEF FPC}
+  TMixerControlDetailsBoolean  = TMixerControlDetails_Boolean;
+  TMixerControlDetailsListText = TMixerControlDetails_ListText;
+  TMixerControlDetailsUnsigned = TMixerControlDetails_Unsigned;
+  {$ENDIF}
   TMixerControlDetailsBooleanArray = array[0..255] of TMixerControlDetailsBoolean;
   PMixerControlDetailsBooleanArray = ^TMixerControlDetailsBooleanArray;
   TMixerControlDetailsListTextArray = array[0..255] of TMixerControlDetailsListText;

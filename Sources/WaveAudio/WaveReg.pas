@@ -17,11 +17,11 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, WaveTimer, WaveUtils, WaveStorage,
-  WaveIO, WavePlayers, WaveRecorders, WaveRedirector, WaveMixer,
+  WaveIO, WavePlayers, WaveRecorders, WaveRedirector, WaveMixer
   {$IFDEF COMPILER6_UP}
-  DesignIntf, DesignEditors
+  {$IFNDEF FPC}, DesignIntf, DesignEditors {$ELSE}, componenteditors, propedits {$ENDIF}
   {$ELSE}
-  DsgnIntf
+  , DsgnIntf
   {$ENDIF};
 
 type
@@ -90,11 +90,13 @@ type
     procedure SetValue(const Value: String); override;
   end;
 
+  {$IFNDEF FPC}
   {$IFDEF COMPILER6_UP}
   TWaveAudioSelectionEditor = class(TSelectionEditor)
   public
     procedure RequiresUnits(Proc: TGetStrProc); override;
   end;
+  {$ENDIF}
   {$ENDIF}
 
 procedure Register;
@@ -119,15 +121,18 @@ begin
   RegisterPropertyEditor(TypeInfo(TWaveStreamAdapter), nil, '', TWavePropertyEditor);
   RegisterPropertyEditor(TypeInfo(String), TAudioMixer, 'MixerName', TMixerNamePropertyEditor);
   RegisterPropertyEditor(TypeInfo(String), TAudioMixer, 'DestinationName', TMixerDestinationNamePropertyEditor);
+  {$IFNDEF FPC}
   {$IFDEF COMPILER6_UP}
   RegisterSelectionEditor(TCustomWaveStorage, TWaveAudioSelectionEditor);
   RegisterSelectionEditor(TWaveAudioIO, TWaveAudioSelectionEditor);
   RegisterSelectionEditor(TAudioRedirector, TWaveAudioSelectionEditor);
   {$ENDIF}
+  {$ENDIF}
 end;
 
 { TWaveAudioSelectionEditor }
 
+{$IFNDEF FPC}
 {$IFDEF COMPILER6_UP}
 procedure TWaveAudioSelectionEditor.RequiresUnits(Proc: TGetStrProc);
 begin
@@ -135,6 +140,7 @@ begin
   Proc('WaveUtils');
   Proc('WaveStorage');
 end;
+{$ENDIF}
 {$ENDIF}
 
 { TWavePropertyDialog }

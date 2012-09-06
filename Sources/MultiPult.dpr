@@ -5,7 +5,7 @@ program MultiPult;
 {$ENDIF}
 
 uses
-  Forms,
+  Forms, Interfaces,
   Gauges in 'Gauges.pas',
   MainFormUnit in 'MainFormUnit.pas' {MainForm},
   WaveACM in 'WaveAudio\WaveACM.pas',
