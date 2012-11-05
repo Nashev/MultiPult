@@ -16,7 +16,7 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin;
+  ToolWin, ExtActns;
 
 const
   ControlActionStackDeep = 10;
@@ -134,6 +134,8 @@ type
     actStretchImages: TAction;
     mmiStretchImages: TMenuItem;
     pbFrameTip: TPaintBox;
+    mmiShowIssuesPage: TMenuItem;
+    actShowIssuesPage: TBrowseURL;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -509,7 +511,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     'МультиПульт'#13#10 +
-    'Версия 0.9.8'#13#10 +
+    'Версия 0.9.9'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -897,7 +899,7 @@ end;
 
 procedure TMainForm.SetCaption(const Value: TCaption);
 begin
-  Caption := Value + ' - МультПульт';
+  Caption := Value + ' - МультиПульт';
 end;
 
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);

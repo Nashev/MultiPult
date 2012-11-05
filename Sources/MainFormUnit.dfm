@@ -1,7 +1,7 @@
 object MainForm: TMainForm
   Left = 403
   Top = 179
-  Caption = 'MainForm'
+  Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
   ClientHeight = 458
   ClientWidth = 673
   Color = clBtnFace
@@ -221,7 +221,7 @@ object MainForm: TMainForm
     Left = 48
     Top = 8
     object actSelectPhotoFolder: TAction
-      Caption = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091
+      Caption = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091' '#1089' '#1082#1072#1076#1088#1072#1084#1080'...'
       Hint = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091
       ShortCut = 16460
       OnExecute = actSelectPhotoFolderClick
@@ -387,6 +387,11 @@ object MainForm: TMainForm
       Caption = #1059#1074#1077#1083#1080#1095#1080#1074#1072#1090#1100' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1076#1086' '#1088#1072#1079#1084#1077#1088#1072' '#1086#1073#1083#1072#1089#1090#1080' '#1087#1088#1086#1089#1084#1086#1090#1088#1072
       Checked = True
     end
+    object actShowIssuesPage: TBrowseURL
+      Caption = #1054#1090#1082#1088#1099#1090#1100'  '#1074#1077#1073'-'#1089#1090#1088#1072#1085#1080#1094#1091' '#1087#1088#1086#1077#1082#1090#1072
+      Hint = 'Browse URL'
+      URL = 'https://github.com/Nashev/MultiPult/issues'
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -494,6 +499,9 @@ object MainForm: TMainForm
       Caption = #1057#1087#1088#1072#1074#1082#1072
       object mmiAbout: TMenuItem
         Action = actAbout
+      end
+      object mmiShowIssuesPage: TMenuItem
+        Action = actShowIssuesPage
       end
     end
   end
