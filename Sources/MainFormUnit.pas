@@ -510,7 +510,7 @@ end;
 procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
-    'МультиПульт'#13#10 +
+    Application.Title + #13#10 +
     'Версия 0.9.9'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
@@ -724,7 +724,7 @@ begin
     case MessageBox(
       0,
       'Хотите сохранить текущий мульт перед созданием нового?',
-      'МультПульт',
+      PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
       IDCANCEL: Exit;
@@ -846,7 +846,7 @@ begin
     case MessageBox(
       0,
       'Хотите сохранить текущий мульт перед открытием другого?',
-      'МультПульт',
+      PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
       IDCANCEL: Exit;

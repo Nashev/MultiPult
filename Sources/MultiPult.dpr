@@ -27,6 +27,7 @@ uses
 
 begin
   Application.Initialize;
+  Application.Title := 'ÌףכüעטÏףכüע';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.

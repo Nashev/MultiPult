@@ -357,7 +357,7 @@ object MainForm: TMainForm
       OnUpdate = actUpdate_HaveFiles
     end
     object actToggleTeleport0: TAction
-      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' 0'
+      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
       ShortCut = 8240
       OnExecute = actToggleTeleport0Execute
     end
