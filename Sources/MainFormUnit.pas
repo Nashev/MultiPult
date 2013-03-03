@@ -136,6 +136,8 @@ type
     pbFrameTip: TPaintBox;
     mmiShowIssuesPage: TMenuItem;
     actShowIssuesPage: TBrowseURL;
+    actShowControllerForm: TAction;
+    mmiShowControllerForm: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -161,7 +163,7 @@ type
     procedure AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;
       BufferSize: Cardinal);
     procedure actOpenExecute(Sender: TObject);
-    procedure actUpdate_HaveFiles(Sender: TObject);
+    procedure actNavigate_Update(Sender: TObject);
     procedure actUpdate_HaveRecorded(Sender: TObject);
     procedure actAboutExecute(Sender: TObject);
     procedure actExportExecute(Sender: TObject);
@@ -206,6 +208,10 @@ type
     procedure pbFrameTipPaint(Sender: TObject);
     procedure pbTimeLineMouseLeave(Sender: TObject);
     procedure pbRecordMouseLeave(Sender: TObject);
+    procedure actShowControllerFormExecute(Sender: TObject);
+    procedure actShowControllerFormUpdate(Sender: TObject);
+    procedure tlbNavigationMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -225,7 +231,6 @@ type
     Recording, Playing, Exporting: Boolean;
     LoopMode: Boolean;
     RecordedFrames: TList;
-    CurrentFrameIndex: Integer;
     FrameTipMode: TFrameTipMode;
     FrameTipArrow: Integer;
     Bookmarks: array [0..9] of Integer;
@@ -236,7 +241,10 @@ type
     PreviousBounds: TRect;
     FFrameTipIndex: Integer;
     FCurrentRecordPosition: Integer;
+    FCurrentFrameIndex: Integer;
     procedure SetCurrentRecordPosition(const Value: Integer);
+    procedure SetCurrentFrameIndex(const Value: Integer);
+    procedure UpdatePlayActions;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipIndex(const Value: Integer);
     function TeleportEnabled: Boolean;
@@ -248,11 +256,8 @@ type
     function FrameIndexToTimeLineX(FrameIndex: Integer): Integer;
     function TimeLineXToFrameIndex(X: Integer): Integer;
 //    Drawing: Boolean;
-    property Frames[Index: Integer]: TFrame read GetFrame;
-    property FramesCount: Integer read GetFramesCount;
     procedure LoadPhotoFolder(APath: string);
     procedure LoadPhoto(Index: Integer);
-    procedure ShowFrame(Index: Integer);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure ClearRecorded;
     procedure RecalculatePreview;
@@ -261,6 +266,10 @@ type
     destructor Destroy; override;
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     procedure SetCaption(const Value: TCaption);
+    property CurrentFrameIndex: Integer read FCurrentFrameIndex write SetCurrentFrameIndex;
+    function IncrementCurrentFrameIndex(AOffset: Integer): Integer;
+    property FramesCount: Integer read GetFramesCount;
+    property Frames[Index: Integer]: TFrame read GetFrame;
   end;
 
 var
@@ -270,7 +279,7 @@ var
   FrameRate: byte = 25;
 
 implementation
-uses AVICompression;
+uses AVICompression, ControllerFormUnit;
 {$R *.dfm}
 
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
@@ -298,6 +307,7 @@ var
   i: Integer;
   FileName: string;
 begin
+  actNew.Execute;
   if OpenPictureDialog.Execute then
     begin
       LoadPhotoFolder(ExtractFilePath(OpenPictureDialog.FileName));
@@ -305,10 +315,20 @@ begin
       for i := 0 to FramesCount - 1 do
         if Frames[i].FileName = FileName then
           begin
-            ShowFrame(i);
+            CurrentFrameIndex := i;
             Break;
           end;
     end;
+end;
+
+procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
+begin
+  ControllerForm.Visible := not ControllerForm.Visible;
+end;
+
+procedure TMainForm.actShowControllerFormUpdate(Sender: TObject);
+begin
+  actShowControllerForm.Checked := ControllerForm.Visible;
 end;
 
 constructor TMainForm.Create(AOwner: TComponent);
@@ -451,8 +471,7 @@ begin
         vk_Right: begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
       end;
 
-  actPlayForward.Checked  := NextControlAction = caPlayForward;
-  actPlayBackward.Checked := NextControlAction = caPlayBackward;
+  UpdatePlayActions;
 //  pbIndicator.Invalidate;
 //  pbIndicator.Refresh;
 end;
@@ -511,7 +530,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     Application.Title + #13#10 +
-    'Версия 0.9.9'#13#10 +
+    'Версия 0.9.10'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -604,7 +623,7 @@ begin
         for i := 0 to RecordedFrames.Count - 1 do
           begin
             CurrentRecordPosition := i;
-            ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+            CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
             pbRecord.Invalidate;
             SetCaption('Экспорт. Копирование кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
             Application.ProcessMessages;
@@ -661,7 +680,7 @@ begin
         for i := 0 to RecordedFrames.Count - 1 do
           begin
             CurrentRecordPosition := i;
-            ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+            CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
             pbRecord.Invalidate;
             SetCaption('Экспорт в AVI. Запись кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
             Application.ProcessMessages;
@@ -831,7 +850,7 @@ begin
       Free;
     end;
   if FramesCount > 0 then
-    ShowFrame(0);
+    CurrentFrameIndex := 0;
   Saved := True;
   pbRecord.Invalidate;
   UpdateActions;
@@ -915,16 +934,18 @@ begin
   pbFrameTip.Visible := (FFrameTipIndex <> -1);
 end;
 
-procedure TMainForm.ShowFrame(Index: Integer);
+procedure TMainForm.SetCurrentFrameIndex(const Value: Integer);
 begin
-  LoadPhoto(Index);
-  CurrentFrameIndex := Index;
+  FCurrentFrameIndex := Value;
+  LoadPhoto(Value);
   if not Exporting then
     SetCaption(Frames[CurrentFrameIndex].FileName);
 //  pnlDisplay.Repaint;
 //  pnlTimeLine.Repaint;
   pbDisplay.Repaint;
   pbTimeLine.Repaint;
+  if Assigned(ControllerForm) and ControllerForm.Visible then
+    ControllerForm.Repaint;
 end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
@@ -932,8 +953,7 @@ begin
   // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
   actPlay.Checked := True;
   ReplaceControlActions(caNone);
-  actPlayForward.Checked := False;
-  actPlayBackward.Checked := False;
+  UpdatePlayActions;
   // на всякий случай. TODO надо ли, когда в actPlayExecute есть ?
   if CurrentRecordPosition >= RecordedFrames.Count - 1 then
     CurrentRecordPosition := 0;
@@ -1010,7 +1030,7 @@ end;
 procedure TMainForm.actGotoBookmark0Execute(Sender: TObject);
 begin
   if Bookmarks[TMenuItem(Sender).Tag] <> -1 then
-    ShowFrame(Bookmarks[TMenuItem(Sender).Tag]);
+    CurrentFrameIndex := Bookmarks[TMenuItem(Sender).Tag];
 end;
 
 procedure TMainForm.actExitExecute(Sender: TObject);
@@ -1048,7 +1068,7 @@ var
   Image: TBitmap;
 begin
   try
-    if CurrentFrameIndex < FramesCount then
+    if CurrentFrameIndex < FramesCount then // на всякий случай (?)
       begin
         LoadPhoto(CurrentFrameIndex); // на всякий случай
         if not Frames[CurrentFrameIndex].Loaded then
@@ -1174,7 +1194,7 @@ begin
     NewPosition := 0;
 
   CurrentRecordPosition := NewPosition;
-  ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+  CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
 
   pbRecord.Invalidate;
   pbDisplay.Invalidate;
@@ -1303,7 +1323,7 @@ end;
 
 procedure TMainForm.ListBoxClick(Sender: TObject);
 begin
-//  ShowFrame(ListBox.ItemIndex);
+//  CurrentFrameIndex := ListBox.ItemIndex;
 end;
 
 procedure TMainForm.LiveAudioRecorderData(Sender: TObject; const Buffer: Pointer; BufferSize: Cardinal; var FreeIt: Boolean);
@@ -1327,18 +1347,19 @@ end;
 procedure TMainForm.pbTimeLineMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  CurrentFrame: Integer;
+  NewFrameIndex: Integer;
 begin
   if FramesCount = 0 then
     Exit;
 
-  CurrentFrame := TimeLineXToFrameIndex(X);
-  if CurrentFrame >= FramesCount then
-    CurrentFrame := FramesCount - 1;
-  if CurrentFrame < 0 then
-    CurrentFrame := 0;
+  NewFrameIndex := TimeLineXToFrameIndex(X);
+  if NewFrameIndex >= FramesCount then
+    NewFrameIndex := FramesCount - 1;
+  if NewFrameIndex < 0 then
+    NewFrameIndex := 0;
 
-  ShowFrame(CurrentFrame);
+  CurrentFrameIndex := NewFrameIndex;
+
   pbRecord.Invalidate;
   pbDisplay.Invalidate;
   UpdateActions;
@@ -1371,7 +1392,7 @@ begin
   if FramesCount = 0 then
     Result := -1
   else
-    Result := 4 + MulDiv(FrameIndex, pbTimeLine.Width - 8, FramesCount);
+    Result := 4 + MulDiv(FrameIndex, pbTimeLine.Width - 8, FramesCount - 1);
 end;
 
 function TMainForm.TimeLineXToFrameIndex(X: Integer): Integer;
@@ -1497,6 +1518,10 @@ end;
 
 procedure TMainForm.PushControlAction(Value: TControlAction);
 begin
+  // Если была автоматика, то не отодвигаем её, а стираем.
+  if NextControlAction in [caPlayBackward, caPlayForward] then
+    NextControlActionStackPosition := 0;
+
   if NextControlActionStackPosition = ControlActionStackDeep then
     Beep
   else
@@ -1536,12 +1561,11 @@ begin
 
   if Exporting then
     Exit;
-
   if Playing then
     begin
       if CurrentRecordPosition < RecordedFrames.Count then
         begin
-          ShowFrame(Integer(RecordedFrames[CurrentRecordPosition]));
+          CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
           pbRecord.Invalidate;
           Inc(FCurrentRecordPosition);
         end
@@ -1556,40 +1580,29 @@ begin
       case NextControlAction of
         caStepForward:
           begin
-            inc(CurrentFrameIndex);
+            CurrentFrameIndex := IncrementCurrentFrameIndex(1);
             PopControlAction;
           end;
         caPlayForward:
           if Interval <= 1 then
-            if (Frames[CurrentFrameIndex].Teleport <> -1) and TeleportEnabled then
-              CurrentFrameIndex := Bookmarks[Frames[CurrentFrameIndex].Teleport]
-            else
-              inc(CurrentFrameIndex);
+            CurrentFrameIndex := IncrementCurrentFrameIndex(1);
         caStepBackward:
           begin
-            dec(CurrentFrameIndex);
+            CurrentFrameIndex := IncrementCurrentFrameIndex(-1);
             PopControlAction;
           end;
         caPlayBackward:
           if Interval <= 1 then
-            if Frames[CurrentFrameIndex].Teleport <> -1 then
-              CurrentFrameIndex := Bookmarks[Frames[CurrentFrameIndex].Teleport]
-            else
-              dec(CurrentFrameIndex);
+            CurrentFrameIndex := IncrementCurrentFrameIndex(-1);
         caNone:
           if Interval <= 1 then
             begin
               if actBackwardWhilePressed.Checked or (GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0) then //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
-                dec(CurrentFrameIndex);
+                CurrentFrameIndex := IncrementCurrentFrameIndex(-1);
               if actForwardWhilePressed.Checked or (GetAsyncKeyState(Ord('D')) < 0)  or (GetAsyncKeyState(Ord('M')) < 0) then
-                inc(CurrentFrameIndex);
+                CurrentFrameIndex := IncrementCurrentFrameIndex(1);
             end;
       end;
-      if CurrentFrameIndex < 0 then
-        CurrentFrameIndex := FramesCount - 1;
-      if CurrentFrameIndex > (FramesCount - 1) then
-        CurrentFrameIndex := 0;
-      ShowFrame(CurrentFrameIndex);
 
       if Recording then
         begin
@@ -1608,17 +1621,24 @@ begin
     end;
 end;
 
+procedure TMainForm.tlbNavigationMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  // fix auto chande Down in ToolbarButtons with style Check
+  btnPlayForward.Down  := actPlayForward.Checked;
+  btnPlayBackward.Down := actPlayBackward.Checked;
+end;
+
 procedure TMainForm.actPlayBackwardExecute(Sender: TObject);
 begin
   if NextControlAction <> caPlayBackward then
     ReplaceControlActions(caPlayBackward)
   else
     ReplaceControlActions(caNone);
-  actPlayBackward.Checked := True;
-  btnPlayBackward.Down := True;
+  UpdatePlayActions;
 end;
 
-procedure TMainForm.actUpdate_HaveFiles(Sender: TObject);
+procedure TMainForm.actNavigate_Update(Sender: TObject);
 begin
   TAction(Sender).Enabled := not Exporting and (FramesCount > 0);
 end;
@@ -1631,15 +1651,13 @@ end;
 procedure TMainForm.actStepNextExecute(Sender: TObject);
 begin
   PushControlAction(caStepForward);
-  actPlayForward.Checked := False;
-  actPlayBackward.Checked := False;
+  UpdatePlayActions;
 end;
 
 procedure TMainForm.actStepPrevExecute(Sender: TObject);
 begin
   PushControlAction(caStepBackward);
-  actPlayForward.Checked := False;
-  actPlayBackward.Checked := False;
+  UpdatePlayActions;
 end;
 
 procedure TMainForm.actPlayForwardExecute(Sender: TObject);
@@ -1648,7 +1666,13 @@ begin
     ReplaceControlActions(caPlayForward)
   else
     ReplaceControlActions(caNone);
-  actPlayForward.Checked := True;
+  UpdatePlayActions;
+end;
+
+procedure TMainForm.UpdatePlayActions;
+begin
+  actPlayForward.Checked := (NextControlAction = caPlayForward);
+  actPlayBackward.Checked := (NextControlAction = caPlayBackward);
 end;
 
 procedure TMainForm.actPlayUpdate(Sender: TObject);
@@ -1713,8 +1737,7 @@ begin
   actRecord.Checked := False;
   ReplaceControlActions(caNone);
 
-  actPlayForward.Checked := NextControlAction = caPlayForward;
-  actPlayBackward.Checked := NextControlAction = caPlayBackward;
+  UpdatePlayActions;
 
   if WaveStorage.Wave.Empty then
     WaveStorage.Wave.Assign(AudioRecorder.Wave)
@@ -1773,6 +1796,38 @@ end;
 procedure TMainForm.pbIndicatorClick(Sender: TObject);
 begin
   mmiDoubleFramerate.Click;
+end;
+
+function TMainForm.IncrementCurrentFrameIndex(AOffset: Integer): Integer;
+var
+  Count: Integer;
+  i: Integer;
+begin
+  Result := CurrentFrameIndex;
+  if AOffset = 0 then
+    Exit;
+
+  if FramesCount = 0 then
+    begin
+      Result := 0;
+      Exit;
+    end;
+
+  // TODO: Stop frames. Stop frames must break this incrementing
+
+  Count := Abs(AOffset);
+  AOffset := AOffset div Count;
+  for i := 1 to Count do
+    begin
+      Result := Result + AOffset;
+      while Result < 0 do
+        Result := FramesCount + Result;
+      while Result > (FramesCount - 1) do
+        Result := Result - FramesCount;
+
+      if TeleportEnabled and (Frames[Result].Teleport <> -1) then
+        Result := Bookmarks[Frames[Result].Teleport];
+    end;
 end;
 
 function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;

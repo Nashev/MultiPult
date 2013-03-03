@@ -25,6 +25,12 @@
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
+		<PropertyGroup Condition="'$(Platform)'=='Win32' and '$(Cfg_2)'=='true' or '$(Cfg_2_Win32)'!=''">
+			<Cfg_2_Win32>true</Cfg_2_Win32>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<VerInfo_Locale>1049</VerInfo_Locale>
 			<VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
@@ -59,6 +65,10 @@
 			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+			<DCC_Inlining>off</DCC_Inlining>
+			<DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
+		</PropertyGroup>
 		<ItemGroup>
 			<DelphiCompile Include="MultiPult.dpr">
 				<MainSource>MainSource</MainSource>
@@ -66,6 +76,9 @@
 			<DCCReference Include="Gauges.pas"/>
 			<DCCReference Include="MainFormUnit.pas">
 				<Form>MainForm</Form>
+			</DCCReference>
+			<DCCReference Include="ControllerFormUnit.pas">
+				<Form>ControllerForm</Form>
 			</DCCReference>
 			<DCCReference Include="WaveAudio\WaveACM.pas"/>
 			<DCCReference Include="WaveAudio\WaveIn.pas"/>
@@ -107,7 +120,7 @@
 						<VersionInfo Name="AutoIncBuild">True</VersionInfo>
 						<VersionInfo Name="MajorVer">0</VersionInfo>
 						<VersionInfo Name="MinorVer">9</VersionInfo>
-						<VersionInfo Name="Release">9</VersionInfo>
+						<VersionInfo Name="Release">10</VersionInfo>
 						<VersionInfo Name="Build">0</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">True</VersionInfo>
@@ -120,7 +133,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">0.9.9.0</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">0.9.10.0</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright"/>
 						<VersionInfoKeys Name="LegalTrademarks"/>

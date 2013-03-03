@@ -9,6 +9,7 @@ uses
   {$IFDEF FPC}Interfaces,{$ENDIF}
   Gauges in 'Gauges.pas',
   MainFormUnit in 'MainFormUnit.pas' {MainForm},
+  ControllerFormUnit in 'ControllerFormUnit.pas' {ControllerForm},
   WaveACM in 'WaveAudio\WaveACM.pas',
   WaveIn in 'WaveAudio\WaveIn.pas',
   WaveIO in 'WaveAudio\WaveIO.pas',
@@ -29,5 +30,6 @@ begin
   Application.Initialize;
   Application.Title := 'ÌףכüעטÏףכüע';
   Application.CreateForm(TMainForm, MainForm);
+  Application.CreateForm(TControllerForm, ControllerForm);
   Application.Run;
 end.

@@ -148,11 +148,15 @@ object MainForm: TMainForm
       Images = ilActions
       TabOrder = 0
       Wrapable = False
+      OnMouseUp = tlbNavigationMouseUp
       object btnPlayBackward: TToolButton
         Left = 0
         Top = 0
         Action = actPlayBackward
+        AllowAllUp = True
+        Style = tbsCheck
         OnMouseDown = btnNavigationMouseDown
+        OnMouseUp = tlbNavigationMouseUp
       end
       object btnBackwardWhilePressed: TToolButton
         Left = 23
@@ -212,7 +216,10 @@ object MainForm: TMainForm
         Left = 177
         Top = 0
         Action = actPlayForward
+        AllowAllUp = True
+        Style = tbsCheck
         OnMouseDown = btnNavigationMouseDown
+        OnMouseUp = tlbNavigationMouseUp
       end
     end
   end
@@ -231,7 +238,7 @@ object MainForm: TMainForm
       Hint = #1053#1086#1074#1072#1103' '#1079#1072#1087#1080#1089#1100'...'
       ShortCut = 16462
       OnExecute = actNewExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actOpen: TAction
       Caption = #1054#1090#1082#1088#1099#1090#1100'...'
@@ -267,7 +274,7 @@ object MainForm: TMainForm
       SecondaryShortCuts.Strings = (
         'v')
       OnExecute = actStepPrevExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actStepNext: TAction
       Caption = #1042#1087#1077#1088#1105#1076' '#1085#1072' '#1082#1072#1076#1088
@@ -275,10 +282,9 @@ object MainForm: TMainForm
       ImageIndex = 3
       ShortCut = 78
       OnExecute = actStepNextExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actPlayForward: TAction
-      AutoCheck = True
       Caption = #1042#1087#1077#1088#1105#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       Hint = #1042#1087#1077#1088#1105#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       ImageIndex = 5
@@ -286,7 +292,7 @@ object MainForm: TMainForm
       SecondaryShortCuts.Strings = (
         'Ctrl+Right')
       OnExecute = actPlayForwardExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actPlayBackward: TAction
       Caption = #1053#1072#1079#1072#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
@@ -296,7 +302,7 @@ object MainForm: TMainForm
       SecondaryShortCuts.Strings = (
         'Ctrl+Left')
       OnExecute = actPlayBackwardExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actRecord: TAction
       Caption = #1047#1072#1087#1080#1089#1100
@@ -304,20 +310,20 @@ object MainForm: TMainForm
       ImageIndex = 6
       ShortCut = 32
       OnExecute = actRecordExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actNewBookmark: TAction
       Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1089#1083#1077#1076#1091#1102#1097#1091#1102' '#1079#1072#1082#1083#1072#1076#1082#1091
       Hint = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1089#1083#1077#1076#1091#1102#1097#1091#1102' '#1079#1072#1082#1083#1072#1076#1082#1091
       ShortCut = 13
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actToggleBookmark0: TAction
       Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
       Hint = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
       ShortCut = 16432
       OnExecute = actToggleBookmarkExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actGotoBookmark0: TAction
       Caption = #1055#1077#1088#1077#1081#1090#1080' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
@@ -346,7 +352,7 @@ object MainForm: TMainForm
       ImageIndex = 4
       ShortCut = 77
       OnExecute = actForwardWhilePressedExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actBackwardWhilePressed: TAction
       Caption = #1053#1072#1079#1072#1076', '#1087#1086#1082#1072' '#1085#1072#1078#1072#1090#1072' '#1082#1083#1072#1074#1080#1096#1072
@@ -354,7 +360,7 @@ object MainForm: TMainForm
       ImageIndex = 1
       ShortCut = 67
       OnExecute = actBackwardWhilePressedExecute
-      OnUpdate = actUpdate_HaveFiles
+      OnUpdate = actNavigate_Update
     end
     object actToggleTeleport0: TAction
       Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
@@ -391,6 +397,14 @@ object MainForm: TMainForm
       Caption = #1054#1090#1082#1088#1099#1090#1100'  '#1074#1077#1073'-'#1089#1090#1088#1072#1085#1080#1094#1091' '#1087#1088#1086#1077#1082#1090#1072
       Hint = 'Browse URL'
       URL = 'https://github.com/Nashev/MultiPult/issues'
+    end
+    object actShowControllerForm: TAction
+      AutoCheck = True
+      Caption = #1055#1086#1082#1072#1079#1072#1090#1100' '#1086#1082#1085#1086' '#1091#1087#1088#1072#1074#1083#1077#1085#1080#1103
+      Checked = True
+      ShortCut = 115
+      OnExecute = actShowControllerFormExecute
+      OnUpdate = actShowControllerFormUpdate
     end
   end
   object MainMenu: TMainMenu
@@ -443,7 +457,6 @@ object MainForm: TMainForm
       end
       object mmiPlayingForward: TMenuItem
         Action = actPlayForward
-        AutoCheck = True
       end
       object mmiSeparatorBookmarkManagement: TMenuItem
         Caption = '-'
@@ -492,6 +505,10 @@ object MainForm: TMainForm
       end
       object mmiFullScreenMode: TMenuItem
         Action = actFullScreenMode
+        AutoCheck = True
+      end
+      object mmiShowControllerForm: TMenuItem
+        Action = actShowControllerForm
         AutoCheck = True
       end
     end
