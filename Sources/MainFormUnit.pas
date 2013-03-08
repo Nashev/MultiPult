@@ -212,6 +212,7 @@ type
     procedure actShowControllerFormUpdate(Sender: TObject);
     procedure tlbNavigationMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure actStretchImagesExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -530,7 +531,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     Application.Title + #13#10 +
-    'Версия 0.9.10'#13#10 +
+    'Версия 0.9.11'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -732,8 +733,9 @@ begin
       BoundsRect := PreviousBounds;
       FormStyle := fsNormal;
       pbRecord.Show;
-      Menu := MainMenu;
+      RecordSplitter.Left := pbRecord.Left - 5;
       RecordSplitter.Show;
+      Menu := MainMenu;
     end;
 end;
 
@@ -1066,28 +1068,66 @@ procedure TMainForm.pbDisplayPaint(Sender: TObject);
 var
   R: TRect;
   Image: TBitmap;
+  Index: Integer;
 begin
   try
-    if CurrentFrameIndex < FramesCount then // на всякий случай (?)
+    LoadPhoto(CurrentFrameIndex); // на всякий случай
+    if Frames[CurrentFrameIndex].Loaded then
       begin
-        LoadPhoto(CurrentFrameIndex); // на всякий случай
-        if not Frames[CurrentFrameIndex].Loaded then
-          Exit;
-
         Image := Frames[CurrentFrameIndex].Preview;
-        R.Left :=  0;
-        R.Top := 0;
-        if actStretchImages.Checked or (Image.Width > pbDisplay.Width) or (Image.Height > pbDisplay.Height) then
+        if actStretchImages.Checked or (Image.Width > (pbDisplay.Width - 20)) or (Image.Height > (pbDisplay.Height - 20)) then
           begin
-            R := StretchSize(Image.Width, Image.Height, pbDisplay.Width, pbDisplay.Height);
+            R := StretchSize(Image.Width, Image.Height, pbDisplay.Width - 20, pbDisplay.Height - 20);
+            R.Left   := R.Left   + 10;
+            R.Top    := R.Top    + 10;
+            R.Right  := R.Right  + 10;
+            R.Bottom := R.Bottom + 10;
+            with R do pbDisplay.Canvas.RoundRect(Left-10, Top - 10, Right + 10, Bottom + 10, 10, 10);
             pbDisplay.Canvas.StretchDraw(R, Image);
           end
         else
           begin
             R.Left := (pbDisplay.Width  - Image.Width ) div 2;
             R.Top  := (pbDisplay.Height - Image.Height) div 2;
+            R.Right := R.Left + Image.Width;
+            R.Bottom := R.Top + Image.Height;
+            with R do pbDisplay.Canvas.RoundRect(Left-20, Top - 20, Right + 20, Bottom + 20, 20, 20);
             pbDisplay.Canvas.Draw(R.Left, R.Top, Image);
           end;
+      end;
+    Index := IncrementCurrentFrameIndex(-1);
+    LoadPhoto(Index); // на всякий случай
+    if Frames[Index].Loaded then
+      begin
+        Image := Frames[Index].Preview;
+        R := StretchSize(Image.Width, Image.Height, 120, 120);
+        R.Bottom := R.Bottom - R.Top;
+        R.Top    := 0;
+        R.Left   := R.Left   + 5;
+        R.Top    := R.Top    + 5;
+        R.Right  := R.Right  + 5;
+        R.Bottom := R.Bottom + 5;
+        with R do pbDisplay.Canvas.RoundRect(Left - 5, Top - 5, Right + 5, Bottom + 5, 5, 5);
+        pbDisplay.Canvas.StretchDraw(R, Image);
+      end;
+    Index := IncrementCurrentFrameIndex(+1);
+    LoadPhoto(Index); // на всякий случай
+    if Frames[Index].Loaded then
+      begin
+        Image := Frames[Index].Preview;
+        R.Left :=  0;
+        R.Top := 0;
+        R := StretchSize(Image.Width, Image.Height, 120, 120);
+        R.Left := pbDisplay.Width - 120 + R.Left;
+        R.Right := pbDisplay.Width - 120 + R.Right;
+        R.Bottom := R.Bottom - R.Top;
+        R.Top := 0;
+        R.Left   := R.Left   - 5;
+        R.Top    := R.Top    + 5;
+        R.Right  := R.Right  - 5;
+        R.Bottom := R.Bottom + 5;
+        with R do pbDisplay.Canvas.RoundRect(Left - 5, Top - 5, Right + 5, Bottom + 5, 5, 5);
+        pbDisplay.Canvas.StretchDraw(R, Image);
       end;
   except
     ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
@@ -1236,6 +1276,9 @@ type
 var
   y: Integer;
   FrameIndex: Integer;
+  R: TRect;
+  DataWidth: Integer;
+  DataAreaHeight: Integer;
 
   SamplesPerFrame: Integer;
   WaveFormat: TWaveFormatEx;
@@ -1262,24 +1305,24 @@ var
         Inc(pSample);
         Inc(pSample); // stereo
       end;
-    pbRecord.Canvas.MoveTo(pbRecord.Width div 2 + MulDiv(MinData, pbRecord.Width, $FFFF div 2),     y);
-    pbRecord.Canvas.LineTo(pbRecord.Width div 2 + MulDiv(MaxData, pbRecord.Width, $FFFF div 2) + 1, y);
+    pbRecord.Canvas.MoveTo(R.Left + DataWidth div 2 + MulDiv(MinData, DataWidth, $FFFF div 2),     y);
+    pbRecord.Canvas.LineTo(R.Left + DataWidth div 2 + MulDiv(MaxData, DataWidth, $FFFF div 2) + 1, y);
   end;
 
   procedure DrawScaleMark;
   begin
-    if FrameIndex mod FrameRate = 0 then
-      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 1));
-    if FrameIndex mod (FrameRate * 10) = 0 then
-      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 2));
-    if FrameIndex mod (FrameRate * 60) = 0 then
-      pbRecord.Canvas.FillRect(Rect(0, y, pbRecord.Width, y + 3));
+    if FrameIndex mod FrameRate        = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 1));
+    if FrameIndex mod (FrameRate * 10) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 2));
+    if FrameIndex mod (FrameRate * 60) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 3));
   end;
 
 begin
-  pbRecordOffset := CurrentRecordPosition - (pbRecord.Height div 2);
-  if (pbRecordOffset + pbRecord.Height) > RecordedFrames.Count then
-    pbRecordOffset := RecordedFrames.Count - pbRecord.Height;
+  DataWidth := pbRecord.ClientWidth - 12;
+  DataAreaHeight := pbRecord.ClientHeight - 10;
+
+  pbRecordOffset := CurrentRecordPosition - (DataAreaHeight div 2);
+  if (pbRecordOffset + DataAreaHeight) > RecordedFrames.Count then
+    pbRecordOffset := RecordedFrames.Count - DataAreaHeight;
   if pbRecordOffset < 0 then
     pbRecordOffset := 0;
 
@@ -1289,8 +1332,30 @@ begin
   Assert(WaveFormat.wBitsPerSample = 16, '{F90018C7-D187-41DE-A30C-CB8D15A72149}');
   Assert(WaveFormat.nChannels = 2,       '{9655AC01-69A1-456D-B55E-027A9B04CA93}');
 
-  pbRecord.Canvas.Brush.Color := clWindow;
+  pbRecord.Canvas.Brush.Color := clBtnFace;
   pbRecord.Canvas.FillRect(pbRecord.ClientRect);
+
+  pbRecord.Canvas.Brush.Color := clMaroon;
+  with pbRecord.ClientRect do pbRecord.Canvas.FillRect(Rect(
+    Right - 2, MulDiv(pbRecordOffset, pbRecord.ClientHeight, RecordedFrames.Count),
+    Right, MulDiv(pbRecordOffset + DataAreaHeight, pbRecord.ClientHeight, RecordedFrames.Count)
+  ));
+
+  pbRecord.Canvas.Pen.Color := clBlack;
+  pbRecord.Canvas.Pen.Width := 1;
+  pbRecord.Canvas.Pen.Style := psSolid;
+
+  R := pbRecord.ClientRect;
+  R.Bottom := Min(RecordedFrames.Count - pbRecordOffset + 10, R.Bottom);
+  R.Right := R.Left + DataWidth + 10;
+  pbRecord.Canvas.Brush.Color := clBtnFace;
+  pbRecord.Canvas.RoundRect(R, 5, 5);
+  R.Left   := R.Left   + 5;
+  R.Top    := R.Top    + 5;
+  R.Right  := R.Right  - 5;
+  R.Bottom := R.Bottom - 5;
+  pbRecord.Canvas.Brush.Color := clWindow;
+  pbRecord.Canvas.FillRect(R);
 
   pbRecord.Canvas.Brush.Color := clLtGray;
 
@@ -1298,26 +1363,21 @@ begin
   pbRecord.Canvas.Pen.Width := 1;
   pbRecord.Canvas.Pen.Style := psSolid;
 
-  for y := 0 to pbRecord.Height do
+  FrameIndex := pbRecordOffset;
+  for y := R.Top to R.Bottom - 1 do
     begin
-      FrameIndex := y + pbRecordOffset;
-
       DrawSound;
-
-      if FrameIndex >= RecordedFrames.Count then
-        Continue;
 
       DrawScaleMark;
 
-      pbRecord.Canvas.Pixels[MulDiv(Integer(RecordedFrames[FrameIndex]), pbRecord.Width, FramesCount), y] := clBlack;
-    end;
+      pbRecord.Canvas.Pixels[R.Left + MulDiv(Integer(RecordedFrames[FrameIndex]), DataWidth, FramesCount), y] := clBlack;
 
-  pbRecord.Canvas.Brush.Color := clBtnFace;
-  pbRecord.Canvas.FillRect(Rect(0, RecordedFrames.Count - pbRecordOffset, pbRecord.ClientWidth, pbRecord.ClientHeight));
+      Inc(FrameIndex);
+    end;
 
   pbRecord.Canvas.Brush.Color := clWhite;
     if CurrentRecordPosition < RecordedFrames.Count then
-      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), pbRecord.Width, FramesCount), CurrentRecordPosition - pbRecordOffset) do
+      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), DataWidth, FramesCount) + R.Left, CurrentRecordPosition - pbRecordOffset + R.Top) do
         pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
 end;
 
@@ -1658,6 +1718,11 @@ procedure TMainForm.actStepPrevExecute(Sender: TObject);
 begin
   PushControlAction(caStepBackward);
   UpdatePlayActions;
+end;
+
+procedure TMainForm.actStretchImagesExecute(Sender: TObject);
+begin
+  pbDisplay.Invalidate;
 end;
 
 procedure TMainForm.actPlayForwardExecute(Sender: TObject);
