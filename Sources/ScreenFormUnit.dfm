@@ -1,0 +1,22 @@
+object ScreenForm: TScreenForm
+  Left = 987
+  Top = 432
+  BorderStyle = bsNone
+  ClientHeight = 407
+  ClientWidth = 550
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  Position = poMainFormCenter
+  OnDblClick = FormDblClick
+  OnKeyDown = FormKeyDown
+  OnKeyUp = FormKeyUp
+  OnPaint = FormPaint
+  OnResize = FormResize
+  PixelsPerInch = 96
+  TextHeight = 13
+end

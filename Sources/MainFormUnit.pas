@@ -138,6 +138,8 @@ type
     actShowIssuesPage: TBrowseURL;
     actShowControllerForm: TAction;
     mmiShowControllerForm: TMenuItem;
+    actScreenWindow: TAction;
+    mmiScreenWindow: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -213,6 +215,9 @@ type
     procedure tlbNavigationMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure actStretchImagesExecute(Sender: TObject);
+    procedure actScreenWindowExecute(Sender: TObject);
+    procedure pbDisplayDblClick(Sender: TObject);
+    procedure mmiNewBookmarkClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -258,7 +263,6 @@ type
     function TimeLineXToFrameIndex(X: Integer): Integer;
 //    Drawing: Boolean;
     procedure LoadPhotoFolder(APath: string);
-    procedure LoadPhoto(Index: Integer);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure ClearRecorded;
     procedure RecalculatePreview;
@@ -271,6 +275,8 @@ type
     function IncrementCurrentFrameIndex(AOffset: Integer): Integer;
     property FramesCount: Integer read GetFramesCount;
     property Frames[Index: Integer]: TFrame read GetFrame;
+    // Used in ScreenForm
+    procedure LoadPhoto(Index: Integer);
   end;
 
 var
@@ -278,9 +284,10 @@ var
 
 var
   FrameRate: byte = 25;
+function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
 implementation
-uses AVICompression, ControllerFormUnit;
+uses AVICompression, ControllerFormUnit, ScreenFormUnit;
 {$R *.dfm}
 
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
@@ -468,8 +475,10 @@ begin
   else
     if not KeyPressBlocked then
       case Key of
-        vk_Left:  begin PushControlAction(caStepBackward); KeyPressBlocked := True; end;
-        vk_Right: begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
+        vk_Left:   begin PushControlAction(caStepBackward); KeyPressBlocked := True; end;
+        vk_Right:  begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
+        VK_ESCAPE: if actFullScreenMode.Checked then actFullScreenMode.Execute; // TODO: что ещё тут стоит прерывать эскейпом?
+        vk_Shift:  pbTimeLine.Invalidate; // телепорты выключаются
       end;
 
   UpdatePlayActions;
@@ -481,6 +490,9 @@ procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   KeyPressBlocked := False; // TODO: разблокировать не любую клавишу, а ту, что блокировали. Чтоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
+  case Key of
+    vk_Shift: pbTimeLine.Invalidate; // телепорты включаются
+  end;
 //  pbIndicator.Refresh;
 end;
 
@@ -531,7 +543,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     Application.Title + #13#10 +
-    'Версия 0.9.11'#13#10 +
+    'Версия 0.9.12'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -544,6 +556,32 @@ end;
 procedure TMainForm.mmiBackwardWhilePressedClick(Sender: TObject);
 begin
  //
+end;
+
+procedure TMainForm.mmiNewBookmarkClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  for i := 1 to 10 do // сначала попробуем снять закладку, если она тут уже есть. Пусть Enter тоже выключателем работает
+    // перебираем 1-10 и используем i mod 10, чтобы индекс 0 был после 9, как на клавиатуре
+    if Bookmarks[i mod 10] = CurrentFrameIndex then
+      begin
+        Bookmarks[i mod 10] := -1;
+        pbTimeLine.Invalidate;
+        Saved := False;
+        Exit;
+      end;
+
+  for i := 1 to 10 do // если не было закладки - то ставим первую свободную
+    if Bookmarks[i mod 10] = -1 then
+      begin
+        Bookmarks[i mod 10] := CurrentFrameIndex;
+        pbTimeLine.Invalidate;
+        Saved := False;
+        Exit;
+      end;
+
+  Beep; // если свободных закладок не нашлось - гудим.
 end;
 
 procedure TMainForm.actBackwardWhilePressedExecute(Sender: TObject);
@@ -711,32 +749,35 @@ end;
 
 procedure TMainForm.actFullScreenModeExecute(Sender: TObject);
 begin
-  if actFullScreenMode.Checked then
-    begin
-      BorderStyle := bsNone;
-      PreviousBounds := BoundsRect;
-      BoundsRect := Self.Monitor.BoundsRect;
-      // FormStyle := fsStayOnTop;
-      pnlDisplay.Align := alNone;
-      pnlDisplay.BringToFront;
-      Menu := nil;
-      with Self.ClientRect do
-        pnlDisplay.SetBounds(Left, Top, Right, Bottom);
-      pbRecord.Hide;
-      RecordSplitter.Hide;
-      FrameTipIndex := -1;  // hide
-    end
+  if ScreenForm.Visible then
+    ScreenForm.UpdateFullScreen
   else
-    begin
-      pnlDisplay.Align := alClient;
-      BorderStyle := bsSizeable;
-      BoundsRect := PreviousBounds;
-      FormStyle := fsNormal;
-      pbRecord.Show;
-      RecordSplitter.Left := pbRecord.Left - 5;
-      RecordSplitter.Show;
-      Menu := MainMenu;
-    end;
+    if actFullScreenMode.Checked then
+      begin
+        BorderStyle := bsNone;
+        PreviousBounds := BoundsRect;
+        BoundsRect := Self.Monitor.BoundsRect;
+        // FormStyle := fsStayOnTop;
+        pnlDisplay.Align := alNone;
+        pnlDisplay.BringToFront;
+        Menu := nil;
+        with Self.ClientRect do
+          pnlDisplay.SetBounds(Left, Top, Right, Bottom);
+        pbRecord.Hide;
+        RecordSplitter.Hide;
+        FrameTipIndex := -1;  // hide
+      end
+    else
+      begin
+        pnlDisplay.Align := alClient;
+        BorderStyle := bsSizeable;
+        BoundsRect := PreviousBounds;
+        FormStyle := fsNormal;
+        pbRecord.Show;
+        RecordSplitter.Left := pbRecord.Left - 5;
+        RecordSplitter.Show;
+        Menu := MainMenu;
+      end;
 end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
@@ -918,6 +959,14 @@ begin
   actSave.Enabled := not Exporting and (RecordedFrames.Count > 0) and not Saved;
 end;
 
+procedure TMainForm.actScreenWindowExecute(Sender: TObject);
+begin
+  if actFullScreenMode.Checked then
+    actFullScreenMode.Execute;
+
+  ScreenForm.Visible := actScreenWindow.Checked;
+end;
+
 procedure TMainForm.SetCaption(const Value: TCaption);
 begin
   Caption := Value + ' - МультиПульт';
@@ -945,6 +994,9 @@ begin
 //  pnlDisplay.Repaint;
 //  pnlTimeLine.Repaint;
   pbDisplay.Repaint;
+  if Assigned(ScreenForm) and ScreenForm.Visible then
+    ScreenForm.Repaint;
+
   pbTimeLine.Repaint;
   if Assigned(ControllerForm) and ControllerForm.Visible then
     ControllerForm.Repaint;
@@ -1016,6 +1068,7 @@ begin
     Bookmarks[TMenuItem(Sender).Tag] := -1
   else
     Bookmarks[TMenuItem(Sender).Tag] := CurrentFrameIndex;
+  pbTimeLine.Invalidate;
   Saved := False;
 end;
 
@@ -1026,6 +1079,7 @@ begin
       Teleport := -1
     else
       Teleport := TMenuItem(Sender).Tag;
+  pbTimeLine.Invalidate;
   Saved := False;
 end;
 
@@ -1062,6 +1116,11 @@ begin
   // запись кадров начнётся в AudioRecorderActivate
   // а закончится - в AudioRecorderDeactivate
   AudioRecorder.Active := not Recording
+end;
+
+procedure TMainForm.pbDisplayDblClick(Sender: TObject);
+begin
+  actFullScreenMode.Execute;
 end;
 
 procedure TMainForm.pbDisplayPaint(Sender: TObject);
@@ -1544,7 +1603,7 @@ begin
           TextSize := pbTimeLine.Canvas.TextExtent(BookmarkText);
           BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
           pbTimeLine.Canvas.Brush.Style := bsSolid;
-          if not TeleportEnabled then
+          if not TeleportEnabled or (Bookmarks[Frames[FrameIndex].Teleport] = -1) then
             begin
               pbTimeLine.Canvas.Brush.Color := clLtGray;
               pbTimeLine.Canvas.Font.Color := clDkGray;
@@ -1890,7 +1949,7 @@ begin
       while Result > (FramesCount - 1) do
         Result := Result - FramesCount;
 
-      if TeleportEnabled and (Frames[Result].Teleport <> -1) then
+      if TeleportEnabled and (Frames[Result].Teleport <> -1) and (Bookmarks[Frames[Result].Teleport] <> -1) then
         Result := Bookmarks[Frames[Result].Teleport];
     end;
 end;

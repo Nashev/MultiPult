@@ -6,7 +6,6 @@ program MultiPult;
 
 uses
   Forms,
-  {$IFDEF FPC}Interfaces,{$ENDIF}
   Gauges in 'Gauges.pas',
   MainFormUnit in 'MainFormUnit.pas' {MainForm},
   ControllerFormUnit in 'ControllerFormUnit.pas' {ControllerForm},
@@ -22,7 +21,8 @@ uses
   WaveTimer in 'WaveAudio\WaveTimer.pas',
   WaveUtils in 'WaveAudio\WaveUtils.pas',
   AVICompression in 'avi_work\AVICompression.pas',
-  AVIFile32 in 'avi_work\AVIFile32.pas';
+  AVIFile32 in 'avi_work\AVIFile32.pas',
+  ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm};
 
 {$R *.res}
 
@@ -31,5 +31,6 @@ begin
   Application.Title := 'ÌףכüעטÏףכüע';
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TControllerForm, ControllerForm);
+  Application.CreateForm(TScreenForm, ScreenForm);
   Application.Run;
 end.

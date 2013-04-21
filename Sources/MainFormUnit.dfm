@@ -39,6 +39,7 @@ object MainForm: TMainForm
       Width = 452
       Height = 398
       Align = alClient
+      OnDblClick = pbDisplayDblClick
       OnPaint = pbDisplayPaint
       ExplicitWidth = 474
       ExplicitHeight = 403
@@ -407,6 +408,12 @@ object MainForm: TMainForm
       OnExecute = actShowControllerFormExecute
       OnUpdate = actShowControllerFormUpdate
     end
+    object actScreenWindow: TAction
+      AutoCheck = True
+      Caption = #1055#1086#1082#1072#1079#1072#1090#1100' '#1086#1090#1076#1077#1083#1100#1085#1086#1077' '#1086#1082#1085#1086' '#1101#1082#1088#1072#1085#1072
+      ShortCut = 123
+      OnExecute = actScreenWindowExecute
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -464,6 +471,7 @@ object MainForm: TMainForm
       end
       object mmiNewBookmark: TMenuItem
         Action = actNewBookmark
+        OnClick = mmiNewBookmarkClick
       end
       object mmiToggleBookmark0: TMenuItem
         Action = actToggleBookmark0
@@ -504,12 +512,16 @@ object MainForm: TMainForm
         Action = actStretchImages
         AutoCheck = True
       end
-      object mmiFullScreenMode: TMenuItem
-        Action = actFullScreenMode
-        AutoCheck = True
-      end
       object mmiShowControllerForm: TMenuItem
         Action = actShowControllerForm
+        AutoCheck = True
+      end
+      object mmiScreenWindow: TMenuItem
+        Action = actScreenWindow
+        AutoCheck = True
+      end
+      object mmiFullScreenMode: TMenuItem
+        Action = actFullScreenMode
         AutoCheck = True
       end
     end
