@@ -512,6 +512,11 @@ begin
   OutOfMemoryRaised := False;
 end;
 
+function CompareFramesFileName(Item1, Item2: Pointer): Integer;
+begin
+  Result := CompareText(TFrame(Item1).FileName, TFrame(Item2).FileName)
+end;
+
 procedure TMainForm.LoadPhotoFolder(APath: string);
 var
   Rec: TSearchRec;
@@ -535,6 +540,7 @@ begin
       until {$IFDEF FPC}FindNextUTF8{$ELSE}FindNext{$ENDIF}(Rec) <> 0;
       {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
     end;
+  FFrames.Sort(CompareFramesFileName);
 //  ListBox.Items.Assign(FileNames);
   UpdateActions;
 end;
@@ -543,7 +549,7 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     Application.Title + #13#10 +
-    'Версия 0.9.12'#13#10 +
+    'Версия 0.9.13'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +

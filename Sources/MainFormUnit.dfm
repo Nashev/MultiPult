@@ -471,7 +471,6 @@ object MainForm: TMainForm
       end
       object mmiNewBookmark: TMenuItem
         Action = actNewBookmark
-        OnClick = mmiNewBookmarkClick
       end
       object mmiToggleBookmark0: TMenuItem
         Action = actToggleBookmark0
