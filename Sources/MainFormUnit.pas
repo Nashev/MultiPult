@@ -2,6 +2,12 @@ unit MainFormUnit;
 
 {$IFDEF FPC}
   {$MODE Delphi}
+{$ELSE}
+  {$IFDEF VER140} // Delphi 6
+    {$DEFINE Delphi6}
+  {$ELSE}
+    {$DEFINE DelphiXE+}
+  {$ENDIF}
 {$ENDIF}
 
 interface
@@ -18,7 +24,7 @@ uses
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns;
 
-const
+const                   
   ControlActionStackDeep = 10;
 type
   TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward);
@@ -432,7 +438,7 @@ begin
 
   FrameTipIndex := -1;
 
-  {$IFNDEF FPC}
+  {$IFDEF DelphiXE+}
   pnlDisplay.ParentBackground := False;
   pnlTimeLine.ParentBackground := False;
   pnlToolls.ParentBackground := False;
@@ -1036,7 +1042,7 @@ var
   Image: TGraphic;
   R: TRect;
 begin
-  if Frames[Index].Loaded or OutOfMemoryRaised then
+  if (FramesCount = 0) or Frames[Index].Loaded or OutOfMemoryRaised then
     Exit;
   try
     with Frames[Index] do
@@ -1051,7 +1057,12 @@ begin
         if actPreviewMode.Checked then
           begin
             R := StretchSize(Image.Width, Image.Height, 640, 480);
+            {$IFDEF DelphiXE+}
             Preview.SetSize(640,480);
+            {$ELSE}
+            Preview.Width := 640;
+            Preview.Height := 480;
+            {$ENDIF}
             Preview.Canvas.StretchDraw(R, Image);
           end
         else
@@ -1130,34 +1141,71 @@ begin
 end;
 
 procedure TMainForm.pbDisplayPaint(Sender: TObject);
+const
+  MainScreenBorder = 10;
+  PrevNextPreviewBorder = 5;
+  PrevNextPreviewMaxSize = 120;
 var
-  R: TRect;
+  R_MainScreen: TRect;
+  R_PrevNextPreview: TRect;
+  Offset: Integer;
   Image: TBitmap;
   Index: Integer;
 begin
   try
     LoadPhoto(CurrentFrameIndex); // на всякий случай
+    if FramesCount = 0 then
+      Exit;
+    Index := IncrementCurrentFrameIndex(-1);
+    LoadPhoto(Index); // на всякий случай
+    if Frames[Index].Loaded then
+      begin
+        Image := Frames[Index].Preview;
+        R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
+      end;
     if Frames[CurrentFrameIndex].Loaded then
       begin
         Image := Frames[CurrentFrameIndex].Preview;
-        if actStretchImages.Checked or (Image.Width > (pbDisplay.Width - 20)) or (Image.Height > (pbDisplay.Height - 20)) then
+        if actStretchImages.Checked or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
           begin
-            R := StretchSize(Image.Width, Image.Height, pbDisplay.Width - 20, pbDisplay.Height - 20);
-            R.Left   := R.Left   + 10;
-            R.Top    := R.Top    + 10;
-            R.Right  := R.Right  + 10;
-            R.Bottom := R.Bottom + 10;
-            with R do pbDisplay.Canvas.RoundRect(Left-10, Top - 10, Right + 10, Bottom + 10, 10, 10);
-            pbDisplay.Canvas.StretchDraw(R, Image);
+            R_MainScreen := StretchSize(Image.Width, Image.Height, pbDisplay.Width - MainScreenBorder * 2, pbDisplay.Height - MainScreenBorder * 2);
+            R_MainScreen.Left   := R_MainScreen.Left   + MainScreenBorder;
+            R_MainScreen.Top    := R_MainScreen.Top    + MainScreenBorder;
+            R_MainScreen.Right  := R_MainScreen.Right  + MainScreenBorder;
+            R_MainScreen.Bottom := R_MainScreen.Bottom + MainScreenBorder;
+
+            Offset := Min(pbDisplay.Height - MainScreenBorder * 2 - R_MainScreen.Bottom, (R_PrevNextPreview.Bottom - R_PrevNextPreview.Top - MainScreenBorder) div 2);
+
+            R_MainScreen.Top    := R_MainScreen.Top    + Offset + MainScreenBorder;
+            R_MainScreen.Bottom := R_MainScreen.Bottom + Offset + MainScreenBorder;
+
+            with R_MainScreen do
+              pbDisplay.Canvas.RoundRect(
+                Left   - MainScreenBorder,
+                Top    - MainScreenBorder,
+                Right  + MainScreenBorder,
+                Bottom + MainScreenBorder,
+                MainScreenBorder,
+                MainScreenBorder
+              );
+            pbDisplay.Canvas.StretchDraw(R_MainScreen, Image);
           end
         else
           begin
-            R.Left := (pbDisplay.Width  - Image.Width ) div 2;
-            R.Top  := (pbDisplay.Height - Image.Height) div 2;
-            R.Right := R.Left + Image.Width;
-            R.Bottom := R.Top + Image.Height;
-            with R do pbDisplay.Canvas.RoundRect(Left-20, Top - 20, Right + 20, Bottom + 20, 20, 20);
-            pbDisplay.Canvas.Draw(R.Left, R.Top, Image);
+            R_MainScreen.Left := (pbDisplay.Width  - Image.Width ) div 2;
+            R_MainScreen.Top  := (pbDisplay.Height - Image.Height) div 2;
+            R_MainScreen.Right := R_MainScreen.Left + Image.Width;
+            R_MainScreen.Bottom := R_MainScreen.Top + Image.Height;
+            with R_MainScreen do
+              pbDisplay.Canvas.RoundRect(
+                Left   - MainScreenBorder,
+                Top    - MainScreenBorder,
+                Right  + MainScreenBorder,
+                Bottom + MainScreenBorder,
+                MainScreenBorder,
+                MainScreenBorder
+              );
+            pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, Image);
           end;
       end;
     Index := IncrementCurrentFrameIndex(-1);
@@ -1165,34 +1213,47 @@ begin
     if Frames[Index].Loaded then
       begin
         Image := Frames[Index].Preview;
-        R := StretchSize(Image.Width, Image.Height, 120, 120);
-        R.Bottom := R.Bottom - R.Top;
-        R.Top    := 0;
-        R.Left   := R.Left   + 5;
-        R.Top    := R.Top    + 5;
-        R.Right  := R.Right  + 5;
-        R.Bottom := R.Bottom + 5;
-        with R do pbDisplay.Canvas.RoundRect(Left - 5, Top - 5, Right + 5, Bottom + 5, 5, 5);
-        pbDisplay.Canvas.StretchDraw(R, Image);
+        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+        R_PrevNextPreview.Top    := 0;
+        R_PrevNextPreview.Left   := R_PrevNextPreview.Left   + PrevNextPreviewBorder;
+        R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+        R_PrevNextPreview.Right  := R_PrevNextPreview.Right  + PrevNextPreviewBorder;
+        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+        with R_PrevNextPreview do
+          pbDisplay.Canvas.RoundRect(
+            Left   - PrevNextPreviewBorder,
+            Top    - PrevNextPreviewBorder,
+            Right  + PrevNextPreviewBorder,
+            Bottom + PrevNextPreviewBorder,
+            PrevNextPreviewBorder,
+            PrevNextPreviewBorder
+          );
+        pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
       end;
     Index := IncrementCurrentFrameIndex(+1);
     LoadPhoto(Index); // на всякий случай
     if Frames[Index].Loaded then
       begin
         Image := Frames[Index].Preview;
-        R.Left :=  0;
-        R.Top := 0;
-        R := StretchSize(Image.Width, Image.Height, 120, 120);
-        R.Left := pbDisplay.Width - 120 + R.Left;
-        R.Right := pbDisplay.Width - 120 + R.Right;
-        R.Bottom := R.Bottom - R.Top;
-        R.Top := 0;
-        R.Left   := R.Left   - 5;
-        R.Top    := R.Top    + 5;
-        R.Right  := R.Right  - 5;
-        R.Bottom := R.Bottom + 5;
-        with R do pbDisplay.Canvas.RoundRect(Left - 5, Top - 5, Right + 5, Bottom + 5, 5, 5);
-        pbDisplay.Canvas.StretchDraw(R, Image);
+        R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
+        R_PrevNextPreview.Left := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Left;
+        R_PrevNextPreview.Right := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Right;
+        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+        R_PrevNextPreview.Top := 0;
+        R_PrevNextPreview.Left   := R_PrevNextPreview.Left   - PrevNextPreviewBorder;
+        R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+        R_PrevNextPreview.Right  := R_PrevNextPreview.Right  - PrevNextPreviewBorder;
+        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+        with R_PrevNextPreview do
+          pbDisplay.Canvas.RoundRect(
+            Left   - PrevNextPreviewBorder,
+            Top    - PrevNextPreviewBorder,
+            Right  + PrevNextPreviewBorder,
+            Bottom + PrevNextPreviewBorder,
+            PrevNextPreviewBorder,
+            PrevNextPreviewBorder
+          );
+        pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
       end;
   except
     ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
@@ -1414,7 +1475,7 @@ begin
   R.Bottom := Min(RecordedFrames.Count - pbRecordOffset + 10, R.Bottom);
   R.Right := R.Left + DataWidth + 10;
   pbRecord.Canvas.Brush.Color := clBtnFace;
-  pbRecord.Canvas.RoundRect(R, 5, 5);
+  pbRecord.Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, 5, 5);
   R.Left   := R.Left   + 5;
   R.Top    := R.Top    + 5;
   R.Right  := R.Right  - 5;
@@ -1435,14 +1496,14 @@ begin
 
       DrawScaleMark;
 
-      pbRecord.Canvas.Pixels[R.Left + MulDiv(Integer(RecordedFrames[FrameIndex]), DataWidth, FramesCount), y] := clBlack;
+      pbRecord.Canvas.Pixels[R.Left + MulDiv(Integer(RecordedFrames[FrameIndex]), DataWidth, FramesCount - 1), y] := clBlack;
 
       Inc(FrameIndex);
     end;
 
   pbRecord.Canvas.Brush.Color := clWhite;
     if CurrentRecordPosition < RecordedFrames.Count then
-      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), DataWidth, FramesCount) + R.Left, CurrentRecordPosition - pbRecordOffset + R.Top) do
+      with Point(MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), DataWidth, FramesCount - 1) + R.Left, CurrentRecordPosition - pbRecordOffset + R.Top) do
         pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
 end;
 
@@ -2017,7 +2078,12 @@ begin
   Result := TBitmap.Create;
   with TBitmap(Result) do
     begin
-      SetSize(640, 480);
+      {$IFDEF DelphiXE+}
+      SetSize(640,480);
+      {$ELSE}
+      Width := 640;
+      Height := 480;
+      {$ENDIF}
       Canvas.TextOut(20, 20, FPath + FFileName);
       Canvas.TextOut(20, 80, ErrorMessage);
     end;
