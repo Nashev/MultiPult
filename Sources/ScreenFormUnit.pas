@@ -80,37 +80,57 @@ begin
 end;
 
 procedure TScreenForm.FormPaint(Sender: TObject);
+const
+  ScreenBorder = 1;
 var
   R: TRect;
   Image: TBitmap;
+  ScreenSize: TPoint;
 begin
   with MainForm do
-  try
-    LoadPhoto(CurrentFrameIndex); // на всякий случай
-    if Frames[CurrentFrameIndex].Loaded then
-      begin
-        Image := Frames[CurrentFrameIndex].Preview;
-        if actStretchImages.Checked or (Image.Width > (Self.Width)) or (Image.Height > (Self.Height)) then
-          begin
-            R := StretchSize(Image.Width, Image.Height, Self.Width, Self.Height);
-            Self.Canvas.StretchDraw(R, Image);
-          end
+    if FramesCount > 0 then
+      try
+        LoadPhoto(CurrentFrameIndex); // на всякий случай
+        R := Rect(0,0,0,0);
+        if MainForm.actFullScreenMode.Checked then
+          ScreenSize := Point(Self.ClientWidth, Self.ClientHeight)
         else
+          ScreenSize := Point(Self.ClientWidth - ScreenBorder * 2, Self.ClientHeight - ScreenBorder * 2);
+        if Frames[CurrentFrameIndex].Loaded then
           begin
-            R.Left := (Self.Width  - Image.Width ) div 2;
-            R.Top  := (Self.Height - Image.Height) div 2;
-            R.Right := R.Left + Image.Width;
-            R.Bottom := R.Top + Image.Height;
-            Self.Canvas.Draw(R.Left, R.Top, Image);
+            Image := Frames[CurrentFrameIndex].Preview;
+            if actStretchImages.Checked or (Image.Width > ScreenSize.X) or (Image.Height > ScreenSize.Y) then
+              begin
+                R := StretchSize(Image.Width, Image.Height, ScreenSize.X, ScreenSize.Y);
+                R.Left   := R.Left   + ScreenBorder;
+                R.Top    := R.Top    + ScreenBorder;
+                R.Right  := R.Right  + ScreenBorder;
+                R.Bottom := R.Bottom + ScreenBorder;
+                Self.Canvas.StretchDraw(R, Image);
+              end
+            else
+              begin
+                R.Left := (ScreenSize.X - Image.Width ) div 2 + ScreenBorder;
+                R.Top  := (ScreenSize.Y - Image.Height) div 2 + ScreenBorder;
+                R.Right := R.Left + Image.Width;
+                R.Bottom := R.Top + Image.Height;
+                Self.Canvas.Draw(R.Left, R.Top, Image);
+              end;
           end;
+        Self.Canvas.Brush.Color := clBlack;
+        Self.Canvas.FillRect(Rect(0,       0,        R.Left,           Self.ClientHeight));
+        Self.Canvas.FillRect(Rect(R.Right, 0,        Self.ClientWidth, Self.ClientHeight));
+        Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, R.Top            ));
+        Self.Canvas.FillRect(Rect(0,       R.Bottom, Self.ClientWidth, Self.ClientHeight));
+      except
+        ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
+      end
+    else
+      begin
+        Self.Canvas.Brush.Color := clBlack;
+        Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, Self.ClientHeight));
       end;
-    Self.Canvas.FillRect(Rect(0,       0,        R.Left,           Self.ClientHeight));
-    Self.Canvas.FillRect(Rect(R.Right, 0,        Self.ClientWidth, Self.ClientHeight));
-    Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, R.Top            ));
-    Self.Canvas.FillRect(Rect(0,       R.Bottom, Self.ClientWidth, Self.ClientHeight));
-  except
-    ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
-  end;
+      ;
 end;
 
 procedure TScreenForm.FormResize(Sender: TObject);
