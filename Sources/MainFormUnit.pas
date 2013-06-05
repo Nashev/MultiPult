@@ -146,6 +146,9 @@ type
     mmiShowControllerForm: TMenuItem;
     actScreenWindow: TAction;
     mmiScreenWindow: TMenuItem;
+    actShowMultiStudiaPage: TBrowseURL;
+    mmiShowMultiStudiaPage: TMenuItem;
+    imgBackgroundSource: TImage;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -555,10 +558,13 @@ procedure TMainForm.actAboutExecute(Sender: TObject);
 begin
   ShowMessage(
     Application.Title + #13#10 +
-    'Версия 0.9.13'#13#10 +
+    'Версия 0.9.14'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
+    ''#13#10 +
+    'Исходный код программы доступен для просмотра и доработок'#13#10 +
+    'по адресу https://github.com/Nashev/MultiPult'#13#10 +
     ''#13#10 +
     '(А Вы знаете, что Ctrl+C в подобных окошках работает?)'
   );
@@ -1153,9 +1159,18 @@ var
   Index: Integer;
 begin
   try
+    pbDisplay.Canvas.Brush.Color := clWhite;
+    pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
+    pbDisplay.Canvas.Brush.Color := clBtnFace;
+
     LoadPhoto(CurrentFrameIndex); // на всякий случай
     if FramesCount = 0 then
-      Exit;
+      begin
+        R_MainScreen.Left := (pbDisplay.Width  - imgBackgroundSource.Picture.Width ) div 2;
+        R_MainScreen.Top  := (pbDisplay.Height - imgBackgroundSource.Picture.Height) div 2;
+        pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, imgBackgroundSource.Picture.Graphic);
+        Exit;
+      end;
     Index := IncrementCurrentFrameIndex(-1);
     LoadPhoto(Index); // на всякий случай
     if Frames[Index].Loaded then
