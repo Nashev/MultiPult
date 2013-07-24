@@ -4,6 +4,9 @@ MultiPult
 My site also is http://innenashev.narod.ru.
 Download latest MultPult You can by link https://github.com/Nashev/MultiPult/raw/origin/bin/MultiPult.exe
 
+Screenshot:
+![ScreenShot](https://raw.github.com/Nashev/MultiPult/origin/ScreenShot.png)
+
 Первоначальный проект выглядел так:
 ===================================
 
