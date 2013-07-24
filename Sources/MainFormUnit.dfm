@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 403
   Top = 179
   Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
-  ClientHeight = 458
+  ClientHeight = 477
   ClientWidth = 673
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -899,6 +899,15 @@ object MainForm: TMainForm
       end
     end
   end
+  object StatusBar: TStatusBar
+    Left = 0
+    Top = 458
+    Width = 673
+    Height = 19
+    Panels = <>
+    SimplePanel = True
+    ExplicitWidth = 681
+  end
   object ActionList: TActionList
     Images = ilActions
     Left = 48
@@ -1221,7 +1230,6 @@ object MainForm: TMainForm
   end
   object OpenPictureDialog: TOpenPictureDialog
     Filter = 'JPEG Image File (*.jpg;*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*'
-    InitialDir = '..\testdata'
     Options = [ofReadOnly, ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofNoTestFileCreate, ofEnableSizing, ofDontAddToRecent]
     Left = 16
     Top = 40

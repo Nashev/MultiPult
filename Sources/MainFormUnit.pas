@@ -24,7 +24,7 @@ uses
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns;
 
-const                   
+const
   ControlActionStackDeep = 10;
 type
   TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward);
@@ -46,6 +46,7 @@ type
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
+    property Path: string read FPath;
     constructor Create(APath, AFileName: string);
     destructor Destroy; override;
   end;
@@ -149,6 +150,7 @@ type
     actShowMultiStudiaPage: TBrowseURL;
     mmiShowMultiStudiaPage: TMenuItem;
     imgBackgroundSource: TImage;
+    StatusBar: TStatusBar;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -271,7 +273,7 @@ type
     function FrameIndexToTimeLineX(FrameIndex: Integer): Integer;
     function TimeLineXToFrameIndex(X: Integer): Integer;
 //    Drawing: Boolean;
-    procedure LoadPhotoFolder(APath: string);
+    procedure LoadPhotoFolder(ARelativePath: string);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure ClearRecorded;
     procedure RecalculatePreview;
@@ -280,6 +282,7 @@ type
     destructor Destroy; override;
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     procedure SetCaption(const Value: TCaption);
+    procedure SetStatus(const Value: string);
     property CurrentFrameIndex: Integer read FCurrentFrameIndex write SetCurrentFrameIndex;
     function IncrementCurrentFrameIndex(AOffset: Integer): Integer;
     property FramesCount: Integer read GetFramesCount;
@@ -320,22 +323,20 @@ begin
 end;
 
 procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
-var
-  i: Integer;
-  FileName: string;
+resourcestring
+  rs_SelectPhotoFolderCaption = 'С какой папки начинать искать кадры?';
 begin
   actNew.Execute;
-  if OpenPictureDialog.Execute then
-    begin
-      LoadPhotoFolder(ExtractFilePath(OpenPictureDialog.FileName));
-      FileName := ExtractFileName(OpenPictureDialog.FileName);
-      for i := 0 to FramesCount - 1 do
-        if Frames[i].FileName = FileName then
-          begin
-            CurrentFrameIndex := i;
-            Break;
-          end;
-    end;
+  PhotoFolder := ExpandFileName('..\testdata\');
+  if SelectDirectory(
+    rs_SelectPhotoFolderCaption, '', PhotoFolder
+    {$IFDEF DelphiXE}
+    , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
+    {$ENDIF}
+  ) then
+    LoadPhotoFolder('\');
+  CurrentFrameIndex := 0;
+  Saved := False;
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -354,6 +355,7 @@ var
 begin
   inherited Create(AOwner);
   CurrentSpeedInterval := 3;
+  Saved := True;
 //  BufferIndexes := TList.Create;
   FFrames := TObjectList.Create(True);
   RecordedFrames := TList.Create;
@@ -381,13 +383,23 @@ begin
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+resourcestring
+  rs_SaveBeforeExit =
+    'Вы закрываете программу, в то время как записанный Вами мультик ещё не сохранён.'#13#10+
+    'Если его не сохранить сейчас, то он пропадёт.'#13#10+
+    'Желаете его сохранить, прежде чем закрыть программу?';
 begin
   actSave.Update;
   if actSave.Enabled then
-    case MessageDlg('Вы закрываете программу, в то время как записанный Вами мультик ещё не сохранён.'+#13+#10+'Если его не сохранить сейчас, то он пропадёт.'+#13+#10+'Желаете его сохранить, прежде чем закрыть программу?', mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
-      mrYes: begin actSave.Execute; CanClose := Saved; end;
-      mrNo: CanClose := True;
-      mrCancel: CanClose := False;
+    case MessageBox(
+      0,
+      PChar(rs_SaveBeforeExit),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1
+    ) of
+      IDYES: begin actSave.Execute; CanClose := Saved; end;
+      IDNO: CanClose := True;
+      IDCANCEL: CanClose := False;
     end;
 end;
 
@@ -523,42 +535,56 @@ end;
 
 function CompareFramesFileName(Item1, Item2: Pointer): Integer;
 begin
-  Result := CompareText(TFrame(Item1).FileName, TFrame(Item2).FileName)
+  Result := CompareText(
+    TFrame(Item1).Path + TFrame(Item1).FileName,
+    TFrame(Item2).Path + TFrame(Item2).FileName
+  )
 end;
 
-procedure TMainForm.LoadPhotoFolder(APath: string);
-var
-  Rec: TSearchRec;
-  ext: string;
+procedure TMainForm.LoadPhotoFolder(ARelativePath: string);
+
+resourcestring
+  rs_ScaningStatus = 'Чтение папки: ';
+
+  procedure InternalLoadDirectory(ARelativePath: string);
+  var
+    Rec: TSearchRec;
+    ext: string;
+  begin
+    SetStatus(rs_ScaningStatus + PhotoFolder + ARelativePath);
+    if {$IFDEF FPC}FindFirstUTF8{$ELSE}FindFirst{$ENDIF}(PhotoFolder + ARelativePath + '*.*', faAnyFile, Rec) = 0 then
+      begin
+        repeat
+          ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
+          if (ext = '.jpg') or (ext = '.jpeg') then
+            begin
+              FFrames.Add(TFrame.Create(ARelativePath, Rec.Name));
+            end;
+          if ((Rec.Attr and faDirectory) <> 0) and (Rec.Name <> '.') and (Rec.Name <> '..') then
+            InternalLoadDirectory(ARelativePath + Rec.Name + '\');
+        until {$IFDEF FPC}FindNextUTF8{$ELSE}FindNext{$ENDIF}(Rec) <> 0;
+        {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
+      end;
+  end;
 //  i: Integer;
 begin
-  SetCaption(APath);
-  PhotoFolder := APath;
+  SetCaption(PhotoFolder);
+
   UnloadFrames;
 //  BufferIndexes.Clear;
   HaveBuffers := True;
 
-  if {$IFDEF FPC}FindFirstUTF8{$ELSE}FindFirst{$ENDIF}(PhotoFolder + '*.*', faAnyFile, Rec) = 0 then
-    begin
-      repeat
-        ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
-        if (ext = '.jpg') or (ext = '.jpeg') then
-          begin
-            FFrames.Add(TFrame.Create(APath, Rec.Name));
-          end;
-      until {$IFDEF FPC}FindNextUTF8{$ELSE}FindNext{$ENDIF}(Rec) <> 0;
-      {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
-    end;
+  InternalLoadDirectory(ARelativePath);
+
   FFrames.Sort(CompareFramesFileName);
 //  ListBox.Items.Assign(FileNames);
   UpdateActions;
 end;
 
 procedure TMainForm.actAboutExecute(Sender: TObject);
-begin
-  ShowMessage(
-    Application.Title + #13#10 +
-    'Версия 0.9.14'#13#10 +
+resourcestring
+  rs_AboutText =
+    'Версия 0.9.15'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
     'в лице Евгения Генриховича Кабакова'#13#10 +
@@ -566,7 +592,11 @@ begin
     'Исходный код программы доступен для просмотра и доработок'#13#10 +
     'по адресу https://github.com/Nashev/MultiPult'#13#10 +
     ''#13#10 +
-    '(А Вы знаете, что Ctrl+C в подобных окошках работает?)'
+    '(А Вы знаете, что Ctrl+C в подобных окошках работает?)';
+begin
+  ShowMessage(
+    Application.Title + #13#10 +
+    rs_AboutText
   );
 end;
 
@@ -635,7 +665,7 @@ function CopyProgressHandler(
   lpData: LPVOID
 ): Integer; stdcall;
 begin
-//  TMainForm(lpData).SetCaption('Копирование кадра: ' + FloatToStrF(TotalBytesTransferred / TotalFileSizeTotalFileSize) * 100, ffFixed, 0, 2) + '%';
+//  TMainForm(lpData).SetStatus('Копирование кадра: ' + FloatToStrF(TotalBytesTransferred / TotalFileSizeTotalFileSize) * 100, ffFixed, 0, 2) + '%';
   Result := PROGRESS_CONTINUE;
 end;
 
@@ -662,12 +692,15 @@ var
   i: Integer;
   Cancel: BOOL;
   NewFileName: string;
+resourcestring
+  rs_ExportSelectFolderCaption = 'Выберите папку для экспорта';
+  rs_FramesExportingCaption = 'Экспорт. Копирование кадра %0:d из %1:d';
 begin
   Dir := GetCurrentDir;
   if SelectDirectory(
-    'Выберите папку для экспорта', '', Dir
+    rs_ExportSelectFolderCaption, '', Dir
     {$IFDEF DelphiXE}
-    , [sdNewFolder, sdShowEdit, sdShowShares, sdNewUI, sdShowFiles, sdValidateDir]
+    , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
     {$ENDIF}
   )
   then
@@ -682,12 +715,12 @@ begin
             CurrentRecordPosition := i;
             CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
             pbRecord.Invalidate;
-            SetCaption('Экспорт. Копирование кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
+            SetStatus(Format(rs_FramesExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
             Cancel := False;
             NewFileName := Dir + Format('Frame%.5d.jpg', [i]);
             if not CopyFileEx(
-              PChar(PhotoFolder + Frames[Integer(RecordedFrames[i])].FileName),
+              PChar(PhotoFolder + Frames[Integer(RecordedFrames[i])].Path + Frames[Integer(RecordedFrames[i])].FileName),
               PChar(NewFileName),
               @CopyProgressHandler,
               @Self,
@@ -717,29 +750,33 @@ var
   Bmp: Graphics.TBitmap;
   Image: TGraphic;
   Dir: string;
+  OldCurrentFrameIndex: Integer;
 //  Cancel: BOOL;
+resourcestring
+  rs_AVIExportingCaption = 'Экспорт в AVI. Запись кадра %0:d из %1:d';
 begin
   Dir := GetCurrentDir;
+  OldCurrentFrameIndex := CurrentFrameIndex;
   if SaveToAVIDialog.Execute then
     begin
 //      SetCurrentDir(Dir);
       Dir := ExtractFilePath(SaveToAVIDialog.FileName);
       Exporting := True;
       try
-        WaveStorage.Wave.SaveToFile(Dir + 'Audio.wav');
+        WaveStorage.Wave.SaveToFile(Dir + '~Audio.wav');
         Compressor := TAVICompressor.Create;
         Options.Init;
         Options.FrameRate := FrameRate;
         Options.Width := 640;
         Options.Height := 480;
-        CheckAVIError(Compressor.Open(Dir + 'Video.avi', Options));
+        CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
         Bmp := TBitmap.Create;
         for i := 0 to RecordedFrames.Count - 1 do
           begin
             CurrentRecordPosition := i;
             CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
             pbRecord.Invalidate;
-            SetCaption('Экспорт в AVI. Запись кадра ' + IntToStr(i+1) + ' из ' + IntToStr(RecordedFrames.Count));
+            SetStatus(Format(rs_AVIExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
             Image := Frames[CurrentFrameIndex].Preview;
             Bmp.Assign(Image);
@@ -749,13 +786,14 @@ begin
         Bmp.Free;
         Compressor.Close;
 
-        Compressor.MergeFilesAndSaveAs(Dir + 'Video.avi', Dir + 'Audio.wav', SaveToAVIDialog.FileName);
+        Compressor.MergeFilesAndSaveAs(Dir + '~Video.avi', Dir + '~Audio.wav', SaveToAVIDialog.FileName);
 
         Compressor.Destroy;
-        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + 'Audio.wav');
-        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + 'Video.avi');
+        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Audio.wav');
+        {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Video.avi');
       finally
         Exporting := False;
+        CurrentFrameIndex := OldCurrentFrameIndex;
       end;
     end;
 end;
@@ -782,6 +820,7 @@ begin
         with Self.ClientRect do
           pnlDisplay.SetBounds(Left, Top, Right, Bottom);
         pbRecord.Hide;
+        StatusBar.Hide;
         RecordSplitter.Hide;
         FrameTipIndex := -1;  // hide
       end
@@ -792,6 +831,7 @@ begin
         BoundsRect := PreviousBounds;
         FormStyle := fsNormal;
         pbRecord.Show;
+        StatusBar.Show;
         RecordSplitter.Left := pbRecord.Left - 5;
         RecordSplitter.Show;
         Menu := MainMenu;
@@ -799,11 +839,13 @@ begin
 end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
+resourcestring
+  rs_SaveBeforeNewRequest = 'Хотите сохранить текущий мульт перед созданием нового?';
 begin
   if (RecordedFrames.Count > 0) and not Saved then
     case MessageBox(
       0,
-      'Хотите сохранить текущий мульт перед созданием нового?',
+      PChar(rs_SaveBeforeNewRequest),
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
@@ -833,6 +875,7 @@ var
   i: Integer;
   WaveFileName: string;
   s: string;
+  LastDelimiterPos: Integer;
 
   procedure ReadTeleport(s: string);
   var
@@ -878,7 +921,8 @@ begin
             s := Strings[i];
             if s = BookmarkSectionStart then
               Break;
-            FFrames.Add(TFrame.Create(PhotoFolder, s));
+            LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
+            FFrames.Add(TFrame.Create(Copy(s, 1, LastDelimiterPos), Copy(s, LastDelimiterPos + 1, MaxInt)));
           end;
       if s = BookmarkSectionStart then
         while i < (Count - 1) do
@@ -918,6 +962,8 @@ begin
 end;
 
 procedure TMainForm.actOpenExecute(Sender: TObject);
+resourcestring
+  rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
 begin
   if not OpenDialog.Execute then
     Abort;
@@ -925,7 +971,7 @@ begin
   if (RecordedFrames.Count > 0) and not Saved then
     case MessageBox(
       0,
-      'Хотите сохранить текущий мульт перед открытием другого?',
+      PChar(rs_SaveBeforeOpenRequest),
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
@@ -945,16 +991,29 @@ end;
 procedure TMainForm.actSaveExecute(Sender: TObject);
 var
   i: Integer;
+  NewPath: string;
 begin
+  SaveDialog.InitialDir := PhotoFolder;
   if not SaveDialog.Execute then
     Abort;
+
+  NewPath := ExtractFilePath(SaveDialog.FileName);
+  if NewPath <> PhotoFolder then
+    // TODO: не уведомлять, а исправлять относительные пути по возможности
+    ShowMessage(
+    'Внимание!'#13#10+
+    'Пути к файлам кадров в файле проекта будут всё равно сохранены относительно '#13#10+
+    '  "' + PhotoFolder + '", '#13#10+
+    'а не относительно '#13#10+
+    '  "' + NewPath + '".'#13#10+
+    'При загрузке проекта придётся восстанавливать структуру каталогов с изображениями относительно файла проекта.');
   WaveStorage.Wave.SaveToFile(SaveDialog.FileName + '.wav');
   with TStringList.Create do
     try
       Add('Wave = ' + ExtractFileName(SaveDialog.FileName) + '.wav');
       Add(FilesSectionStart);
       for i := 0 to FramesCount - 1 do
-        Add(Frames[i].FileName);
+        Add(Frames[i].Path + Frames[i].FileName);
       Add(BookmarkSectionStart);
       for i := 0 to 9 do
         Add('Bookmark' + IntToStr(i) + ' = ' + IntToStr(Integer(Bookmarks[i])));
@@ -974,7 +1033,7 @@ end;
 
 procedure TMainForm.actSaveUpdate(Sender: TObject);
 begin
-  actSave.Enabled := not Exporting and (RecordedFrames.Count > 0) and not Saved;
+  actSave.Enabled := not Exporting and not Saved;
 end;
 
 procedure TMainForm.actScreenWindowExecute(Sender: TObject);
@@ -987,7 +1046,7 @@ end;
 
 procedure TMainForm.SetCaption(const Value: TCaption);
 begin
-  Caption := Value + ' - МультиПульт';
+  Caption := Value + ' - ' + Application.Title;
 end;
 
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
@@ -1003,12 +1062,17 @@ begin
   pbFrameTip.Visible := (FFrameTipIndex <> -1);
 end;
 
+procedure TMainForm.SetStatus(const Value: string);
+begin
+  StatusBar.SimpleText := Value;
+end;
+
 procedure TMainForm.SetCurrentFrameIndex(const Value: Integer);
 begin
   FCurrentFrameIndex := Value;
   LoadPhoto(Value);
   if not Exporting then
-    SetCaption(Frames[CurrentFrameIndex].FileName);
+    SetCaption(Frames[CurrentFrameIndex].Path +  Frames[CurrentFrameIndex].FileName);
 //  pnlDisplay.Repaint;
 //  pnlTimeLine.Repaint;
   pbDisplay.Repaint;
@@ -1114,23 +1178,6 @@ end;
 
 procedure TMainForm.actExitExecute(Sender: TObject);
 begin
-  if (RecordedFrames.Count > 0) and not Saved then
-    case MessageBox(
-      0,
-      'Хотите сохранить текущий мульт перед закрытием программы?',
-      'МультПульт',
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    of
-      IDCANCEL: Exit;
-      IDYES:
-        begin
-          actSave.Execute;
-          if not Saved then
-            Exit;
-        end;
-      IDNO: ;
-    end;
-
   Close;
 end;
 
@@ -1916,6 +1963,8 @@ begin
 end;
 
 procedure TMainForm.ApplicationIdle(Sender: TObject; var Done: Boolean);
+resourcestring
+  rs_PreloadStatus = 'Загрузка кадра: ';
 var
   i: integer;
 begin
@@ -1924,11 +1973,14 @@ begin
     for i := 0 to FramesCount - 1 do
       if not Frames[i].Loaded then
         begin
+          SetStatus(rs_PreloadStatus + Frames[i].Path + Frames[i].FileName);
           LoadPhoto(i);
           pbTimeLine.Repaint;
           Done := False;
           Exit;
         end;
+  if Done then
+    SetStatus('');
 end;
 
 procedure TMainForm.AudioRecorderActivate(Sender: TObject);
@@ -2082,7 +2134,7 @@ begin
   Result := TJPEGImage.Create;
   with TJPEGImage(Result) do
     begin
-      LoadFromFile(FPath + FFileName);
+      LoadFromFile(MainForm.PhotoFolder + Path + FileName); // NOTE: Global variable used
       Performance := jpBestSpeed;
       {$IFNDEF FPC}DIBNeeded;{$ENDIF}
     end;
@@ -2099,7 +2151,7 @@ begin
       Width := 640;
       Height := 480;
       {$ENDIF}
-      Canvas.TextOut(20, 20, FPath + FFileName);
+      Canvas.TextOut(20, 20, Path + FileName);
       Canvas.TextOut(20, 80, ErrorMessage);
     end;
 end;
