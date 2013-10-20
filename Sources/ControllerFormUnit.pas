@@ -281,8 +281,6 @@ begin
 end;
 
 procedure TControllerForm.tmrAutoModeTimer(Sender: TObject);
-var
-  NewFrameIndex: Integer;
 begin
   Assert(ScrollHandleMode = shmAuto, 'Timer working in non auto mode are useless!');
   MainForm.CurrentFrameIndex := MainForm.IncrementCurrentFrameIndex(ScrollHandleAutoDirection);
