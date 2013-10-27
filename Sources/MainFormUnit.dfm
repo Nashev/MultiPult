@@ -6858,8 +6858,10 @@ object MainForm: TMainForm
     Left = 16
     Top = 40
   end
-  object Timer: TTimer
+  object MultimediaTimer: TMultimediaTimer
+    Enabled = True
     Interval = 40
+    Resolution = 40
     OnTimer = TimerTimer
     Left = 160
     Top = 128

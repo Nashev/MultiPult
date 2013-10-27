@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns;
 
 resourcestring
-  rs_VersionName = '0.9.16';
+  rs_VersionName = '0.9.17';
   rs_VersionYear = '2013';
 
 const
@@ -93,7 +93,7 @@ type
     actGotoBookmark0: TAction;
     mmiGotoBookmark0: TMenuItem;
     mmiSeparatorBookmarks: TMenuItem;
-    Timer: TTimer;
+    MultimediaTimer: TMultimediaTimer;
     actPlayForward: TAction;
     mmiPlayingForward: TMenuItem;
     actExit: TAction;
@@ -474,7 +474,7 @@ end;
 
 destructor TMainForm.Destroy;
 begin
-  Timer.Enabled := False;
+  MultimediaTimer.Enabled := False;
   FreeAndNil(RecordedAudioCopy);
 //  FreeAndNil(BufferIndexes);
   FreeAndNil(FFrames);
@@ -771,7 +771,7 @@ begin
     FrameRate := 25;
   actDoubleFramerate.Checked := (FrameRate = 50);
 
-  Timer.Interval := 1000 div FrameRate;
+  MultimediaTimer.Interval := 1000 div FrameRate;
   pnlToolls.Invalidate;
 //  Invalidate;
 end;
@@ -782,6 +782,7 @@ begin
   FreeAndNil(AdvertisementFrameImage);
   FreeAndNil(AdvertisementFrameImagePreview);
   pnlDisplay.Invalidate;
+  pbTimeLine.Repaint;
 end;
 
 type
@@ -887,10 +888,15 @@ var
   Bmp: Graphics.TBitmap;
   Image: TGraphic;
   Dir: string;
+  PreparedFrameIndex: Integer;
   OldCurrentFrameIndex: Integer;
 //  Cancel: BOOL;
 resourcestring
+  rs_AVIExportingAudioStore = 'Ёкспорт в AVI. Audio save';
+  rs_AVIExportingCompressorInit = 'Ёкспорт в AVI. Compressor init';
   rs_AVIExportingCaption = 'Ёкспорт в AVI. «апись кадра %0:d из %1:d';
+  rs_AVIExportingAudioMerge = 'Ёкспорт в AVI. Audio merge';
+
 begin
   Dir := GetCurrentDir;
   OldCurrentFrameIndex := CurrentFrameIndex;
@@ -900,7 +906,9 @@ begin
       Dir := ExtractFilePath(SaveToAVIDialog.FileName);
       Exporting := True;
       try
+        SetStatus(rs_AVIExportingAudioStore);
         WaveStorage.Wave.SaveToFile(Dir + '~Audio.wav');
+        SetStatus(rs_AVIExportingCompressorInit);
         Compressor := TAVICompressor.Create;
         Options.Init;
         Options.FrameRate := FrameRate;
@@ -909,6 +917,7 @@ begin
         CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
         Bmp := TBitmap.Create;
         AdvertisementShowing := False;
+        PreparedFrameIndex := -1;
         for i := 0 to RecordedFrames.Count - 1 do
           begin
             CurrentRecordPosition := i;
@@ -916,9 +925,13 @@ begin
             pbRecord.Invalidate;
             SetStatus(Format(rs_AVIExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
-            Image := Frames[CurrentFrameIndex].Preview;
-            Bmp.Assign(Image);
-            Bmp.PixelFormat := pf24bit;
+            if PreparedFrameIndex <> CurrentFrameIndex then // skip already preparing
+              begin
+                Image := Frames[CurrentFrameIndex].Preview;
+                Bmp.Assign(Image);
+                Bmp.PixelFormat := pf24bit;
+                PreparedFrameIndex := CurrentFrameIndex;
+              end;
             CheckAVIError(Compressor.WriteFrame(Bmp));
           end;
         Bmp.Assign(AdvertisementFrameImagePreview);
@@ -926,6 +939,7 @@ begin
         CheckAVIError(Compressor.WriteFrame(Bmp));
         Bmp.Free;
         Compressor.Close;
+        SetStatus(rs_AVIExportingAudioMerge);
 
         Compressor.MergeFilesAndSaveAs(Dir + '~Video.avi', Dir + '~Audio.wav', SaveToAVIDialog.FileName);
 
@@ -1139,7 +1153,7 @@ begin
   if not SaveDialog.Execute then
     Abort;
 
-  NewPath := ExtractFilePath(SaveDialog.FileName);
+  NewPath := ExtractFileDir(SaveDialog.FileName);
   if NewPath <> PhotoFolder then
     // TODO: не уведомл€ть, а исправл€ть относительные пути по возможности
     ShowMessage(
@@ -1253,12 +1267,24 @@ procedure TMainForm.LoadPhoto(Index: Integer);
 var
   Image: TGraphic;
   R: TRect;
+  i, UnloadCounter: Integer;
 begin
-  if (FramesCount = 0) or Frames[Index].Loaded or OutOfMemoryRaised then
+  if (FramesCount = 0) or Frames[Index].Loaded then
     Exit;
+
+  if OutOfMemoryRaised then
+    for i := 0 to FramesCount - 1 do
+      if Frames[i].Loaded and (Abs(Index - i) > 5) then // skip nearest neighbours
+        begin
+          Frames[i].Loaded := False;
+    //        FreeAndNil(Frames[i].OriginalJpeg);
+          FreeAndNil(Frames[i].Preview);
+          Break;
+        end;
+
   try
     with Frames[Index] do
-      begin
+      try
         try
           Image := ImageFromDisc;
         except
@@ -1279,13 +1305,25 @@ begin
           end
         else
           Preview.Assign(Image);
-        FreeAndNil(Image);
         Loaded := True;
+      finally
+        FreeAndNil(Image);
       end;
   except
     on EOutOfResources do
       begin
         OutOfMemoryRaised := True;
+        UnloadCounter := Index div 5; // unload twenty percents for leave a some memory back
+        for i := 0 to FramesCount - 1 do
+          if Frames[i].Loaded then
+            begin
+              Frames[i].Loaded := False;
+      //        FreeAndNil(Frames[i].OriginalJpeg);
+              FreeAndNil(Frames[i].Preview);
+              Dec(UnloadCounter);
+              if UnloadCounter <= 0 then
+                Break;
+            end;
         raise;
       end;
   end;
@@ -1652,12 +1690,13 @@ var
   FrameIndex: Integer;
   R: TRect;
   DataWidth: Integer;
+  DataWidthHalf: Integer;
   DataAreaHeight: Integer;
 
   SamplesPerFrame: Integer;
   WaveFormat: TWaveFormatEx;
 
-  procedure DrawSound;
+  procedure DrawSoundLine;
   var
     FirstSample: Integer;
     pSample: PSmallInt;
@@ -1679,8 +1718,8 @@ var
         Inc(pSample);
         Inc(pSample); // stereo
       end;
-    pbRecord.Canvas.MoveTo(R.Left + DataWidth div 2 + MulDiv(MinData, DataWidth, $FFFF div 2),     y);
-    pbRecord.Canvas.LineTo(R.Left + DataWidth div 2 + MulDiv(MaxData, DataWidth, $FFFF div 2) + 1, y);
+    pbRecord.Canvas.MoveTo(R.Left + DataWidthHalf + MulDiv(MinData, DataWidthHalf, $FFFF div 2),     y);
+    pbRecord.Canvas.LineTo(R.Left + DataWidthHalf + MulDiv(MaxData, DataWidthHalf, $FFFF div 2) + 1, y);
   end;
 
   procedure DrawScaleMark;
@@ -1692,6 +1731,7 @@ var
 
 begin
   DataWidth := pbRecord.ClientWidth - FramesBorderSize - FramesBorderSize - ScrollBarWidth - 1;
+  DataWidthHalf := DataWidth div 2;
   DataAreaHeight := pbRecord.ClientHeight - imgAdvertisementThumbnail.Height - FramesBorderSize * 4 - FragmentsGap;
 
   // Automatic scrollbar position
@@ -1748,7 +1788,7 @@ begin
   FrameIndex := pbRecordOffset;
   for y := R.Top to R.Bottom - 1 do
     begin
-      DrawSound;
+      DrawSoundLine;
 
       DrawScaleMark;
 
@@ -2033,11 +2073,9 @@ end;
 
 procedure TMainForm.TimerTimer(Sender: TObject);
 begin
-  if (FramesCount = 0) then
+  if (csDestroying in ComponentState) or (FramesCount = 0) or Exporting then
     Exit;
 
-  if Exporting then
-    Exit;
   if Playing then
     begin
       AdvertisementShowing := False;
