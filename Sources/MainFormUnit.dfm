@@ -714,8 +714,8 @@ object MainForm: TMainForm
       Width = 452
       Height = 398
       Align = alClient
-      OnClick = pbDisplayClick
       OnDblClick = pbDisplayDblClick
+      OnMouseDown = pbDisplayMouseDown
       OnPaint = pbDisplayPaint
       ExplicitWidth = 474
       ExplicitHeight = 403

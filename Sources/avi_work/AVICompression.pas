@@ -90,6 +90,8 @@ begin
     AVIERR_CANTCOMPRESS       : raise EAviError.Create('AVIERR_CANTCOMPRESS     ');
     AVIERR_USERABORT          : raise EAviError.Create('AVIERR_USERABORT        ');
     AVIERR_ERROR              : raise EAviError.Create('AVIERR_ERROR            ');
+  else
+    Abort; // like result -1 on press 'Cancel' in CompressorOptions dialog on TAVICompressor.Open
   end;
 end;
 

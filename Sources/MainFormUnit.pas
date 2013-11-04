@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns;
 
 resourcestring
-  rs_VersionName = '0.9.17';
+  rs_VersionName = '0.9.18';
   rs_VersionYear = '2013';
 
 const
@@ -240,7 +240,8 @@ type
     procedure actScreenWindowExecute(Sender: TObject);
     procedure pbDisplayDblClick(Sender: TObject);
     procedure mmiNewBookmarkClick(Sender: TObject);
-    procedure pbDisplayClick(Sender: TObject);
+    procedure pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure imgLeftRightByMouseDownControllerMouseDown(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgLeftRightByMouseDownControllerMouseUp(Sender: TObject;
@@ -869,6 +870,7 @@ begin
           ScreenForm.Repaint;
         Application.ProcessMessages;
         AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.jpg', [RecordedFrames.Count]));
+        ShowMessage('Ёкспорт завершЄн.');
       finally
         Exporting := False;
       end;
@@ -892,10 +894,10 @@ var
   OldCurrentFrameIndex: Integer;
 //  Cancel: BOOL;
 resourcestring
-  rs_AVIExportingAudioStore = 'Ёкспорт в AVI. Audio save';
-  rs_AVIExportingCompressorInit = 'Ёкспорт в AVI. Compressor init';
-  rs_AVIExportingCaption = 'Ёкспорт в AVI. «апись кадра %0:d из %1:d';
-  rs_AVIExportingAudioMerge = 'Ёкспорт в AVI. Audio merge';
+  rs_AVIExportingAudioStore = 'Ёкспорт в AVI. —охранение звука.';
+  rs_AVIExportingCompressorInit = 'Ёкспорт в AVI. »нициализаци€ экспорта видео.';
+  rs_AVIExportingCaption = 'Ёкспорт в AVI. «апись кадра %0:d из %1:d.';
+  rs_AVIExportingAudioMerge = 'Ёкспорт в AVI. ќбъединение со звуком.';
 
 begin
   Dir := GetCurrentDir;
@@ -914,6 +916,7 @@ begin
         Options.FrameRate := FrameRate;
         Options.Width := 640;
         Options.Height := 480;
+        Options.Handler := 'DIB '; // без компрессии
         CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
         Bmp := TBitmap.Create;
         AdvertisementShowing := False;
@@ -946,7 +949,9 @@ begin
         Compressor.Destroy;
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Audio.wav');
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Video.avi');
+        ShowMessage('Ёкспорт завершЄн.');
       finally
+        SetStatus('');
         Exporting := False;
         CurrentFrameIndex := OldCurrentFrameIndex;
       end;
@@ -1368,12 +1373,13 @@ begin
   AudioRecorder.Active := not Recording
 end;
 
-procedure TMainForm.pbDisplayClick(Sender: TObject);
+procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
 begin
   if FramesCount = 0 then
-    if GetAsyncKeyState(VK_Shift) < 0 then
+    if (ssRight in Shift) or ((ssLeft in Shift) and (ssShift in Shift)) then // открытие вешаем не только на шифт+левую кнопку мыши, но и просто на правую кнопку мыши.
       actOpen.Execute
-    else
+    else if (ssLeft in Shift) then
       actSelectPhotoFolder.Execute;
 end;
 
