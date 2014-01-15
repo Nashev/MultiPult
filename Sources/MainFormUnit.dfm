@@ -6247,7 +6247,7 @@ object MainForm: TMainForm
       Top = 1
       Width = 671
       Height = 22
-      Hint = #1050#1072#1076#1088#1099
+      Hint = #1047#1072#1075#1088#1091#1078#1077#1085#1085#1099#1077' '#1080#1089#1093#1086#1076#1085#1099#1077' '#1082#1072#1076#1088#1099
       Align = alClient
       OnMouseDown = pbTimeLineMouseDown
       OnMouseLeave = pbTimeLineMouseLeave

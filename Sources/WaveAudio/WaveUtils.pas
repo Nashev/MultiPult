@@ -968,19 +968,19 @@ begin
   case Fmt of
     msHMSh:
       Result := Format('%u%s%2.2u%s%2.2u%s%2.2u',
-        [Hours, TimeSeparator, Mins mod 60, TimeSeparator, Secs mod 60, DecimalSeparator, HSecs mod 100]);
+        [Hours, FormatSettings.TimeSeparator, Mins mod 60, FormatSettings.TimeSeparator, Secs mod 60, FormatSettings.DecimalSeparator, HSecs mod 100]);
     msHMS:
       Result := Format('%u%s%2.2u%s%2.2u',
-        [Hours, TimeSeparator, Mins mod 60, TimeSeparator, Secs mod 60]);
+        [Hours, FormatSettings.TimeSeparator, Mins mod 60, FormatSettings.TimeSeparator, Secs mod 60]);
     msMSh:
       Result := Format('%u%s%2.2u%s%2.2u',
-        [Mins, TimeSeparator, Secs mod 60, DecimalSeparator, HSecs mod 100]);
+        [Mins, FormatSettings.TimeSeparator, Secs mod 60, FormatSettings.DecimalSeparator, HSecs mod 100]);
     msMS:
       Result := Format('%u%s%2.2u',
-        [Mins, TimeSeparator, Secs mod 60]);
+        [Mins, FormatSettings.TimeSeparator, Secs mod 60]);
     msSh:
       Result := Format('%u%s%2.2u',
-        [Secs, DecimalSeparator, HSecs mod 100]);
+        [Secs, FormatSettings.DecimalSeparator, HSecs mod 100]);
     msS:
       Result := Format('%u', [Secs]);
   else

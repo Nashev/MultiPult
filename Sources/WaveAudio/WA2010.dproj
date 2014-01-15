@@ -7,7 +7,7 @@
 			<AppType>Package</AppType>
 			<FrameworkType>VCL</FrameworkType>
 			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-			<ProjectVersion>13.4</ProjectVersion>
+			<ProjectVersion>15.1</ProjectVersion>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
 			<TargetedPlatforms>1</TargetedPlatforms>
 		</PropertyGroup>
@@ -56,12 +56,12 @@
 			<DCC_K>false</DCC_K>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base_Win64)'!=''">
-			<Icon_MainIcon>WA2010_Icon.ico</Icon_MainIcon>
+			<Icon_MainIcon></Icon_MainIcon>
 			<DCC_UsePackage>vcl;$(DCC_UsePackage)</DCC_UsePackage>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base_Win32)'!=''">
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-			<Icon_MainIcon>WA2010_Icon.ico</Icon_MainIcon>
+			<Icon_MainIcon></Icon_MainIcon>
 			<DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
 			<VerInfo_Locale>1033</VerInfo_Locale>
 			<DCC_UsePackage>vcl;$(DCC_UsePackage)</DCC_UsePackage>

@@ -22,7 +22,7 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns;
+  ToolWin, ExtActns, Actions;
 
 resourcestring
   rs_VersionName = '0.9.18';
