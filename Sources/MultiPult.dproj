@@ -1,159 +1,167 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <PropertyGroup>
-        <ProjectGuid>{7D9EA2D5-214F-42F5-B838-0AE9240E9627}</ProjectGuid>
-        <MainSource>MultiPult.dpr</MainSource>
-        <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
-        <AppType>Application</AppType>
-        <FrameworkType>VCL</FrameworkType>
-        <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-        <ProjectVersion>15.1</ProjectVersion>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>1</TargetedPlatforms>
-        <Platform>Win32</Platform>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
-        <Cfg_1>true</Cfg_1>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
-        <Cfg_2>true</Cfg_2>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
-        <Cfg_2_Win32>true</Cfg_2_Win32>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base)'!=''">
-        <VerInfo_Locale>1049</VerInfo_Locale>
-        <VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
-        <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.9.4.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=0.9.0.0;Comments=;PrivateBuild=</VerInfo_Keys>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Release>4</VerInfo_Release>
-        <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_MinorVer>9</VerInfo_MinorVer>
-        <VerInfo_MajorVer>0</VerInfo_MajorVer>
-        <DCC_ExeOutput>..\bin\</DCC_ExeOutput>
-        <DCC_DcuOutput>..\dcu\</DCC_DcuOutput>
-        <DCC_ImageBase>00400000</DCC_ImageBase>
-        <DCC_UsePackage>vcl;rtl;dbrtl;adortl;vcldb;vclx;bdertl;vcldbx;ibxpress;dsnap;cds;bdecds;qrpt;teeui;teedb;tee;dss;teeqr;visualclx;visualdbclx;dsnapcrba;dsnapcon;VclSmp;vclshlctrls;vclie;xmlrtl;inet;inetdbbde;inetdbxpress;inetdb;nmfast;webdsnap;websnap;soaprtl;dbexpress;dbxcds;indy;dclOffice2k;$(DCC_UsePackage)</DCC_UsePackage>
-        <DCC_UnitSearchPath>$(DELPHI)\Lib\Debug;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
-        <DCC_Optimize>false</DCC_Optimize>
-        <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
-        <DCC_N>true</DCC_N>
-        <DCC_S>false</DCC_S>
-        <DCC_K>false</DCC_K>
-        <DCC_E>false</DCC_E>
-        <DCC_F>false</DCC_F>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
-        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
-        <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
-        <DCC_DebugInformation>0</DCC_DebugInformation>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2)'!=''">
-        <DCC_OutputDependencies>true</DCC_OutputDependencies>
-        <DCC_DebugDCUs>true</DCC_DebugDCUs>
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <DCC_Inlining>off</DCC_Inlining>
-        <DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
-    </PropertyGroup>
-    <ItemGroup>
-        <DelphiCompile Include="$(MainSource)">
-            <MainSource>MainSource</MainSource>
-        </DelphiCompile>
-        <DCCReference Include="Gauges.pas"/>
-        <DCCReference Include="MainFormUnit.pas">
-            <Form>MainForm</Form>
-        </DCCReference>
-        <DCCReference Include="ControllerFormUnit.pas">
-            <Form>ControllerForm</Form>
-        </DCCReference>
-        <DCCReference Include="WaveAudio\WaveACM.pas"/>
-        <DCCReference Include="WaveAudio\WaveIn.pas"/>
-        <DCCReference Include="WaveAudio\WaveIO.pas"/>
-        <DCCReference Include="WaveAudio\WaveMixer.pas"/>
-        <DCCReference Include="WaveAudio\WaveOut.pas"/>
-        <DCCReference Include="WaveAudio\WavePlayers.pas"/>
-        <DCCReference Include="WaveAudio\WaveRecorders.pas"/>
-        <DCCReference Include="WaveAudio\WaveRedirector.pas"/>
-        <DCCReference Include="WaveAudio\WaveStorage.pas"/>
-        <DCCReference Include="WaveAudio\WaveTimer.pas"/>
-        <DCCReference Include="WaveAudio\WaveUtils.pas"/>
-        <DCCReference Include="avi_work\AVICompression.pas"/>
-        <DCCReference Include="avi_work\AVIFile32.pas"/>
-        <DCCReference Include="ScreenFormUnit.pas">
-            <Form>ScreenForm</Form>
-        </DCCReference>
-        <BuildConfiguration Include="Debug">
-            <Key>Cfg_2</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Base">
-            <Key>Base</Key>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Release">
-            <Key>Cfg_1</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
-    </ItemGroup>
-    <Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
-    <Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
-    <ProjectExtensions>
-        <Borland.Personality>Delphi.Personality.12</Borland.Personality>
-        <Borland.ProjectType>VCLApplication</Borland.ProjectType>
-        <BorlandProject>
-            <Delphi.Personality>
-                <Source>
-                    <Source Name="MainSource">MultiPult.dpr</Source>
-                </Source>
-                <VersionInfo>
-                    <VersionInfo Name="IncludeVerInfo">True</VersionInfo>
-                    <VersionInfo Name="AutoIncBuild">True</VersionInfo>
-                    <VersionInfo Name="MajorVer">0</VersionInfo>
-                    <VersionInfo Name="MinorVer">9</VersionInfo>
-                    <VersionInfo Name="Release">18</VersionInfo>
-                    <VersionInfo Name="Build">0</VersionInfo>
-                    <VersionInfo Name="Debug">False</VersionInfo>
-                    <VersionInfo Name="PreRelease">True</VersionInfo>
-                    <VersionInfo Name="Special">False</VersionInfo>
-                    <VersionInfo Name="Private">False</VersionInfo>
-                    <VersionInfo Name="DLL">False</VersionInfo>
-                    <VersionInfo Name="Locale">1049</VersionInfo>
-                    <VersionInfo Name="CodePage">1251</VersionInfo>
-                </VersionInfo>
-                <VersionInfoKeys>
-                    <VersionInfoKeys Name="CompanyName"/>
-                    <VersionInfoKeys Name="FileDescription"/>
-                    <VersionInfoKeys Name="FileVersion">0.9.18.0</VersionInfoKeys>
-                    <VersionInfoKeys Name="InternalName"/>
-                    <VersionInfoKeys Name="LegalCopyright"/>
-                    <VersionInfoKeys Name="LegalTrademarks"/>
-                    <VersionInfoKeys Name="OriginalFilename"/>
-                    <VersionInfoKeys Name="ProductName"/>
-                    <VersionInfoKeys Name="ProductVersion">0.9.0.0</VersionInfoKeys>
-                    <VersionInfoKeys Name="Comments"/>
-                    <VersionInfoKeys Name="PrivateBuild"/>
-                </VersionInfoKeys>
-                <Parameters_Win32/>
-            </Delphi.Personality>
-            <Platforms>
-                <Platform value="Win32">True</Platform>
-                <Platform value="Win64">False</Platform>
-            </Platforms>
-            <ModelSupport>False</ModelSupport>
-        </BorlandProject>
-        <ProjectFileVersion>12</ProjectFileVersion>
-    </ProjectExtensions>
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{7D9EA2D5-214F-42F5-B838-0AE9240E9627}</ProjectGuid>
+			<MainSource>MultiPult.dpr</MainSource>
+			<Base>True</Base>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<AppType>Application</AppType>
+			<FrameworkType>VCL</FrameworkType>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>15.1</ProjectVersion>
+			<Platform Condition="'$(Platform)'==''">Win32</Platform>
+			<TargetedPlatforms>1</TargetedPlatforms>
+			<Platform>Win32</Platform>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+			<Cfg_2_Win32>true</Cfg_2_Win32>
+			<CfgParent>Cfg_2</CfgParent>
+			<Cfg_2>true</Cfg_2>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<VerInfo_Locale>1049</VerInfo_Locale>
+			<VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
+			<VerInfo_PreRelease>true</VerInfo_PreRelease>
+			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.9.4.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=0.9.0.0;Comments=;PrivateBuild=</VerInfo_Keys>
+			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+			<VerInfo_Release>4</VerInfo_Release>
+			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
+			<VerInfo_MinorVer>9</VerInfo_MinorVer>
+			<VerInfo_MajorVer>0</VerInfo_MajorVer>
+			<DCC_ExeOutput>..\bin\</DCC_ExeOutput>
+			<DCC_DcuOutput>..\dcu\</DCC_DcuOutput>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_UsePackage>vcl;rtl;dbrtl;adortl;vcldb;vclx;bdertl;vcldbx;ibxpress;dsnap;cds;bdecds;qrpt;teeui;teedb;tee;dss;teeqr;visualclx;visualdbclx;dsnapcrba;dsnapcon;VclSmp;vclshlctrls;vclie;xmlrtl;inet;inetdbbde;inetdbxpress;inetdb;nmfast;webdsnap;websnap;soaprtl;dbexpress;dbxcds;indy;dclOffice2k;$(DCC_UsePackage)</DCC_UsePackage>
+			<DCC_UnitSearchPath>$(DELPHI)\Lib\Debug;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+			<DCC_N>true</DCC_N>
+			<DCC_S>false</DCC_S>
+			<DCC_K>false</DCC_K>
+			<DCC_E>false</DCC_E>
+			<DCC_F>false</DCC_F>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
+			<DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_DebugInformation>0</DCC_DebugInformation>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_OutputDependencies>true</DCC_OutputDependencies>
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.19.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Release>19</VerInfo_Release>
+			<VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
+			<Manifest_File>None</Manifest_File>
+			<DCC_Inlining>off</DCC_Inlining>
+			<DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="$(MainSource)">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="Gauges.pas"/>
+			<DCCReference Include="MainFormUnit.pas">
+				<Form>MainForm</Form>
+			</DCCReference>
+			<DCCReference Include="ControllerFormUnit.pas">
+				<Form>ControllerForm</Form>
+			</DCCReference>
+			<DCCReference Include="WaveAudio\WaveACM.pas"/>
+			<DCCReference Include="WaveAudio\WaveIn.pas"/>
+			<DCCReference Include="WaveAudio\WaveIO.pas"/>
+			<DCCReference Include="WaveAudio\WaveMixer.pas"/>
+			<DCCReference Include="WaveAudio\WaveOut.pas"/>
+			<DCCReference Include="WaveAudio\WavePlayers.pas"/>
+			<DCCReference Include="WaveAudio\WaveRecorders.pas"/>
+			<DCCReference Include="WaveAudio\WaveRedirector.pas"/>
+			<DCCReference Include="WaveAudio\WaveStorage.pas"/>
+			<DCCReference Include="WaveAudio\WaveTimer.pas"/>
+			<DCCReference Include="WaveAudio\WaveUtils.pas"/>
+			<DCCReference Include="avi_work\AVICompression.pas"/>
+			<DCCReference Include="avi_work\AVIFile32.pas"/>
+			<DCCReference Include="ScreenFormUnit.pas">
+				<Form>ScreenForm</Form>
+			</DCCReference>
+			<DCCReference Include="ExportSizeCustomRequestDialogUnit.pas">
+				<Form>ExportSizeCustomRequestDialog</Form>
+				<FormType>dfm</FormType>
+			</DCCReference>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType>VCLApplication</Borland.ProjectType>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">MultiPult.dpr</Source>
+					</Source>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">True</VersionInfo>
+						<VersionInfo Name="MajorVer">0</VersionInfo>
+						<VersionInfo Name="MinorVer">9</VersionInfo>
+						<VersionInfo Name="Release">18</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">True</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1049</VersionInfo>
+						<VersionInfo Name="CodePage">1251</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">0.9.18.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">0.9.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+						<VersionInfoKeys Name="PrivateBuild"/>
+					</VersionInfoKeys>
+					<Parameters_Win32/>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win64">False</Platform>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+				<ModelSupport>False</ModelSupport>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
 </Project>

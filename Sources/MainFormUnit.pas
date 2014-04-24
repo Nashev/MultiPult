@@ -22,11 +22,11 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns, Actions;
+  ToolWin, ExtActns{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.18';
-  rs_VersionYear = '2013';
+  rs_VersionName = '0.9.19';
+  rs_VersionYear = '2014';
 
 const
   ControlActionStackDeep = 10;
@@ -162,6 +162,16 @@ type
     imgAdvertisement: TImage;
     imgAdvertisementThumbnail: TImage;
     imgLeftRightByMouseDownController: TImage;
+    mmiExportResolution: TMenuItem;
+    mmiExportResolution43: TMenuItem;
+    mmiExportResolutionQVGA: TMenuItem;
+    mmiExportResolutionVGA: TMenuItem;
+    mmiExportResolutionCustom: TMenuItem;
+    mmiExportResolutionFirstFrame: TMenuItem;
+    actExportResolutionCustom: TAction;
+    actExportResolutionFirstFrame: TAction;
+    N1: TMenuItem;
+    mmiExportSeparator: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -246,6 +256,10 @@ type
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure imgLeftRightByMouseDownControllerMouseUp(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure mmiExportResolutionClick(Sender: TObject);
+    procedure actExportResolutionCustomExecute(Sender: TObject);
+    procedure actExportResolutionFirstFrameExecute(Sender: TObject);
+    procedure actExportResolutionFirstFrameUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -279,6 +293,9 @@ type
     AdvertisementFrameBottom: Integer;
     AdvertisementFrameImage: TBitmap;
     AdvertisementFrameTipShowing: Boolean;
+    ExportSize: TSize;
+    FirstFrameSize: TSize;
+    procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
     procedure SetCurrentFrameIndex(const Value: Integer);
     procedure UpdatePlayActions;
@@ -322,8 +339,15 @@ var
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
 implementation
-uses AVICompression, ControllerFormUnit, ScreenFormUnit;
+uses AVICompression, ControllerFormUnit, ScreenFormUnit,
+  ExportSizeCustomRequestDialogUnit, ShellAPI;
 {$R *.dfm}
+
+function Size(AX, AY: Integer): TSize;
+begin
+  Result.cx := AX;
+  Result.cy := AY;
+end;
 
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 begin
@@ -350,7 +374,7 @@ resourcestring
   rs_SelectPhotoFolderCaption = '— какой папки начинать искать кадры?';
 begin
   actNew.Execute;
-  PhotoFolder := ExpandFileName('..\testdata\');
+  PhotoFolder := ExtractFilePath(ExpandFileName('..\testdata\'));
   if SelectDirectory(
     rs_SelectPhotoFolderCaption, '', PhotoFolder
     {$IFDEF DelphiXE}
@@ -362,6 +386,7 @@ begin
       CurrentFrameIndex := 0;
       Saved := False;
     end;
+  CaptureFirstFrameSizes;
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -568,6 +593,9 @@ begin
 //  DoubleBuffered := True;
   if ParamCount >= 1 then
     OpenMovie(ParamStr(1));
+
+  // инициализируем разрешение при экспорте по умолчанию.
+  mmiExportResolutionVGA.Click;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -893,11 +921,13 @@ var
   PreparedFrameIndex: Integer;
   OldCurrentFrameIndex: Integer;
 //  Cancel: BOOL;
+  R: TRect;
 resourcestring
   rs_AVIExportingAudioStore = 'Ёкспорт в AVI. —охранение звука.';
   rs_AVIExportingCompressorInit = 'Ёкспорт в AVI. »нициализаци€ экспорта видео.';
   rs_AVIExportingCaption = 'Ёкспорт в AVI. «апись кадра %0:d из %1:d.';
   rs_AVIExportingAudioMerge = 'Ёкспорт в AVI. ќбъединение со звуком.';
+  rs_ExportFinished = 'Ёкспорт завершЄн. ќткрыть созданый файл?';
 
 begin
   Dir := GetCurrentDir;
@@ -914,11 +944,17 @@ begin
         Compressor := TAVICompressor.Create;
         Options.Init;
         Options.FrameRate := FrameRate;
-        Options.Width := 640;
-        Options.Height := 480;
+        Options.Width := ExportSize.cx;
+        Options.Height := ExportSize.cy;
         Options.Handler := 'DIB '; // без компрессии
         CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
         Bmp := TBitmap.Create;
+        {$IFDEF DelphiXE+}
+        Bmp.SetSize(ExportSize.cx, ExportSize.cy);
+        {$ELSE}
+        Bmp.Width := ExportSize.cx;
+        Bmp.Height := ExportSize.cy;
+        {$ENDIF}
         AdvertisementShowing := False;
         PreparedFrameIndex := -1;
         for i := 0 to RecordedFrames.Count - 1 do
@@ -930,8 +966,11 @@ begin
             Application.ProcessMessages;
             if PreparedFrameIndex <> CurrentFrameIndex then // skip already preparing
               begin
-                Image := Frames[CurrentFrameIndex].Preview;
-                Bmp.Assign(Image);
+                Image := Frames[CurrentFrameIndex].ImageFromDisc;
+                R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+                Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
+                Bmp.Canvas.StretchDraw(R, Image);
+                Image.Free;
                 Bmp.PixelFormat := pf24bit;
                 PreparedFrameIndex := CurrentFrameIndex;
               end;
@@ -949,7 +988,12 @@ begin
         Compressor.Destroy;
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Audio.wav');
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Video.avi');
-        ShowMessage('Ёкспорт завершЄн.');
+        if (MessageBox(0,
+          PWideChar(rs_ExportFinished),
+          PWideChar(Application.Title),
+          MB_ICONINFORMATION or MB_YESNO or MB_TASKMODAL) = idYes)
+        then
+          ShellExecute(0, 'play', PWideChar(SaveToAVIDialog.FileName), nil, nil, SW_SHOWNORMAL);
       finally
         SetStatus('');
         Exporting := False;
@@ -1031,6 +1075,9 @@ const
   FrameSectionStart     = '-------------------- Frames: ----------------------';
   TeleportsSectionStart = '------------------- Teleports: --------------------';
 
+resourcestring
+  rs_CustomSize = '—вой (%d, %d)';
+
 procedure TMainForm.OpenMovie(AFileName: string);
 var
   i: Integer;
@@ -1060,7 +1107,9 @@ begin
       LoadFromFile(AFileName);
       i := 0;
       s := Strings[i];
-      if WaveStorage.Wave.Empty and (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
+      // —ейчас файл читаетс€ в пор€дке регистрации, и максимум что может быть - это очередна€ секци€ отсутствовать. ѕереставить местами их нельз€.
+      // TODO: сделать гибче (хот€, зачем ?)
+      if (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
           if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
@@ -1072,9 +1121,22 @@ begin
             end
           else
             WaveStorage.Wave.Clear;
+          inc(i);
+          s := Strings[i];
         end;
-      inc(i);
-      s := Strings[i];
+      if (Copy(s, 1, Length('ExportWidth = ')) = 'ExportWidth = ') then
+        begin
+          ExportSize.cx := StrToInt(Copy(s, Length('ExportWidth = ') + 1, MaxInt));
+          inc(i);
+          s := Strings[i];
+        end;
+      if (Copy(s, 1, Length('ExportHeight = ')) = 'ExportHeight = ') then
+        begin
+          ExportSize.cy := StrToInt(Copy(s, Length('ExportHeight = ') + 1, MaxInt));
+          mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
+          inc(i);
+          s := Strings[i];
+        end;
       if s = FilesSectionStart then
         while i < (Count - 1) do
           begin
@@ -1117,6 +1179,7 @@ begin
     end;
   if FramesCount > 0 then
     CurrentFrameIndex := 0;
+  CaptureFirstFrameSizes;
   Saved := True;
   pbRecord.Invalidate;
   UpdateActions;
@@ -1158,7 +1221,7 @@ begin
   if not SaveDialog.Execute then
     Abort;
 
-  NewPath := ExtractFileDir(SaveDialog.FileName);
+  NewPath := ExtractFilePath(SaveDialog.FileName);
   if NewPath <> PhotoFolder then
     // TODO: не уведомл€ть, а исправл€ть относительные пути по возможности
     ShowMessage(
@@ -1172,6 +1235,8 @@ begin
   with TStringList.Create do
     try
       Add('Wave = ' + ExtractFileName(SaveDialog.FileName) + '.wav');
+      Add(Format('ExportWidth = %d', [ExportSize.cx]));
+      Add(Format('ExportHeight = %d', [ExportSize.cy]));
       Add(FilesSectionStart);
       for i := 0 to FramesCount - 1 do
         Add(Frames[i].Path + Frames[i].FileName);
@@ -2070,6 +2135,68 @@ procedure TMainForm.ReplaceControlActions(Value: TControlAction);
 begin
   NextControlActionStackPosition := 1;
   NextControlActionStack[NextControlActionStackPosition] := Value;
+end;
+
+procedure TMainForm.mmiExportResolutionClick(Sender: TObject);
+begin
+  case (Sender as TMenuItem).Tag of
+  //3:4
+    1: ExportSize := Size(320, 240);
+    2: ExportSize := Size(640, 480);
+    3: ExportSize := Size(800, 600);
+    4: ExportSize := Size(1024, 768);
+    5: ExportSize := Size(1600, 1200);
+    6: ExportSize := Size(2048, 1536);
+    7: ExportSize := Size(3200, 2400);
+    8: ExportSize := Size(6400, 4800);
+  // 16:9
+     9: ExportSize := Size(640, 360);
+    10: ExportSize := Size(854, 480);
+    11: ExportSize := Size(960, 540);
+    12: ExportSize := Size(1280, 720);
+    13: ExportSize := Size(1600, 900);
+    14: ExportSize := Size(1920, 1080);
+    15: ExportSize := Size(2048, 1152);
+    16: ExportSize := Size(2560, 1440);
+    17: ExportSize := Size(7680, 4320);
+  end;
+  mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + TrimLeft(TMenuItem(Sender).Caption);
+  if FramesCount > 0 then
+    Saved := False;
+end;
+
+procedure TMainForm.actExportResolutionCustomExecute(Sender: TObject);
+begin
+  if TExportSizeCustomRequestDialog.Execute(ExportSize) then
+    mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
+  if FramesCount > 0 then
+    Saved := False;
+end;
+
+procedure TMainForm.CaptureFirstFrameSizes;
+begin
+  if FramesCount > 0 then
+    with Frames[0].ImageFromDisc do
+      begin
+        FirstFrameSize := Size(Width, Height);
+        actExportResolutionFirstFrame.Caption := Copy(actExportResolutionFirstFrame.Caption, 1, Pos('-', mmiExportResolution.Caption)) + Format('(%d, %d)', [FirstFrameSize.cx, FirstFrameSize.cy]);
+        Free;
+      end
+  else
+    actExportResolutionFirstFrame.Caption := Copy(actExportResolutionFirstFrame.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + '(?, ?)';
+end;
+
+procedure TMainForm.actExportResolutionFirstFrameExecute(Sender: TObject);
+begin
+  ExportSize := FirstFrameSize;
+  mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
+  if FramesCount > 0 then
+    Saved := False;
+end;
+
+procedure TMainForm.actExportResolutionFirstFrameUpdate(Sender: TObject);
+begin
+  actExportResolutionFirstFrame.Enabled := (FramesCount > 0);
 end;
 
 function TMainForm.TeleportEnabled: Boolean;

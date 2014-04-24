@@ -6729,6 +6729,15 @@ object MainForm: TMainForm
       Hint = 'Browse URL'
       URL = 'http://multistudia.ru/?page_id=923'
     end
+    object actExportResolutionCustom: TAction
+      Caption = #1047#1072#1076#1072#1090#1100' '#1089#1074#1086#1081'...'
+      OnExecute = actExportResolutionCustomExecute
+    end
+    object actExportResolutionFirstFrame: TAction
+      Caption = #1055#1086' '#1088#1072#1079#1084#1077#1088#1091' '#1087#1077#1088#1074#1086#1075#1086' '#1082#1072#1076#1088#1072' - (?, ?)'
+      OnExecute = actExportResolutionFirstFrameExecute
+      OnUpdate = actExportResolutionFirstFrameUpdate
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -6748,8 +6757,169 @@ object MainForm: TMainForm
       object mmiSave: TMenuItem
         Action = actSave
       end
+      object mmiExportSeparator: TMenuItem
+        Caption = '-'
+      end
       object mmiExport: TMenuItem
         Action = actExport
+      end
+      object mmiExportResolution: TMenuItem
+        Caption = #1056#1072#1079#1084#1077#1088' '#1082#1072#1076#1088#1072' '#1087#1088#1080' '#1101#1082#1089#1087#1086#1088#1090#1077' - VGA (640x480), 4:3'
+        object mmiExportResolutionCustom: TMenuItem
+          Action = actExportResolutionCustom
+          RadioItem = True
+        end
+        object mmiExportResolutionFirstFrame: TMenuItem
+          Action = actExportResolutionFirstFrame
+          GroupIndex = 1
+        end
+        object mmiExportResolution43: TMenuItem
+          Caption = '4:3'
+          Enabled = False
+          GroupIndex = 1
+        end
+        object mmiExportResolutionQVGA: TMenuItem
+          Tag = 1
+          AutoCheck = True
+          Caption = '  QVGA (320'#215'240)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionVGA: TMenuItem
+          Tag = 2
+          AutoCheck = True
+          Caption = '  VGA (640'#215'480)'
+          Checked = True
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionSVGA: TMenuItem
+          Tag = 3
+          AutoCheck = True
+          Caption = '  SVGA (800'#215'600)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionXGA: TMenuItem
+          Tag = 4
+          AutoCheck = True
+          Caption = '  XGA (1024'#215'768)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionUXGA: TMenuItem
+          Tag = 5
+          AutoCheck = True
+          Caption = '  UXGA (1600'#215'1200)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionQXGA: TMenuItem
+          Tag = 6
+          AutoCheck = True
+          Caption = '  QXGA (2048'#215'1536)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionQUXGA: TMenuItem
+          Tag = 7
+          AutoCheck = True
+          Caption = '  QUXGA (3200'#215'2400)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionHUXGA: TMenuItem
+          Tag = 8
+          AutoCheck = True
+          Caption = '  HUXGA (6400'#215'4800)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolution169: TMenuItem
+          Caption = '16:9'
+          Enabled = False
+          GroupIndex = 1
+        end
+        object mmiExportResolution_nHD: TMenuItem
+          Tag = 9
+          AutoCheck = True
+          Caption = '  nHD (640'#215'360)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionFWVGA: TMenuItem
+          Tag = 10
+          AutoCheck = True
+          Caption = '  FWVGA (854'#215'480)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolution_qHD: TMenuItem
+          Tag = 11
+          AutoCheck = True
+          Caption = '  qHD (960'#215'540)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionHD720p: TMenuItem
+          Tag = 12
+          AutoCheck = True
+          Caption = '  HD 720p (1280'#215'720)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionWXGApp: TMenuItem
+          Tag = 13
+          AutoCheck = True
+          Caption = '  WXGA++ (1600'#215'900)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionFullHD1080p: TMenuItem
+          Tag = 14
+          AutoCheck = True
+          Caption = '  Full HD 1080p (1920'#215'1080)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionQWXGA: TMenuItem
+          Tag = 15
+          AutoCheck = True
+          Caption = '  QWXGA (2048'#215'1152)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionWQXGA: TMenuItem
+          Tag = 16
+          AutoCheck = True
+          Caption = '  WQXGA (2560'#215'1440)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
+        object mmiExportResolutionSuperHiVision: TMenuItem
+          Tag = 17
+          AutoCheck = True
+          Caption = '  Super Hi-Vision (7680'#215'4320)'
+          GroupIndex = 1
+          RadioItem = True
+          OnClick = mmiExportResolutionClick
+        end
       end
       object mmiExportToAVI: TMenuItem
         Action = actExportToAVI
@@ -6780,6 +6950,10 @@ object MainForm: TMainForm
       end
       object mmiPlayingForward: TMenuItem
         Action = actPlayForward
+      end
+      object N1: TMenuItem
+        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
+        ShortCut = 16
       end
       object mmiSeparatorBookmarkManagement: TMenuItem
         Caption = '-'
@@ -7727,6 +7901,7 @@ object MainForm: TMainForm
       FFE3FFFFFFF9FFF9FFC3FFFFFFF9FFF9FF81FFFFFFE1FFE1FFC7FFFFFFF1FFF1
       FBEFFBFFFBF9FDF9F3FFF3FFF3FFFCFFE049E049E03FC07FC049C049C03FC03F
       80498049803FC01FC049C049C03FC03FE049E049E03FC07FF3FFF3FFF3FFFCFF
-      FBFFFBFFFBFFFDFFFFFFFFFFFFFFFFFF}
+      FBFFFBFFFBFFFDFFFFFFFFFFFFFFFFFF00000000000000000000000000000000
+      000000000000}
   end
 end

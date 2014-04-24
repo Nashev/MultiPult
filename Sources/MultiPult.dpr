@@ -22,7 +22,8 @@ uses
   WaveUtils in 'WaveAudio\WaveUtils.pas',
   AVICompression in 'avi_work\AVICompression.pas',
   AVIFile32 in 'avi_work\AVIFile32.pas',
-  ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm};
+  ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm},
+  ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog};
 
 {$R *.res}
 
