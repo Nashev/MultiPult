@@ -1,11 +1,17 @@
 MultiPult
 =========
-
-My site also is http://innenashev.narod.ru.
-Download latest MultPult You can by link https://github.com/Nashev/MultiPult/raw/origin/bin/MultiPult.exe
-
-Screenshot:
 ![ScreenShot](https://raw.github.com/Nashev/MultiPult/origin/ScreenShot.png)
+
+Автор: [Илья Ненашев](http://innenashev.narod.ru).
+
+МультиПульт создаётся по заказу [МультиСтудии](http://multistudia.ru/?page_id=923) в лице Евгения Генриховича Кабакова.
+
+Исходный код программы доступен для просмотра и доработок на [github](https://github.com/Nashev/MultiPult).
+
+Справочная информация размещается [в местной вики](https://github.com/Nashev/MultiPult/wiki) и на  [страничке программы на сайте МультиСтудии](http://multistudia.ru/?page_id=923).
+
+Скачать последнюю версию МультиПульта можно по ссылке https://github.com/Nashev/MultiPult/raw/origin/bin/MultiPult.exe
+
 
 Первоначальный проект выглядел так:
 ===================================
