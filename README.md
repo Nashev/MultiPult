@@ -83,6 +83,9 @@ MultiPult
 
  → – следующая фотография
 
+
+ 
+
  ← – предыдущая фотография
 
  ↓   запускает и останавливает проигрывание кадров вперёд с заданной скоростью
@@ -127,3 +130,5 @@ x - назад
 c - назад
 v - вперёд
 Ну или как-то так
+
+[![Stories in Ready](https://badge.waffle.io/nashev/multipult.png?label=ready&title=Ready)](http://waffle.io/nashev/multipult)
