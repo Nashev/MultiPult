@@ -6,7 +6,8 @@ MultiPult
 
 МультиПульт создаётся по заказу [МультиСтудии](http://multistudia.ru/?page_id=923) в лице Евгения Генриховича Кабакова.
 
-Исходный код программы доступен для просмотра и доработок на [github](https://github.com/Nashev/MultiPult).
+Исходный код программы доступен для просмотра и доработок на [github](https://github.com/Nashev/MultiPult). Так же используется сервис Waffle.io? чтобы отмечать, какие из задач в работе и сколько задач достаточно продумано, чтобы к ним можно было приступить в свободную минутку [![Stories in Ready for work](https://badge.waffle.io/nashev/multipult.png?label=ready+for+work&title=Ready for work)](http://waffle.io/nashev/multipult)
+
 
 Справочная информация размещается [в местной вики](https://github.com/Nashev/MultiPult/wiki) и на  [страничке программы на сайте МультиСтудии](http://multistudia.ru/?page_id=923).
 
@@ -130,5 +131,3 @@ x - назад
 c - назад
 v - вперёд
 Ну или как-то так
-
-[![Stories in Ready](https://badge.waffle.io/nashev/multipult.png?label=ready&title=Ready)](http://waffle.io/nashev/multipult)
