@@ -66,8 +66,8 @@
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.19.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
-			<VerInfo_Release>19</VerInfo_Release>
+			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.20.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Release>20</VerInfo_Release>
 			<VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
 			<Manifest_File>None</Manifest_File>
 			<DCC_Inlining>off</DCC_Inlining>

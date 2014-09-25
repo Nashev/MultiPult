@@ -22,10 +22,10 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns{$IFDEF Delphi6}, Actions{$ENDIF};
+  ToolWin, ExtActns, Vcl.StdActns{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.19';
+  rs_VersionName = '0.9.20'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2014';
 
 const
@@ -66,13 +66,13 @@ type
     MainMenu: TMainMenu;
     actOpen: TAction;
     actNew: TAction;
-    actSave: TAction;
+    actSaveAs: TAction;
     actSelectPhotoFolder: TAction;
     mmiSelectPhotoFolder: TMenuItem;
     mmiFiles: TMenuItem;
     mmiNew: TMenuItem;
     mmiOpen: TMenuItem;
-    mmiSave: TMenuItem;
+    mmiSaveAs: TMenuItem;
     mmiNavigation: TMenuItem;
     actStepPrev: TAction;
     actStepNext: TAction;
@@ -110,8 +110,8 @@ type
     actPlay: TAction;
     mmiSeparatorSteps: TMenuItem;
     mmiPlay: TMenuItem;
-    SaveDialog: TSaveDialog;
-    OpenDialog: TOpenDialog;
+    dlgSaveMovie: TSaveDialog;
+    dlgOpenMovie: TOpenDialog;
     mmiHelp: TMenuItem;
     mmiAbout: TMenuItem;
     pbIndicator: TPaintBox;
@@ -172,6 +172,13 @@ type
     actExportResolutionFirstFrame: TAction;
     N1: TMenuItem;
     mmiExportSeparator: TMenuItem;
+    mmiSelectAudioFile: TMenuItem;
+    actSelectAudioFile: TAction;
+    dlgOpenAudio: TOpenDialog;
+    dlgSaveAudio: TSaveDialog;
+    lblAudioFileName: TLabel;
+    N2: TMenuItem;
+    mmiUseMicrophone: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -192,8 +199,8 @@ type
     procedure actGotoBookmark0Execute(Sender: TObject);
     procedure actPlayUpdate(Sender: TObject);
     procedure actNewExecute(Sender: TObject);
-    procedure actSaveExecute(Sender: TObject);
-    procedure actSaveUpdate(Sender: TObject);
+    procedure actSaveAsExecute(Sender: TObject);
+    procedure actSaveAsUpdate(Sender: TObject);
     procedure AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;
       BufferSize: Cardinal);
     procedure actOpenExecute(Sender: TObject);
@@ -260,6 +267,8 @@ type
     procedure actExportResolutionCustomExecute(Sender: TObject);
     procedure actExportResolutionFirstFrameExecute(Sender: TObject);
     procedure actExportResolutionFirstFrameUpdate(Sender: TObject);
+    procedure actSelectAudioFileExecute(Sender: TObject);
+    procedure mmiUseMicrophoneClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -276,13 +285,21 @@ type
     HaveBuffers: Boolean;
     KeyPressBlocked: Boolean;
     Interval, CurrentSpeedInterval: Integer;
-    Recording, Playing, Exporting: Boolean;
+    Recording, RecordingMustBeChanged, Playing, Exporting: Boolean;
     LoopMode: Boolean;
     RecordedFrames: TList;
     FrameTipMode: TFrameTipMode;
     FrameTipArrow: Integer;
     Bookmarks: array [0..9] of Integer;
     Saved: Boolean;
+     // RecordedAudioCopy - рисуемая копия звука. По мере записи мульта пополняется из AudioRecorder
+     // копиями очередных порций записываемого им себе звука.
+     // При открытии старой записи инициализируется копией загруженного в WaveStorage звука.
+     // По завершении записи в WaveStorage копируется звук, записанный
+     // в AudioRecorder-е и так WaveStorage догоняет RecordedAudioCopy.
+     // При воспроизведении проигрывается WaveStorage при помощи StockAudioPlayer
+     // Паралельно всему этому всё время работает LiveAudioRecorder
+     // на отображение уровня звука в статусе.
     RecordedAudioCopy: TMemoryStream;
     pbRecordOffset: Integer;
     OutOfMemoryRaised: Boolean;
@@ -295,14 +312,18 @@ type
     AdvertisementFrameTipShowing: Boolean;
     ExportSize: TSize;
     FirstFrameSize: TSize;
+    FExternalAudioFileName: string;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
     procedure SetCurrentFrameIndex(const Value: Integer);
     procedure UpdatePlayActions;
+    procedure StopRecording;
+    procedure StopPlaying;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipIndex(const Value: Integer);
     function TeleportEnabled: Boolean;
     procedure OpenMovie(AFileName: string);
+    procedure OpenAudio(AFileName: string);
     property FrameTipIndex: Integer read FFrameTipIndex write SetFrameTipIndex;
     function GetFrame(Index: Integer): TFrame;
     function GetFramesCount: Integer;
@@ -367,6 +388,34 @@ begin
       Result.Left := (ABoundsWidth - Result.Right) div 2;
       Result.Right := Result.Right + Result.Left;
     end;
+end;
+
+procedure TMainForm.actSelectAudioFileExecute(Sender: TObject);
+resourcestring
+  rs_SaveBeforeOpenRequest = 'Хотите сохранить записанную озвучку перед подключением готовой?';
+begin
+  StopRecording;
+  StopPlaying;
+  if (WaveStorage.Wave.Length > 0) and (FExternalAudioFileName = '') then
+    case MessageBox(
+      0,
+      PChar(rs_SaveBeforeOpenRequest),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+    of
+      IDCANCEL: Exit;
+      IDYES:
+        begin
+          if not dlgSaveAudio.Execute then
+            Exit;
+          WaveStorage.Wave.SaveToFile(dlgSaveAudio.FileName);
+        end;
+      IDNO: ;
+    end;
+
+  if not dlgOpenAudio.Execute then
+    Abort;
+  OpenAudio(dlgOpenAudio.FileName);
 end;
 
 procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
@@ -514,15 +563,15 @@ resourcestring
     'Если его не сохранить сейчас, то он пропадёт.'#13#10+
     'Желаете его сохранить, прежде чем закрыть программу?';
 begin
-  actSave.Update;
-  if actSave.Enabled then
+  actSaveAs.Update;
+  if actSaveAs.Enabled and not Saved then
     case MessageBox(
       0,
       PChar(rs_SaveBeforeExit),
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1
     ) of
-      IDYES: begin actSave.Execute; CanClose := Saved; end;
+      IDYES: begin actSaveAs.Execute; CanClose := Saved; end;
       IDNO: CanClose := True;
       IDCANCEL: CanClose := False;
     end;
@@ -785,6 +834,20 @@ begin
       end;
 
   Beep; // если свободных закладок не нашлось - гудим.
+end;
+
+procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
+begin
+  if not actNew.Execute then
+    Exit;
+  FExternalAudioFileName := '';
+  actSelectAudioFile.Checked := False;
+  mmiUseMicrophone.Checked := True;
+  LiveAudioRecorder.Active := True;
+  lblAudioFileName.Visible := False;
+  WaveStorage.Wave.Clear;
+  RecordedAudioCopy.Clear;
+  pbRecord.Invalidate;
 end;
 
 procedure TMainForm.actBackwardWhilePressedExecute(Sender: TObject);
@@ -1057,7 +1120,7 @@ begin
       IDCANCEL: Exit;
       IDYES:
         begin
-          actSave.Execute;
+          actSaveAs.Execute;
           if not Saved then
             Exit;
         end;
@@ -1077,6 +1140,21 @@ const
 
 resourcestring
   rs_CustomSize = 'Свой (%d, %d)';
+
+procedure TMainForm.OpenAudio(AFileName: string);
+begin
+  FExternalAudioFileName := AFileName;
+  actSelectAudioFile.Checked := True;
+  mmiUseMicrophone.Checked := False;
+  LiveAudioRecorder.Active := False;
+  lblAudioFileName.Visible := True;
+  lblAudioFileName.Caption := MinimizeName(AFileName, Canvas, lblAudioFileName.Width);
+  WaveStorage.Wave.LoadFromFile(AFileName);
+  WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
+  RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
+  pbRecord.Invalidate;
+  WaveStorage.Wave.Position := 0;
+end;
 
 procedure TMainForm.OpenMovie(AFileName: string);
 var
@@ -1189,7 +1267,7 @@ procedure TMainForm.actOpenExecute(Sender: TObject);
 resourcestring
   rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
 begin
-  if not OpenDialog.Execute then
+  if not dlgOpenMovie.Execute then
     Abort;
 
   if (RecordedFrames.Count > 0) and not Saved then
@@ -1202,26 +1280,26 @@ begin
       IDCANCEL: Exit;
       IDYES:
         begin
-          actSave.Execute;
+          actSaveAs.Execute;
           if not Saved then
             Exit;
         end;
       IDNO: ;
     end;
 
-  OpenMovie(OpenDialog.FileName);
+  OpenMovie(dlgOpenMovie.FileName);
 end;
 
-procedure TMainForm.actSaveExecute(Sender: TObject);
+procedure TMainForm.actSaveAsExecute(Sender: TObject);
 var
   i: Integer;
   NewPath: string;
 begin
-  SaveDialog.InitialDir := PhotoFolder;
-  if not SaveDialog.Execute then
+  dlgSaveMovie.InitialDir := PhotoFolder;
+  if not dlgSaveMovie.Execute then
     Abort;
 
-  NewPath := ExtractFilePath(SaveDialog.FileName);
+  NewPath := ExtractFilePath(dlgSaveMovie.FileName);
   if NewPath <> PhotoFolder then
     // TODO: не уведомлять, а исправлять относительные пути по возможности
     ShowMessage(
@@ -1231,10 +1309,10 @@ begin
     'а не относительно '#13#10+
     '  "' + NewPath + '".'#13#10+
     'При загрузке проекта придётся восстанавливать структуру каталогов с изображениями относительно файла проекта.');
-  WaveStorage.Wave.SaveToFile(SaveDialog.FileName + '.wav');
+  WaveStorage.Wave.SaveToFile(dlgSaveMovie.FileName + '.wav');
   with TStringList.Create do
     try
-      Add('Wave = ' + ExtractFileName(SaveDialog.FileName) + '.wav');
+      Add('Wave = ' + ExtractFileName(dlgSaveMovie.FileName) + '.wav');
       Add(Format('ExportWidth = %d', [ExportSize.cx]));
       Add(Format('ExportHeight = %d', [ExportSize.cy]));
       Add(FilesSectionStart);
@@ -1250,16 +1328,16 @@ begin
       Add(FrameSectionStart);
       for i := 0 to RecordedFrames.Count - 1 do
         Add(IntToStr(Integer(RecordedFrames[i])));
-      SaveToFile(SaveDialog.FileName);
+      SaveToFile(dlgSaveMovie.FileName);
       Saved := True;
     finally
       Free;
     end;
 end;
 
-procedure TMainForm.actSaveUpdate(Sender: TObject);
+procedure TMainForm.actSaveAsUpdate(Sender: TObject);
 begin
-  actSave.Enabled := not Exporting and not Saved;
+  actSaveAs.Enabled := not Exporting and (RecordedFrames.Count > 0);// and not Saved;
 end;
 
 procedure TMainForm.actScreenWindowExecute(Sender: TObject);
@@ -1301,6 +1379,7 @@ begin
     SetCaption(Frames[CurrentFrameIndex].Path +  Frames[CurrentFrameIndex].FileName);
 //  pnlDisplay.Repaint;
 //  pnlTimeLine.Repaint;
+
   pbDisplay.Repaint;
   if Assigned(ScreenForm) and ScreenForm.Visible then
     ScreenForm.Repaint;
@@ -1312,25 +1391,59 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
-  // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
-  actPlay.Checked := True;
-  ReplaceControlActions(caNone);
-  UpdatePlayActions;
-  // на всякий случай. TODO надо ли, когда в actPlayExecute есть ?
-  if CurrentRecordPosition >= RecordedFrames.Count - 1 then
-    CurrentRecordPosition := 0;
-  Interval := 0;
-  Playing := True;
+  if RecordingMustBeChanged then
+    begin
+      Recording := True;
+      RecordingMustBeChanged := False;
+      actRecord.Checked := True;
+    end
+  else
+    begin
+      // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
+      actPlay.Checked := True;
+      ReplaceControlActions(caNone);
+      UpdatePlayActions;
+      // на всякий случай. TODO надо ли, когда в actPlayExecute есть ?
+      if CurrentRecordPosition >= RecordedFrames.Count - 1 then
+        CurrentRecordPosition := 0;
+      Interval := 0;
+      Playing := True;
+    end;
 end;
 
 procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
+  if RecordingMustBeChanged then
+    begin
+      Recording := False;
+      RecordingMustBeChanged := False;
+      actRecord.Checked := False;
+      ReplaceControlActions(caNone);
+
+      UpdatePlayActions;
+    end;
 //  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
 //  actPlay.Checked := False;
 //
 //  //CurrentRecordPosition := 0;
 //  Interval := 0;
 //  Playing := False;
+end;
+
+procedure TMainForm.StopPlaying;
+begin
+  if not Playing then
+    Exit;
+  StockAudioPlayer.Active := False;
+end;
+procedure TMainForm.StopRecording;
+
+begin
+  if not Recording then
+    Exit;
+  RecordingMustBeChanged := True;
+  AudioRecorder.Active := False;
+  StockAudioPlayer.Active := False;
 end;
 
 procedure TMainForm.LoadPhoto(Index: Integer);
@@ -1433,9 +1546,30 @@ end;
 
 procedure TMainForm.actRecordExecute(Sender: TObject);
 begin
-  // запись кадров начнётся в AudioRecorderActivate
-  // а закончится - в AudioRecorderDeactivate
-  AudioRecorder.Active := not Recording
+  if FExternalAudioFileName <> '' then
+    begin
+      Playing := False; // это перед установкой CurrentRecordPosition, чтобы с ним установилась и позиция звука.
+      RecordingMustBeChanged := True;
+      // Запуск самой записи и последующая остановка - через обработчики
+      // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
+      // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
+      // Но вот останавливать вручную, на всякий случай, будем сразу, а не когда звук соизволит.
+      if Recording then
+        CurrentRecordPosition := RecordedFrames.Count // заодно пинаем позиционирование звука
+      else
+//        begin
+          actRecord.Checked := False;
+
+          //CurrentRecordPosition := 0;
+          //Interval := 0;
+//        end;
+      StockAudioPlayer.Active := not Recording;
+    end
+  else
+    // если звук с микрофона - то запись кадров начнётся в
+    // AudioRecorderActivate
+    // а закончится - в AudioRecorderDeactivate
+    AudioRecorder.Active := not Recording
 end;
 
 procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
@@ -1760,6 +1894,7 @@ var
   y: Integer;
   FrameIndex: Integer;
   R: TRect;
+  TopOfMainRecord: Integer;
   DataWidth: Integer;
   DataWidthHalf: Integer;
   DataAreaHeight: Integer;
@@ -1774,7 +1909,7 @@ var
     MaxData, MinData: SmallInt;
     i: Integer;
   begin
-    FirstSample := FrameIndex * SamplesPerFrame;
+    FirstSample := (pbRecordOffset + y - TopOfMainRecord) * SamplesPerFrame;
     if (FirstSample + SamplesPerFrame) > (RecordedAudioCopy.Size div 2) then
       Exit;
 
@@ -1854,7 +1989,7 @@ begin
   pbRecord.Canvas.Pen.Color := clSkyBlue;
   pbRecord.Canvas.Pen.Width := 1;
   pbRecord.Canvas.Pen.Style := psSolid;
-
+  TopOfMainRecord := R.Top;
   // content of main record
   FrameIndex := pbRecordOffset;
   for y := R.Top to R.Bottom - 1 do
@@ -1891,6 +2026,7 @@ begin
 
   pbRecord.Canvas.Pen.Style := psSolid;
   pbRecord.Canvas.Brush.Color := clBtnFace;
+  Inc(TopOfMainRecord, R.Height);
   pbRecord.Canvas.RoundRect(R.Left + pbRecord.Canvas.Pen.Width div 2, R.Top + pbRecord.Canvas.Pen.Width div 2, R.Right, R.Bottom, FramesBorderSize, FramesBorderSize);
   R.Left   := R.Left   + FramesBorderSize;
   R.Top    := R.Top    + FramesBorderSize;
@@ -1904,6 +2040,14 @@ begin
     R.Top + 1,
     imgAdvertisementThumbnail.Picture.Graphic
   );
+
+  // Tail of sound
+  pbRecord.Canvas.Pen.Color := clMoneyGreen;
+  pbRecord.Canvas.Pen.Width := 1;
+  pbRecord.Canvas.Pen.Style := psSolid;
+
+  for y := R.Bottom + FramesBorderSize to pbRecord.Height do
+    DrawSoundLine;
 end;
 
 procedure TMainForm.ListBoxClick(Sender: TObject);
@@ -2224,6 +2368,7 @@ begin
         else
           begin
             Playing := False;
+            StockAudioPlayer.Active := False;
             AdvertisementShowing := True;
             pbDisplay.Invalidate;
             pbRecord.Invalidate;

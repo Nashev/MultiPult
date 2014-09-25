@@ -1,6 +1,6 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{8C60ED68-896B-41E7-B808-3D27F88C751B}</ProjectGuid>
+			<ProjectGuid>{95126CC8-1E11-4D9A-87B4-51A667D5456A}</ProjectGuid>
 		</PropertyGroup>
 		<ItemGroup>
 			<Projects Include="Sources\WaveAudio\WA2010.dproj">
@@ -21,19 +21,19 @@
 			<MSBuild Projects="Sources\WaveAudio\WA2010.dproj"/>
 		</Target>
 		<Target Name="WA2010:Clean">
-			<MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="Sources\WaveAudio\WA2010.dproj"/>
 		</Target>
 		<Target Name="WA2010:Make">
-			<MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="Sources\WaveAudio\WA2010.dproj"/>
 		</Target>
 		<Target Name="MultiPult">
 			<MSBuild Projects="Sources\MultiPult.dproj"/>
 		</Target>
 		<Target Name="MultiPult:Clean">
-			<MSBuild Projects="Sources\MultiPult.dproj" Targets="Clean"/>
+			<MSBuild Targets="Clean" Projects="Sources\MultiPult.dproj"/>
 		</Target>
 		<Target Name="MultiPult:Make">
-			<MSBuild Projects="Sources\MultiPult.dproj" Targets="Make"/>
+			<MSBuild Targets="Make" Projects="Sources\MultiPult.dproj"/>
 		</Target>
 		<Target Name="Build">
 			<CallTarget Targets="WA2010;MultiPult"/>
