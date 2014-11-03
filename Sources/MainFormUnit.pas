@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns, Vcl.StdActns{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.20'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.21'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2014';
 
 const
@@ -179,6 +179,7 @@ type
     lblAudioFileName: TLabel;
     N2: TMenuItem;
     mmiUseMicrophone: TMenuItem;
+    N3: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -2233,7 +2234,7 @@ begin
               pbTimeLine.Canvas.Font.Color := clWhite;
             end;
           with BookmarkRect do
-            pbTimeLine.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
+            pbTimeLine.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
           Inc(BookmarkRect.Left, 2);
           pbTimeLine.Canvas.Brush.Style := bsClear;
 //          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);

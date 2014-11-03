@@ -1,6 +1,6 @@
 object MainForm: TMainForm
   Left = 178
-  Top = 150
+  Top = 66
   Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
   ClientHeight = 473
   ClientWidth = 673
@@ -25,15 +25,15 @@ object MainForm: TMainForm
     Left = 0
     Top = 0
     Width = 673
-    Height = 396
+    Height = 376
     Align = alClient
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
-    ExplicitHeight = 400
+    ExplicitHeight = 396
     DesignSize = (
       673
-      396)
+      376)
     object imgBackgroundSource: TImage
       Left = 64
       Top = 32
@@ -713,7 +713,7 @@ object MainForm: TMainForm
       Left = 1
       Top = 1
       Width = 452
-      Height = 394
+      Height = 374
       Align = alClient
       OnDblClick = pbDisplayDblClick
       OnMouseDown = pbDisplayMouseDown
@@ -725,7 +725,7 @@ object MainForm: TMainForm
       Left = 456
       Top = 1
       Width = 216
-      Height = 394
+      Height = 374
       Align = alRight
       OnMouseDown = pbRecordMouseDown
       OnMouseLeave = pbRecordMouseLeave
@@ -738,7 +738,7 @@ object MainForm: TMainForm
     object RecordSplitter: TSplitter
       Left = 453
       Top = 1
-      Height = 394
+      Height = 374
       Align = alRight
       AutoSnap = False
       Beveled = True
@@ -749,7 +749,7 @@ object MainForm: TMainForm
     end
     object pbFrameTip: TPaintBox
       Left = 188
-      Top = 292
+      Top = 272
       Width = 135
       Height = 105
       Anchors = [akLeft, akBottom]
@@ -6239,26 +6239,24 @@ object MainForm: TMainForm
   end
   object pnlTimeLine: TPanel
     Left = 0
-    Top = 396
+    Top = 376
     Width = 673
-    Height = 24
+    Height = 44
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 400
     object pbTimeLine: TPaintBox
       Left = 1
       Top = 1
       Width = 671
-      Height = 22
+      Height = 42
       Hint = #1047#1072#1075#1088#1091#1078#1077#1085#1085#1099#1077' '#1080#1089#1093#1086#1076#1085#1099#1077' '#1082#1072#1076#1088#1099
       Align = alClient
       OnMouseDown = pbTimeLineMouseDown
       OnMouseLeave = pbTimeLineMouseLeave
       OnMouseMove = pbTimeLineMouseMove
       OnPaint = pbTimeLinePaint
-      ExplicitLeft = 17
-      ExplicitTop = 6
+      ExplicitHeight = 24
     end
   end
   object pnlToolls: TPanel
@@ -6271,7 +6269,6 @@ object MainForm: TMainForm
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
-    ExplicitTop = 424
     DesignSize = (
       673
       34)
@@ -6546,7 +6543,6 @@ object MainForm: TMainForm
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitTop = 458
   end
   object ActionList: TActionList
     Images = ilActions
@@ -6973,30 +6969,33 @@ object MainForm: TMainForm
       object mmiPlayingForward: TMenuItem
         Action = actPlayForward
       end
-      object N1: TMenuItem
-        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
-        ShortCut = 16
-      end
       object mmiSeparatorBookmarkManagement: TMenuItem
         Caption = '-'
       end
-      object mmiNewBookmark: TMenuItem
-        Action = actNewBookmark
-      end
-      object mmiToggleBookmark0: TMenuItem
-        Action = actToggleBookmark0
+      object N3: TMenuItem
+        Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1079#1072#1082#1083#1072#1076#1082#1091
+        object mmiNewBookmark: TMenuItem
+          Action = actNewBookmark
+        end
+        object mmiToggleBookmark0: TMenuItem
+          Action = actToggleBookmark0
+        end
       end
       object mmiSeparatorBookmarks: TMenuItem
-        Caption = '-'
-      end
-      object mmiGotoBookmark0: TMenuItem
-        Action = actGotoBookmark0
+        Caption = #1055#1077#1088#1077#1081#1090#1080' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
+        object mmiGotoBookmark0: TMenuItem
+          Action = actGotoBookmark0
+        end
       end
       object mmiN1: TMenuItem
-        Caption = '-'
+        Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
+        object mmiToggleTeleport0: TMenuItem
+          Action = actToggleTeleport0
+        end
       end
-      object mmiToggleTeleport0: TMenuItem
-        Action = actToggleTeleport0
+      object N1: TMenuItem
+        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
+        ShortCut = 16
       end
     end
     object mmiMode: TMenuItem
