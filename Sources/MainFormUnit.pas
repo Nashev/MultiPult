@@ -761,7 +761,14 @@ resourcestring
       begin
         repeat
           ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
-          if (ext = '.jpg') or (ext = '.jpeg') then
+          if (ext = '.jpg') or
+             (ext = '.jpeg') or
+             (ext = '.bmp') or
+             (ext = '.png') or
+             (ext = '.gif') or
+             (ext = '.wmf') or
+             (ext = '.emf')
+          then
             begin
               FFrames.Add(TFrame.Create(ARelativePath, Rec.Name));
             end;
@@ -1775,6 +1782,8 @@ var
   OddTick: Boolean;
 
 procedure TMainForm.pbIndicatorPaint(Sender: TObject);
+resourcestring
+  rs_Framerate = '- по %d, при %d кадров в секунду';
 var
 //  X: TPoint;
   a: Double;
@@ -1783,8 +1792,8 @@ begin
     begin
       Pen.Style := psClear;
       Brush.Style := bsClear;
-      SetTextAlign(Handle, TA_TOP + TA_CENTER);
-      TextOut(15, 8, IntToStr(CurrentSpeedInterval) + '/' + IntToStr(FrameRate));
+      SetTextAlign(Handle, TA_TOP + TA_LEFT);
+      TextOut(58, 8, Format(rs_Framerate, [CurrentSpeedInterval, FrameRate]));
       Brush.Style := bsSolid;
       Brush.Color := clBlack;
       if Playing then
@@ -2688,14 +2697,23 @@ begin
 end;
 
 function TFrame.ImageFromDisc: TGraphic;
+var
+  pic: TPicture;
 begin
-  Result := TJPEGImage.Create;
-  with TJPEGImage(Result) do
-    begin
-      LoadFromFile(MainForm.PhotoFolder + Path + FileName); // NOTE: Global variable used
-      Performance := jpBestSpeed;
-      {$IFNDEF FPC}DIBNeeded;{$ENDIF}
-    end;
+  pic := TPicture.Create;
+  pic.LoadFromFile(MainForm.PhotoFolder + Path + FileName);
+  try
+    Result := TGraphicClass(pic.Graphic.ClassType).Create;
+    Result.Assign(pic.Graphic);
+  finally
+    pic.Free;
+  end;
+  if Result is TJPEGImage then
+    with TJPEGImage(Result) do
+      begin
+        Performance := jpBestSpeed;
+        {$IFNDEF FPC}DIBNeeded;{$ENDIF}
+      end;
 end;
 
 function TFrame.GenerateStubFrame(ErrorMessage: string): TGraphic;

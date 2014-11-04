@@ -1,9 +1,9 @@
 object MainForm: TMainForm
-  Left = 178
-  Top = 66
+  Left = 111
+  Top = 106
   Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
   ClientHeight = 473
-  ClientWidth = 673
+  ClientWidth = 798
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -24,15 +24,15 @@ object MainForm: TMainForm
   object pnlDisplay: TPanel
     Left = 0
     Top = 0
-    Width = 673
+    Width = 798
     Height = 376
     Align = alClient
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
-    ExplicitHeight = 396
+    ExplicitWidth = 673
     DesignSize = (
-      673
+      798
       376)
     object imgBackgroundSource: TImage
       Left = 64
@@ -712,7 +712,7 @@ object MainForm: TMainForm
     object pbDisplay: TPaintBox
       Left = 1
       Top = 1
-      Width = 452
+      Width = 577
       Height = 374
       Align = alClient
       OnDblClick = pbDisplayDblClick
@@ -722,7 +722,7 @@ object MainForm: TMainForm
       ExplicitHeight = 403
     end
     object pbRecord: TPaintBox
-      Left = 456
+      Left = 581
       Top = 1
       Width = 216
       Height = 374
@@ -736,7 +736,7 @@ object MainForm: TMainForm
       ExplicitHeight = 398
     end
     object RecordSplitter: TSplitter
-      Left = 453
+      Left = 578
       Top = 1
       Height = 374
       Align = alRight
@@ -6240,15 +6240,16 @@ object MainForm: TMainForm
   object pnlTimeLine: TPanel
     Left = 0
     Top = 376
-    Width = 673
+    Width = 798
     Height = 44
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
+    ExplicitWidth = 673
     object pbTimeLine: TPaintBox
       Left = 1
       Top = 1
-      Width = 671
+      Width = 796
       Height = 42
       Hint = #1047#1072#1075#1088#1091#1078#1077#1085#1085#1099#1077' '#1080#1089#1093#1086#1076#1085#1099#1077' '#1082#1072#1076#1088#1099
       Align = alClient
@@ -6256,24 +6257,26 @@ object MainForm: TMainForm
       OnMouseLeave = pbTimeLineMouseLeave
       OnMouseMove = pbTimeLineMouseMove
       OnPaint = pbTimeLinePaint
+      ExplicitWidth = 671
       ExplicitHeight = 24
     end
   end
   object pnlToolls: TPanel
     Left = 0
     Top = 420
-    Width = 673
+    Width = 798
     Height = 34
     Align = alBottom
     BevelOuter = bvNone
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
+    ExplicitWidth = 673
     DesignSize = (
-      673
+      798
       34)
     object LevelGauge: TGauge
-      Left = 561
+      Left = 686
       Top = 7
       Width = 105
       Height = 22
@@ -6287,20 +6290,32 @@ object MainForm: TMainForm
     object pbIndicator: TPaintBox
       Left = 8
       Top = 0
-      Width = 65
+      Width = 273
       Height = 33
       OnClick = pbIndicatorClick
       OnPaint = pbIndicatorPaint
     end
+    object lblAudioFileName: TLabel
+      Left = 578
+      Top = 12
+      Width = 207
+      Height = 13
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight]
+      AutoSize = False
+      Visible = False
+      ExplicitLeft = 453
+    end
     object imgLeftRightByMouseDownController: TImage
-      Left = 120
-      Top = 10
+      Left = 520
+      Top = 5
       Width = 83
       Height = 16
       Hint = 
         #1055#1091#1083#1100#1090#1080#1082', '#1085#1077' '#1090#1088#1077#1073#1091#1102#1097#1080#1081' '#1076#1074#1080#1078#1077#1085#1080#1103' '#1084#1099#1096#1100#1102' '#1076#1083#1103' '#1089#1084#1077#1085#1099' '#1085#1072#1087#1088#1072#1074#1083#1077#1085#1080#1103':'#13#10#1051#1077#1074 +
         #1086#1081' '#1082#1085#1086#1087#1082#1086#1081' '#1084#1099#1096#1080' - '#1089#1088#1072#1073#1086#1090#1072#1077#1090' '#1087#1088#1086#1082#1088#1091#1090#1082#1072' '#1085#1072#1083#1077#1074#1086#13#10#1055#1088#1072#1074#1086#1081' '#1082#1085#1086#1087#1082#1086#1081' '#1084#1099#1096 +
         #1080' - '#1089#1088#1072#1073#1086#1090#1072#1077#1090' '#1087#1088#1086#1082#1088#1091#1090#1082#1072' '#1085#1072#1087#1088#1072#1074#1086
+      Anchors = [akTop]
       AutoSize = True
       Picture.Data = {
         07544269746D6170F60F0000424DF60F00000000000036000000280000005300
@@ -6435,20 +6450,11 @@ object MainForm: TMainForm
       Transparent = True
       OnMouseDown = imgLeftRightByMouseDownControllerMouseDown
       OnMouseUp = imgLeftRightByMouseDownControllerMouseUp
-    end
-    object lblAudioFileName: TLabel
-      Left = 453
-      Top = 12
-      Width = 207
-      Height = 13
-      Alignment = taRightJustify
-      Anchors = [akTop, akRight]
-      AutoSize = False
-      Visible = False
+      ExplicitLeft = 510
     end
     object tlbNavigation: TToolBar
       AlignWithMargins = True
-      Left = 239
+      Left = 303
       Top = 2
       Width = 208
       Height = 30
@@ -6462,6 +6468,7 @@ object MainForm: TMainForm
       TabOrder = 0
       Wrapable = False
       OnMouseUp = tlbNavigationMouseUp
+      ExplicitLeft = 239
       object btnPlayBackward: TToolButton
         Left = 0
         Top = 0
@@ -6539,10 +6546,11 @@ object MainForm: TMainForm
   object StatusBar: TStatusBar
     Left = 0
     Top = 454
-    Width = 673
+    Width = 798
     Height = 19
     Panels = <>
     SimplePanel = True
+    ExplicitWidth = 673
   end
   object ActionList: TActionList
     Images = ilActions
