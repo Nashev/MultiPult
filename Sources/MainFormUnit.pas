@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns, Vcl.StdActns{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.21'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.23'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2014';
 
 const
