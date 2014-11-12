@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns, Vcl.StdActns{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.23'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.24'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2014';
 
 const
@@ -340,6 +340,7 @@ type
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
+    AdvertisementDuration: Integer;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
@@ -455,6 +456,7 @@ var
 begin
   inherited Create(AOwner);
   CurrentSpeedInterval := 3;
+  AdvertisementDuration := 2000; // msec
   Saved := True;
 //  BufferIndexes := TList.Create;
   FFrames := TObjectList.Create(True);
@@ -986,6 +988,7 @@ var
   Compressor: TAVICompressor;
   Options: TAVIFileOptions;
   i: Integer;
+  WaveToSave: TWave;
   Bmp: Graphics.TBitmap;
   Image: TGraphic;
   Dir: string;
@@ -1010,7 +1013,18 @@ begin
       Exporting := True;
       try
         SetStatus(rs_AVIExportingAudioStore);
-        WaveStorage.Wave.SaveToFile(Dir + '~Audio.wav');
+        if WaveStorage.Wave.Length = MulDiv(RecordedFrames.Count, 1000, Framerate) then
+          WaveToSave := WaveStorage.Wave
+        else
+          begin
+            WaveToSave := TWave.Create;
+            WaveToSave.Copy(WaveStorage.Wave, 0, MulDiv(RecordedFrames.Count, 1000, Framerate));
+          end;
+
+        WaveToSave.SaveToFile(Dir + '~Audio.wav');
+        if WaveToSave <> WaveStorage.Wave then
+          WaveToSave.Free;
+
         SetStatus(rs_AVIExportingCompressorInit);
         Compressor := TAVICompressor.Create;
         Options.Init;
@@ -1049,7 +1063,8 @@ begin
           end;
         Bmp.Assign(AdvertisementFrameImagePreview);
         Bmp.PixelFormat := pf24bit;
-        CheckAVIError(Compressor.WriteFrame(Bmp));
+        for i := 1 to AdvertisementDuration div FrameRate do
+          CheckAVIError(Compressor.WriteFrame(Bmp));
         Bmp.Free;
         Compressor.Close;
         SetStatus(rs_AVIExportingAudioMerge);

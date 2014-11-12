@@ -6468,7 +6468,6 @@ object MainForm: TMainForm
       TabOrder = 0
       Wrapable = False
       OnMouseUp = tlbNavigationMouseUp
-      ExplicitLeft = 239
       object btnPlayBackward: TToolButton
         Left = 0
         Top = 0
@@ -6550,7 +6549,6 @@ object MainForm: TMainForm
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitWidth = 673
   end
   object ActionList: TActionList
     Images = ilActions

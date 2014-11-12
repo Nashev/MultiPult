@@ -67,8 +67,8 @@
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
 			<Icon_MainIcon>Images\icon.ico</Icon_MainIcon>
-			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.23.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
-			<VerInfo_Release>23</VerInfo_Release>
+			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.24.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
+			<VerInfo_Release>24</VerInfo_Release>
 			<VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
 			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
 			<DCC_Inlining>off</DCC_Inlining>
