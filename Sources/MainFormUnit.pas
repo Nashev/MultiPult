@@ -22,11 +22,11 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns, Vcl.StdActns{$IFDEF Delphi6}, Actions{$ENDIF};
+  ToolWin, ExtActns, Vcl.StdActns, System.Actions{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.24'; // и в ProjectOptions не забыть поменять
-  rs_VersionYear = '2014';
+  rs_VersionName = '0.9.25'; // и в ProjectOptions не забыть поменять
+  rs_VersionYear = '2015';
 
 const
   ControlActionStackDeep = 10;
@@ -320,6 +320,9 @@ type
     procedure UpdatePlayActions;
     procedure StopRecording;
     procedure StopPlaying;
+    procedure CreateWindowHandle(const Params: TCreateParams); override;
+    procedure DestroyWindowHandle; override;
+    procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipIndex(const Value: Integer);
     function TeleportEnabled: Boolean;
@@ -332,7 +335,7 @@ type
     function FrameIndexToTimeLineX(FrameIndex: Integer): Integer;
     function TimeLineXToFrameIndex(X: Integer): Integer;
 //    Drawing: Boolean;
-    procedure LoadPhotoFolder(ARelativePath: string);
+    procedure LoadPhotoFolder(ANewPhotoFolder: string);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure ClearRecorded;
     procedure RecalculatePreview;
@@ -394,14 +397,14 @@ end;
 
 procedure TMainForm.actSelectAudioFileExecute(Sender: TObject);
 resourcestring
-  rs_SaveBeforeOpenRequest = 'Хотите сохранить записанную озвучку перед подключением готовой?';
+  rs_SaveAudioBeforeOpenRequest = 'Хотите сохранить записанную озвучку перед подключением готовой?';
 begin
   StopRecording;
   StopPlaying;
   if (WaveStorage.Wave.Length > 0) and (FExternalAudioFileName = '') then
     case MessageBox(
       0,
-      PChar(rs_SaveBeforeOpenRequest),
+      PChar(rs_SaveAudioBeforeOpenRequest),
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
@@ -423,21 +426,17 @@ end;
 procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
 resourcestring
   rs_SelectPhotoFolderCaption = 'С какой папки начинать искать кадры?';
+var
+  NewPhotoFolder: string;
 begin
-  actNew.Execute;
-  PhotoFolder := ExtractFilePath(ExpandFileName('..\testdata\'));
+  NewPhotoFolder := ExtractFilePath(ExpandFileName('..\testdata\'));
   if SelectDirectory(
-    rs_SelectPhotoFolderCaption, '', PhotoFolder
+    rs_SelectPhotoFolderCaption, '', NewPhotoFolder
     {$IFDEF DelphiXE}
     , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
     {$ENDIF}
   ) then
-    begin
-      LoadPhotoFolder('\');
-      CurrentFrameIndex := 0;
-      Saved := False;
-    end;
-  CaptureFirstFrameSizes;
+    LoadPhotoFolder(NewPhotoFolder);
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -656,6 +655,38 @@ begin
   LiveAudioRecorder.WaitForStop;
 end;
 
+procedure TMainForm.CreateWindowHandle(const Params: TCreateParams);
+begin
+  inherited CreateWindowHandle(Params);
+  DragAcceptFiles(Handle, True);
+end;
+
+procedure TMainForm.DestroyWindowHandle;
+begin
+  DragAcceptFiles(Handle, False);
+  inherited DestroyWindowHandle;
+end;
+
+procedure TMainForm.WMDropFiles(var Msg: TWMDropFiles);
+var
+  i: Integer;
+  FileCount: Integer;
+  FileName: array [0..MAX_PATH] of Char;
+begin
+  FileCount := DragQueryFile(Msg.Drop, $FFFFFFFF, nil, 0); // Get count of files
+  for i := 0 to FileCount-1 do
+    begin
+      DragQueryFile(Msg.Drop, i, @FileName, SizeOf(FileName)); // Get N file
+      if DirectoryExists(FileName) then
+        LoadPhotoFolder(FileName)
+      else if LowerCase(ExtractFileExt(FileName)) = '.mp' then
+        OpenMovie(FileName)
+      else
+        Beep;
+    end;
+  DragFinish(Msg.Drop); // end drag handling, release drag source window
+end;
+
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if ssCtrl in Shift then
@@ -748,7 +779,7 @@ begin
   )
 end;
 
-procedure TMainForm.LoadPhotoFolder(ARelativePath: string);
+procedure TMainForm.LoadPhotoFolder(ANewPhotoFolder: string);
 
 resourcestring
   rs_ScaningStatus = 'Чтение папки: ';
@@ -782,16 +813,23 @@ resourcestring
   end;
 //  i: Integer;
 begin
+  actNew.Execute;
+  PhotoFolder := ANewPhotoFolder;
+
   SetCaption(PhotoFolder);
 
   UnloadFrames;
 //  BufferIndexes.Clear;
   HaveBuffers := True;
 
-  InternalLoadDirectory(ARelativePath);
+  InternalLoadDirectory('\');
 
   FFrames.Sort(CompareFramesFileName);
 //  ListBox.Items.Assign(FileNames);
+  CurrentFrameIndex := 0;
+  Saved := False;
+  CaptureFirstFrameSizes;
+
   UpdateActions;
 end;
 
@@ -1131,12 +1169,12 @@ end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
 resourcestring
-  rs_SaveBeforeNewRequest = 'Хотите сохранить текущий мульт перед созданием нового?';
+  rs_SaveMovieBeforeNewRequest = 'Хотите сохранить текущий мульт перед созданием нового?';
 begin
   if (RecordedFrames.Count > 0) and not Saved then
     case MessageBox(
       0,
-      PChar(rs_SaveBeforeNewRequest),
+      PChar(rs_SaveMovieBeforeNewRequest),
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
@@ -1197,8 +1235,26 @@ var
     TargetIndex := StrToInt(Trim(Copy(s, SeparatorPos+1, Length(s))));
     Frames[FrameIndex].Teleport := TargetIndex;
   end;
-
+resourcestring
+  rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
 begin
+  if (RecordedFrames.Count > 0) and not Saved then
+    case MessageBox(
+      0,
+      PChar(rs_SaveBeforeOpenRequest),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+    of
+      IDCANCEL: Exit;
+      IDYES:
+        begin
+          actSaveAs.Execute;
+          if not Saved then
+            Exit;
+        end;
+      IDNO: ;
+    end;
+
   ClearRecorded;
   PhotoFolder := ExtractFilePath(AFileName);
   UnloadFrames;
@@ -1287,29 +1343,9 @@ begin
 end;
 
 procedure TMainForm.actOpenExecute(Sender: TObject);
-resourcestring
-  rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
 begin
   if not dlgOpenMovie.Execute then
     Abort;
-
-  if (RecordedFrames.Count > 0) and not Saved then
-    case MessageBox(
-      0,
-      PChar(rs_SaveBeforeOpenRequest),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    of
-      IDCANCEL: Exit;
-      IDYES:
-        begin
-          actSaveAs.Execute;
-          if not Saved then
-            Exit;
-        end;
-      IDNO: ;
-    end;
-
   OpenMovie(dlgOpenMovie.FileName);
 end;
 

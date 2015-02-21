@@ -33,12 +33,18 @@
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<VerInfo_Locale>1049</VerInfo_Locale>
-			<VerInfo_AutoGenVersion>true</VerInfo_AutoGenVersion>
+			<VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
 			<VerInfo_PreRelease>true</VerInfo_PreRelease>
-			<VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=0.9.4.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=0.9.0.0;Comments=;PrivateBuild=</VerInfo_Keys>
+			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.24.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
 			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-			<VerInfo_Release>4</VerInfo_Release>
+			<VerInfo_Release>24</VerInfo_Release>
 			<DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
+			<Icon_MainIcon>Images\icon.ico</Icon_MainIcon>
+			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+			<DCC_Inlining>off</DCC_Inlining>
+			<DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
+			<DCC_OutputDependencies>true</DCC_OutputDependencies>
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<VerInfo_MinorVer>9</VerInfo_MinorVer>
 			<VerInfo_MajorVer>0</VerInfo_MajorVer>
 			<DCC_ExeOutput>..\bin\</DCC_ExeOutput>
@@ -61,18 +67,9 @@
 			<DCC_DebugInformation>0</DCC_DebugInformation>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
-			<DCC_OutputDependencies>true</DCC_OutputDependencies>
-			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-			<Icon_MainIcon>Images\icon.ico</Icon_MainIcon>
-			<VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.24.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
-			<VerInfo_Release>24</VerInfo_Release>
-			<VerInfo_AutoGenVersion>false</VerInfo_AutoGenVersion>
-			<Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-			<DCC_Inlining>off</DCC_Inlining>
-			<DCC_IntegerOverflowCheck>true</DCC_IntegerOverflowCheck>
 		</PropertyGroup>
 		<ItemGroup>
 			<DelphiCompile Include="$(MainSource)">
