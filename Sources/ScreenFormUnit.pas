@@ -89,20 +89,20 @@ var
 begin
   with MainForm do
     begin
-      LoadPhoto(CurrentFrameIndex); // на всякий случай
+      LoadPhoto(DisplayedFrameIndex); // на всякий случай
       R := Rect(0,0,0,0);
       if MainForm.actFullScreenMode.Checked then
         ScreenSize := Point(Self.ClientWidth, Self.ClientHeight)
       else
         ScreenSize := Point(Self.ClientWidth - ScreenBorder * 2, Self.ClientHeight - ScreenBorder * 2);
 
-      if FramesCount > 0 then
+      if FrameInfoCount > 0 then
         try
           if AdvertisementShowing then
             Image := AdvertisementFrameImagePreview
           else
-            if Frames[CurrentFrameIndex].Loaded then
-              Image := Frames[CurrentFrameIndex].Preview
+            if FrameInfoList[DisplayedFrameIndex].Loaded then
+              Image := FrameInfoList[DisplayedFrameIndex].Preview
             else
               Image := nil;
           if Image <> nil then

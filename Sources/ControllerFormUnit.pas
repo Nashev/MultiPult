@@ -67,7 +67,7 @@ end;
 
 procedure TControllerForm.pbScrollHandleMouseEnter(Sender: TObject);
 begin
-  if MainForm.FramesCount = 0 then
+  if MainForm.WorkingSetFrames.Count = 0 then
     Exit;
   ScrollHandleMode := shmManual;
 end;
@@ -82,7 +82,7 @@ var
   Distance: Integer;
   Angle: Double;
 begin
-  if MainForm.FramesCount = 0 then
+  if MainForm.WorkingSetFrames.Count = 0 then
     Exit;
 
   ScrollHandleTargetPoint := pbScrollHandle.ScreenToClient(Mouse.CursorPos);
@@ -114,7 +114,7 @@ var
   EndPoint: TPoint;
   Angle: Double;
   I: Integer;
-  NextFrameIndex: Integer;
+  NextWorkingFrame: TRecordedFrame;
 begin
   case ScrollHandleMode of
     shmInactive: pbScrollHandle.Canvas.Brush.Color := clDkGray;
@@ -126,7 +126,7 @@ begin
   pbScrollHandle.Canvas.Pen.Color := pbScrollHandle.Canvas.Brush.Color;
   pbScrollHandle.Canvas.Pen.Style := psSolid;
 
-  if MainForm.FramesCount = 0 then
+  if not Assigned(MainForm.CurrentWorkingSetFrame) then
     Exit;
 
   if ScrollHandleMode = shmManual then
@@ -149,9 +149,9 @@ begin
 
       for I := ScrollHandlePositionCount div 3 downto 1 do
         begin
-          NextFrameIndex := MainForm.IncrementCurrentFrameIndex(-I);
+          NextWorkingFrame := MainForm.FindWorkingSetFrameByOffset(-I);
           // Stop Frames: if NextFrameIndex(i) = NextFrameIndex(i+1) then not draw previous preview
-          if NextFrameIndex <> MainForm.IncrementCurrentFrameIndex(- I + 1) then
+          if NextWorkingFrame <> MainForm.FindWorkingSetFrameByOffset(- I + 1) then
             begin
               Angle := Pi * 2 * (FScrollHandlePosition - I) / ScrollHandlePositionCount;
               ThumbmailRect.Left := ScrollHandleCenterPoint.X + Round(Sin(Angle) * ThumbmailAreaRadius) - ThumbnailSize.X div 2;
@@ -159,12 +159,12 @@ begin
               ThumbmailRect.Right := ThumbmailRect.Left + ThumbnailSize.X;
               ThumbmailRect.Bottom := ThumbmailRect.Top + ThumbnailSize.Y;
 
-              pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.Frames[NextFrameIndex].Preview);
+              pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.FrameInfoList[NextWorkingFrame.FrameInfoIndex].Preview);
             end;
 
-          NextFrameIndex := MainForm.IncrementCurrentFrameIndex(I);
+          NextWorkingFrame := MainForm.FindWorkingSetFrameByOffset(I);
           // Stop Frames: if NextFrameIndex(i) = NextFrameIndex(i-1) then not draw next preview
-          if NextFrameIndex <> MainForm.IncrementCurrentFrameIndex(I - 1) then
+          if NextWorkingFrame <> MainForm.FindWorkingSetFrameByOffset(I - 1) then
             begin
               Angle := Pi * 2 * (FScrollHandlePosition + I) / ScrollHandlePositionCount;
               ThumbmailRect.Left := ScrollHandleCenterPoint.X + Round(Sin(Angle) * ThumbmailAreaRadius) - ThumbnailSize.X div 2;
@@ -172,7 +172,7 @@ begin
               ThumbmailRect.Right := ThumbmailRect.Left + ThumbnailSize.X;
               ThumbmailRect.Bottom := ThumbmailRect.Top + ThumbnailSize.Y;
 
-              pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.Frames[NextFrameIndex].Preview);
+              pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.FrameInfoList[NextWorkingFrame.FrameInfoIndex].Preview);
             end;
         end;
 
@@ -182,7 +182,7 @@ begin
       ThumbmailRect.Right := ThumbmailRect.Left + ThumbnailSize.X;
       ThumbmailRect.Bottom := ThumbmailRect.Top + ThumbnailSize.Y;
 
-      pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.Frames[MainForm.CurrentFrameIndex].Preview);
+      pbScrollHandle.Canvas.StretchDraw(ThumbmailRect, MainForm.FrameInfoList[MainForm.CurrentWorkingSetFrame.FrameInfoIndex].Preview);
     end;
 
   if ScrollHandleMode = shmAuto then
@@ -260,7 +260,7 @@ begin
       else if ScrollHandleFramesOffset > (ScrollHandlePositionCount div 2) then
         ScrollHandleFramesOffset := ScrollHandleFramesOffset - ScrollHandlePositionCount;
 
-      MainForm.CurrentFrameIndex := MainForm.IncrementCurrentFrameIndex(ScrollHandleFramesOffset);
+      MainForm.CurrentWorkingSetFrame := MainForm.FindWorkingSetFrameByOffset(ScrollHandleFramesOffset);
 
       // For auto mode:
       if ScrollHandleFramesOffset > 0 then
@@ -283,7 +283,7 @@ end;
 procedure TControllerForm.tmrAutoModeTimer(Sender: TObject);
 begin
   Assert(ScrollHandleMode = shmAuto, 'Timer working in non auto mode are useless!');
-  MainForm.CurrentFrameIndex := MainForm.IncrementCurrentFrameIndex(ScrollHandleAutoDirection);
+  MainForm.CurrentWorkingSetFrame := MainForm.FindWorkingSetFrameByOffset(ScrollHandleAutoDirection);
 
   FScrollHandlePosition := FScrollHandlePosition + ScrollHandleAutoDirection;
   if FScrollHandlePosition < 0 then

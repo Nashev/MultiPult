@@ -30,7 +30,6 @@ object MainForm: TMainForm
     BevelOuter = bvLowered
     FullRepaint = False
     TabOrder = 0
-    ExplicitWidth = 673
     DesignSize = (
       798
       376)
@@ -6237,7 +6236,7 @@ object MainForm: TMainForm
       Visible = False
     end
   end
-  object pnlTimeLine: TPanel
+  object pnlWorkingSet: TPanel
     Left = 0
     Top = 376
     Width = 798
@@ -6245,18 +6244,17 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitWidth = 673
-    object pbTimeLine: TPaintBox
+    object pbWorkingSet: TPaintBox
       Left = 1
       Top = 1
       Width = 796
       Height = 42
       Hint = #1047#1072#1075#1088#1091#1078#1077#1085#1085#1099#1077' '#1080#1089#1093#1086#1076#1085#1099#1077' '#1082#1072#1076#1088#1099
       Align = alClient
-      OnMouseDown = pbTimeLineMouseDown
-      OnMouseLeave = pbTimeLineMouseLeave
-      OnMouseMove = pbTimeLineMouseMove
-      OnPaint = pbTimeLinePaint
+      OnMouseDown = pbWorkingSetMouseDown
+      OnMouseLeave = pbWorkingSetMouseLeave
+      OnMouseMove = pbWorkingSetMouseMove
+      OnPaint = pbWorkingSetPaint
       ExplicitWidth = 671
       ExplicitHeight = 24
     end
@@ -6271,7 +6269,6 @@ object MainForm: TMainForm
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
-    ExplicitWidth = 673
     DesignSize = (
       798
       34)

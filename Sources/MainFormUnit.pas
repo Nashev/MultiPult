@@ -25,14 +25,14 @@ uses
   ToolWin, ExtActns, Vcl.StdActns, System.Actions{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.25'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.26'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2015';
 
 const
   ControlActionStackDeep = 10;
 type
   TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward);
-  TFrameTipMode = (ftmTimeLine, ftmRecord);
+  TFrameTipMode = (ftmWorkingSet, ftmRecord);
 const
   FrameTipW = 120;
   FrameTipH = 90;
@@ -40,12 +40,12 @@ const
   FrameTipT = 2;
 
 type
-  TFrame = class
+  TFrameInfo = class
   private
     FPath, FFileName: string;
   public
     Preview: TBitmap;
-    Teleport: Integer;
+    Teleport: Integer; // TODO: move to ResultFrame (?)
     Loaded: Boolean;
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
@@ -53,6 +53,28 @@ type
     property Path: string read FPath;
     constructor Create(APath, AFileName: string);
     destructor Destroy; override;
+  end;
+
+  TRecordedFrameList = class;
+  TRecordedFrame = class(TCollectionItem)
+  private
+    FFrameInfoIndex: Integer;
+  public
+    constructor Create(AFrameList: TRecordedFrameList; AFrameInfoIndex: Integer); reintroduce;
+    property FrameInfoIndex: Integer read FFrameInfoIndex write FFrameInfoIndex;
+    // TODO: FlipHorisontally etc
+  end;
+
+  TRecordedFrameList = class(TCollection)
+  private
+    function GetItems(AIndex: Integer): TRecordedFrame;
+  protected
+    // procedure Update(Item: TCollectionItem); override;
+  public
+    constructor Create;
+    property Items[AIndex: Integer]: TRecordedFrame read GetItems; default;
+    function FindByFrameIndex(AFrameInfoIndex: Integer): TRecordedFrame;
+    // TODO: Audio, AudioOffset
   end;
 
   // TODO: Snippets or clips or pieces
@@ -80,8 +102,8 @@ type
     actNewBookmark: TAction;
     actRecord: TAction;
     actExport: TAction;
-    pnlTimeLine: TPanel;
-    pbTimeLine: TPaintBox;
+    pnlWorkingSet: TPanel;
+    pbWorkingSet: TPaintBox;
     OpenPictureDialog: TOpenPictureDialog;
     mmiNext: TMenuItem;
     mmiPrev: TMenuItem;
@@ -185,7 +207,7 @@ type
     procedure actStepPrevExecute(Sender: TObject);
     procedure pbDisplayPaint(Sender: TObject);
     procedure ListBoxClick(Sender: TObject);
-    procedure pbTimeLinePaint(Sender: TObject);
+    procedure pbWorkingSetPaint(Sender: TObject);
     procedure TimerTimer(Sender: TObject);
     procedure actPlayForwardExecute(Sender: TObject);
     procedure actExitExecute(Sender: TObject);
@@ -243,12 +265,12 @@ type
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure pbTimeLineMouseDown(Sender: TObject; Button: TMouseButton;
+    procedure pbWorkingSetMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure pbTimeLineMouseMove(Sender: TObject; Shift: TShiftState; X,
+    procedure pbWorkingSetMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     procedure pbFrameTipPaint(Sender: TObject);
-    procedure pbTimeLineMouseLeave(Sender: TObject);
+    procedure pbWorkingSetMouseLeave(Sender: TObject);
     procedure pbRecordMouseLeave(Sender: TObject);
     procedure actShowControllerFormExecute(Sender: TObject);
     procedure actShowControllerFormUpdate(Sender: TObject);
@@ -279,19 +301,16 @@ type
     procedure ReplaceControlActions(Value: TControlAction);
   private
     PhotoFolder: string;
-    //FileNames: TStringList;
-//    BufferIndexes: TList;
-    FFrames: TObjectList;
-
-    HaveBuffers: Boolean;
+    FFrameInfoList: TObjectList;
+    FWorkingSetFrames: TRecordedFrameList;
+    FRecordedFrames: TRecordedFrameList;
     KeyPressBlocked: Boolean;
     Interval, CurrentSpeedInterval: Integer;
     Recording, RecordingMustBeChanged, Playing, Exporting: Boolean;
     LoopMode: Boolean;
-    RecordedFrames: TList;
     FrameTipMode: TFrameTipMode;
     FrameTipArrow: Integer;
-    Bookmarks: array [0..9] of Integer;
+    Bookmarks: array [0..9] of Integer; // TODO: move to ResultFrameList (?)
     Saved: Boolean;
      // RecordedAudioCopy - рисуемая копия звука. По мере записи мульта пополняется из AudioRecorder
      // копиями очередных порций записываемого им себе звука.
@@ -305,41 +324,45 @@ type
     pbRecordOffset: Integer;
     OutOfMemoryRaised: Boolean;
     PreviousBounds: TRect;
-    FFrameTipIndex: Integer;
+    FFrameTipRecordedFrame: TRecordedFrame;
     FCurrentRecordPosition: Integer;
-    FCurrentFrameIndex: Integer;
+    FCurrentWorkingSetFrame: TRecordedFrame;
     AdvertisementFrameBottom: Integer;
     AdvertisementFrameImage: TBitmap;
     AdvertisementFrameTipShowing: Boolean;
     ExportSize: TSize;
     FirstFrameSize: TSize;
     FExternalAudioFileName: string;
+    FDisplayedFrameIndex: Integer;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
-    procedure SetCurrentFrameIndex(const Value: Integer);
+    procedure SetCurrentWorkingSetFrame(const Value: TRecordedFrame);
     procedure UpdatePlayActions;
     procedure StopRecording;
     procedure StopPlaying;
-    procedure CreateWindowHandle(const Params: TCreateParams); override;
-    procedure DestroyWindowHandle; override;
-    procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
+    procedure SetDisplayedFrameIndex(const Value: Integer);
+    procedure InitMicrophoneUsage;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
-    procedure SetFrameTipIndex(const Value: Integer);
+    procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
     procedure OpenMovie(AFileName: string);
     procedure OpenAudio(AFileName: string);
-    property FrameTipIndex: Integer read FFrameTipIndex write SetFrameTipIndex;
-    function GetFrame(Index: Integer): TFrame;
-    function GetFramesCount: Integer;
+    property FrameTipRecordedFrame: TRecordedFrame read FFrameTipRecordedFrame write SetFrameTipRecordedFrame;
+    function GetFrameInfo(Index: Integer): TFrameInfo;
+    function GetFrameInfoCount: Integer;
     procedure UnloadFrames;
-    function FrameIndexToTimeLineX(FrameIndex: Integer): Integer;
-    function TimeLineXToFrameIndex(X: Integer): Integer;
+    procedure ClearRecorded;
+    function WorkingFrameToWorkingSetX(AWorkingSetFrame: TRecordedFrame): Integer;
+    function WorkingSetXToWorkingFrame(X: Integer): TRecordedFrame;
 //    Drawing: Boolean;
     procedure LoadPhotoFolder(ANewPhotoFolder: string);
     procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
-    procedure ClearRecorded;
     procedure RecalculatePreview;
     procedure CreateAdvertisementFrame;
+  protected
+    procedure CreateWindowHandle(const Params: TCreateParams); override;
+    procedure DestroyWindowHandle; override;
+    procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
@@ -349,12 +372,15 @@ type
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     procedure SetCaption(const Value: TCaption);
     procedure SetStatus(const Value: string);
-    property CurrentFrameIndex: Integer read FCurrentFrameIndex write SetCurrentFrameIndex;
-    function IncrementCurrentFrameIndex(AOffset: Integer): Integer;
-    property FramesCount: Integer read GetFramesCount;
-    property Frames[Index: Integer]: TFrame read GetFrame;
+    property DisplayedFrameIndex: Integer read FDisplayedFrameIndex write SetDisplayedFrameIndex;
+    property CurrentWorkingSetFrame: TRecordedFrame read FCurrentWorkingSetFrame write SetCurrentWorkingSetFrame;
+    function FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
+    property WorkingSetFrames: TRecordedFrameList read FWorkingSetFrames;
+    property RecordedFrames: TRecordedFrameList read FRecordedFrames;
+    property FrameInfoCount: Integer read GetFrameInfoCount;
+    property FrameInfoList[Index: Integer]: TFrameInfo read GetFrameInfo;
     // Used in ScreenForm
-    procedure LoadPhoto(Index: Integer);
+    procedure LoadPhoto(AFrameInfoIndex: Integer);
   end;
 
 var
@@ -457,11 +483,12 @@ begin
   CurrentSpeedInterval := 3;
   AdvertisementDuration := 2000; // msec
   Saved := True;
-//  BufferIndexes := TList.Create;
-  FFrames := TObjectList.Create(True);
-  RecordedFrames := TList.Create;
+  FFrameInfoList := TObjectList.Create(True);
+  FRecordedFrames := TRecordedFrameList.Create;
+  FWorkingSetFrames := TRecordedFrameList.Create;
   RecordedAudioCopy := TMemoryStream.Create;
   Application.OnIdle := ApplicationIdle;
+  DisplayedFrameIndex := -1;
   for i := 0 to 9 do
     Bookmarks[i] := -1;
 end;
@@ -493,10 +520,10 @@ begin
   if Assigned(AdvertisementFrameImage) then
     Exit;
 
-  if FramesCount = 0 then
+  if FrameInfoCount = 0 then
     Exit;
 
-  Image := Frames[0].ImageFromDisc;
+  Image := FrameInfoList[0].ImageFromDisc;
 
   AdvertisementFrameImage := TBitmap.Create;
   with AdvertisementFrameImage do
@@ -553,8 +580,9 @@ destructor TMainForm.Destroy;
 begin
   MultimediaTimer.Enabled := False;
   FreeAndNil(RecordedAudioCopy);
-//  FreeAndNil(BufferIndexes);
-  FreeAndNil(FFrames);
+  FreeAndNil(FWorkingSetFrames);
+  FreeAndNil(FRecordedFrames);
+  FreeAndNil(FFrameInfoList);
   inherited Destroy;
 end;
 
@@ -624,14 +652,14 @@ begin
   LiveAudioRecorder.Active := True;
 
   pnlDisplay.DoubleBuffered := True;
-  pnlTimeLine.DoubleBuffered := True;
+  pnlWorkingSet.DoubleBuffered := True;
   pnlToolls.DoubleBuffered := True;
 
-  FrameTipIndex := -1;
+  FrameTipRecordedFrame := nil;
 
   {$IFDEF DelphiXE+}
   pnlDisplay.ParentBackground := False;
-  pnlTimeLine.ParentBackground := False;
+  pnlWorkingSet.ParentBackground := False;
   pnlToolls.ParentBackground := False;
   {$ENDIF}
 
@@ -710,7 +738,7 @@ begin
         vk_Left:   begin PushControlAction(caStepBackward); KeyPressBlocked := True; end;
         vk_Right:  begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
         VK_ESCAPE: if actFullScreenMode.Checked then actFullScreenMode.Execute; // TODO: что ещё тут стоит прерывать эскейпом?
-        vk_Shift:  pbTimeLine.Invalidate; // телепорты выключаются
+        vk_Shift:  pbWorkingSet.Invalidate; // телепорты выключаются
       end;
 
   UpdatePlayActions;
@@ -723,19 +751,19 @@ procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
 begin
   KeyPressBlocked := False; // TODO: разблокировать не любую клавишу, а ту, что блокировали. Чтоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
   case Key of
-    vk_Shift: pbTimeLine.Invalidate; // телепорты включаются
+    vk_Shift: pbWorkingSet.Invalidate; // телепорты включаются
   end;
 //  pbIndicator.Refresh;
 end;
 
-function TMainForm.GetFrame(Index: Integer): TFrame;
+function TMainForm.GetFrameInfo(Index: Integer): TFrameInfo;
 begin
-  Result := FFrames[Index] as TFrame;
+  Result := TFrameInfo(FFrameInfoList[Index]);
 end;
 
-function TMainForm.GetFramesCount: Integer;
+function TMainForm.GetFrameInfoCount: Integer;
 begin
-  Result := FFrames.Count;
+  Result := FFrameInfoList.Count;
 end;
 
 procedure TMainForm.imgLeftRightByMouseDownControllerMouseDown(Sender: TObject;
@@ -767,15 +795,21 @@ end;
 
 procedure TMainForm.UnloadFrames;
 begin
-  FFrames.Clear;
+  ClearRecorded;
+
+  DisplayedFrameIndex := -1;
+  FCurrentWorkingSetFrame := nil;
+  FFrameTipRecordedFrame := nil;
+  WorkingSetFrames.Clear;
+  FFrameInfoList.Clear;
   OutOfMemoryRaised := False;
 end;
 
 function CompareFramesFileName(Item1, Item2: Pointer): Integer;
 begin
   Result := CompareText(
-    TFrame(Item1).Path + TFrame(Item1).FileName,
-    TFrame(Item2).Path + TFrame(Item2).FileName
+    TFrameInfo(Item1).Path + TFrameInfo(Item1).FileName,
+    TFrameInfo(Item2).Path + TFrameInfo(Item2).FileName
   )
 end;
 
@@ -803,7 +837,7 @@ resourcestring
              (ext = '.emf')
           then
             begin
-              FFrames.Add(TFrame.Create(ARelativePath, Rec.Name));
+              FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, Rec.Name));
             end;
           if ((Rec.Attr and faDirectory) <> 0) and (Rec.Name <> '.') and (Rec.Name <> '..') then
             InternalLoadDirectory(ARelativePath + Rec.Name + '\');
@@ -811,6 +845,8 @@ resourcestring
         {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
       end;
   end;
+var
+  i: Integer;
 //  i: Integer;
 begin
   actNew.Execute;
@@ -819,15 +855,15 @@ begin
   SetCaption(PhotoFolder);
 
   UnloadFrames;
-//  BufferIndexes.Clear;
-  HaveBuffers := True;
 
   InternalLoadDirectory('\');
 
-  FFrames.Sort(CompareFramesFileName);
-//  ListBox.Items.Assign(FileNames);
-  CurrentFrameIndex := 0;
-  Saved := False;
+  FFrameInfoList.Sort(CompareFramesFileName);
+  for i := 0 to FFrameInfoList.Count - 1 do
+    TRecordedFrame.Create(WorkingSetFrames, i);
+
+  DisplayedFrameIndex := 0; // same as WorkingSetFrames[0].FFrameInfoIndex;
+  Saved := True;
   CaptureFirstFrameSizes;
 
   UpdateActions;
@@ -864,10 +900,10 @@ var
 begin
   for i := 1 to 10 do // сначала попробуем снять закладку, если она тут уже есть. Пусть Enter тоже выключателем работает
     // перебираем 1-10 и используем i mod 10, чтобы индекс 0 был после 9, как на клавиатуре
-    if Bookmarks[i mod 10] = CurrentFrameIndex then
+    if Bookmarks[i mod 10] = DisplayedFrameIndex then
       begin
         Bookmarks[i mod 10] := -1;
-        pbTimeLine.Invalidate;
+        pbWorkingSet.Invalidate;
         Saved := False;
         Exit;
       end;
@@ -875,8 +911,8 @@ begin
   for i := 1 to 10 do // если не было закладки - то ставим первую свободную
     if Bookmarks[i mod 10] = -1 then
       begin
-        Bookmarks[i mod 10] := CurrentFrameIndex;
-        pbTimeLine.Invalidate;
+        Bookmarks[i mod 10] := DisplayedFrameIndex;
+        pbWorkingSet.Invalidate;
         Saved := False;
         Exit;
       end;
@@ -888,13 +924,16 @@ procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
 begin
   if not actNew.Execute then
     Exit;
+  InitMicrophoneUsage;
+end;
+
+procedure TMainForm.InitMicrophoneUsage;
+begin
   FExternalAudioFileName := '';
   actSelectAudioFile.Checked := False;
   mmiUseMicrophone.Checked := True;
   LiveAudioRecorder.Active := True;
   lblAudioFileName.Visible := False;
-  WaveStorage.Wave.Clear;
-  RecordedAudioCopy.Clear;
   pbRecord.Invalidate;
 end;
 
@@ -922,7 +961,7 @@ begin
   FreeAndNil(AdvertisementFrameImage);
   FreeAndNil(AdvertisementFrameImagePreview);
   pnlDisplay.Invalidate;
-  pbTimeLine.Repaint;
+  pbWorkingSet.Repaint;
 end;
 
 type
@@ -983,15 +1022,15 @@ begin
         AdvertisementShowing := False;
         for i := 0 to RecordedFrames.Count - 1 do
           begin
-            CurrentRecordPosition := i;
-            CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
+            CurrentRecordPosition := i; // preview
+            DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
             pbRecord.Invalidate;
             SetStatus(Format(rs_FramesExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
             Cancel := False;
             NewFileName := Dir + Format('Frame%.5d.jpg', [i]);
             if not CopyFileEx(
-              PChar(PhotoFolder + Frames[Integer(RecordedFrames[i])].Path + Frames[Integer(RecordedFrames[i])].FileName),
+              PChar(PhotoFolder + FrameInfoList[RecordedFrames[i].FrameInfoIndex].Path + FrameInfoList[RecordedFrames[i].FrameInfoIndex].FileName),
               PChar(NewFileName),
               @CopyProgressHandler,
               @Self,
@@ -1030,8 +1069,8 @@ var
   Bmp: Graphics.TBitmap;
   Image: TGraphic;
   Dir: string;
-  PreparedFrameIndex: Integer;
-  OldCurrentFrameIndex: Integer;
+  PreparedFrameInfoIndex: Integer;
+  OldCurrentWorkingFrame: TRecordedFrame;
 //  Cancel: BOOL;
   R: TRect;
 resourcestring
@@ -1043,7 +1082,7 @@ resourcestring
 
 begin
   Dir := GetCurrentDir;
-  OldCurrentFrameIndex := CurrentFrameIndex;
+  OldCurrentWorkingFrame := CurrentWorkingSetFrame;
   if SaveToAVIDialog.Execute then
     begin
 //      SetCurrentDir(Dir);
@@ -1079,23 +1118,23 @@ begin
         Bmp.Height := ExportSize.cy;
         {$ENDIF}
         AdvertisementShowing := False;
-        PreparedFrameIndex := -1;
+        PreparedFrameInfoIndex := -1;
         for i := 0 to RecordedFrames.Count - 1 do
           begin
-            CurrentRecordPosition := i;
-            CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
+            CurrentRecordPosition := i; // preview
+            DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
             pbRecord.Invalidate;
             SetStatus(Format(rs_AVIExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
-            if PreparedFrameIndex <> CurrentFrameIndex then // skip already preparing
+            if PreparedFrameInfoIndex <> RecordedFrames[i].FrameInfoIndex then // skip already preparing
               begin
-                Image := Frames[CurrentFrameIndex].ImageFromDisc;
+                Image := FrameInfoList[RecordedFrames[i].FrameInfoIndex].ImageFromDisc;
                 R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
                 Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
                 Bmp.Canvas.StretchDraw(R, Image);
                 Image.Free;
                 Bmp.PixelFormat := pf24bit;
-                PreparedFrameIndex := CurrentFrameIndex;
+                PreparedFrameInfoIndex := RecordedFrames[i].FrameInfoIndex;
               end;
             CheckAVIError(Compressor.WriteFrame(Bmp));
           end;
@@ -1121,7 +1160,7 @@ begin
       finally
         SetStatus('');
         Exporting := False;
-        CurrentFrameIndex := OldCurrentFrameIndex;
+        CurrentWorkingSetFrame := OldCurrentWorkingFrame;
       end;
     end;
 end;
@@ -1151,7 +1190,7 @@ begin
         StatusBar.Hide;
         RecordSplitter.Hide;
         AdvertisementFrameTipShowing := False;
-        FrameTipIndex := -1;  // hide
+        FrameTipRecordedFrame := nil;  // hide
       end
     else
       begin
@@ -1189,15 +1228,17 @@ begin
     end;
 
   ClearRecorded;
+  Saved := True;
   pbRecord.Invalidate;
   UpdateActions;
 end;
 
-const
-  FilesSectionStart     = '-------------------- Files: ----------------------';
-  BookmarkSectionStart  = '------------------- Bookmarks: --------------------';
-  FrameSectionStart     = '-------------------- Frames: ----------------------';
-  TeleportsSectionStart = '------------------- Teleports: --------------------';
+const // do not localise
+  FilesSectionStart      = '-------------------- Files: ----------------------';
+  WorkingSetSectionStart = '------------------ Working set: -------------------';
+  BookmarkSectionStart   = '------------------- Bookmarks: --------------------';
+  FrameSectionStart      = '-------------------- Frames: ----------------------';
+  TeleportsSectionStart  = '------------------- Teleports: --------------------';
 
 resourcestring
   rs_CustomSize = 'Свой (%d, %d)';
@@ -1220,20 +1261,21 @@ end;
 procedure TMainForm.OpenMovie(AFileName: string);
 var
   i: Integer;
+  FrameInfoIndex: Integer;
   WaveFileName: string;
   s: string;
   LastDelimiterPos: Integer;
 
   procedure ReadTeleport(s: string);
   var
-    FrameIndex: Integer;
+    FrameInfoIndex: Integer;
     SeparatorPos: Integer;
     TargetIndex: Integer;
   begin
     SeparatorPos := pos('=', s);
-    FrameIndex := StrToInt(Trim(Copy(s, 1, SeparatorPos-1)));
+    FrameInfoIndex := StrToInt(Trim(Copy(s, 1, SeparatorPos-1)));
     TargetIndex := StrToInt(Trim(Copy(s, SeparatorPos+1, Length(s))));
-    Frames[FrameIndex].Teleport := TargetIndex;
+    FrameInfoList[FrameInfoIndex].Teleport := TargetIndex;
   end;
 resourcestring
   rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
@@ -1255,29 +1297,26 @@ begin
       IDNO: ;
     end;
 
-  ClearRecorded;
-  PhotoFolder := ExtractFilePath(AFileName);
   UnloadFrames;
+  PhotoFolder := ExtractFilePath(AFileName);
 
   with TStringList.Create do
     try
       LoadFromFile(AFileName);
       i := 0;
       s := Strings[i];
-      // Сейчас файл читается в порядке регистрации, и максимум что может быть - это очередная секция отсутствовать. Переставить местами их нельзя.
+      // Сейчас файл читается в порядке регистрации, и максимум что может быть
+      // - это очередная секция отсутствовать. Переставить местами их нельзя.
       // TODO: сделать гибче (хотя, зачем ?)
       if (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
           if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
             begin
-              WaveStorage.Wave.LoadFromFile(PhotoFolder + WaveFileName);
-              WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
-              RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
-              WaveStorage.Wave.Position := 0;
-            end
-          else
-            WaveStorage.Wave.Clear;
+              OpenAudio(PhotoFolder + WaveFileName);
+              if WaveFileName = ExtractFileName(AFileName) + '.wav' then // TODO: сделать более надёжный и явный признак
+                InitMicrophoneUsage;
+            end;
           inc(i);
           s := Strings[i];
         end;
@@ -1295,21 +1334,37 @@ begin
           s := Strings[i];
         end;
       if s = FilesSectionStart then
-        while i < (Count - 1) do
-          begin
-            inc(i);
-            s := Strings[i];
-            if s = BookmarkSectionStart then
-              Break;
-            LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
-            FFrames.Add(TFrame.Create(Copy(s, 1, LastDelimiterPos), Copy(s, LastDelimiterPos + 1, MaxInt)));
-          end;
+        begin
+          while i < (Count - 1) do
+            begin
+              inc(i);
+              s := Strings[i];
+              if s = BookmarkSectionStart then // for compatibility with prev. saves without Working set
+                Break;
+              if s = WorkingSetSectionStart then
+                Break;
+              LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
+              FFrameInfoList.Add(TFrameInfo.Create(Copy(s, 1, LastDelimiterPos), Copy(s, LastDelimiterPos + 1, MaxInt)));
+            end;
+          if s = WorkingSetSectionStart then
+            while i < (Count - 1) do
+              begin
+                inc(i);
+                s := Strings[i];
+                if s = BookmarkSectionStart then
+                  Break;
+                TRecordedFrame.Create(WorkingSetFrames, StrToInt(s));
+              end
+          else  // for compatibility with prev. saves without Working set
+            for FrameInfoIndex := 0 to FFrameInfoList.Count - 1 do
+              TRecordedFrame.Create(WorkingSetFrames, FrameInfoIndex);
+        end;
       if s = BookmarkSectionStart then
         while i < (Count - 1) do
           begin
             inc(i);
             s := Strings[i];
-            if s = FrameSectionStart then // for compatibility with prev.saves without Teleports
+            if s = FrameSectionStart then // for compatibility with prev. saves without Teleports
               Break;
             if s = TeleportsSectionStart then
               Break;
@@ -1329,13 +1384,13 @@ begin
           begin
             inc(i);
             s := Strings[i];
-            RecordedFrames.Add(Pointer(StrToInt(s)));
+            TRecordedFrame.Create(RecordedFrames, StrToInt(s));
           end;
     finally
       Free;
     end;
-  if FramesCount > 0 then
-    CurrentFrameIndex := 0;
+  if WorkingSetFrames.Count > 0 then
+    DisplayedFrameIndex := WorkingSetFrames[0].FrameInfoIndex;
   CaptureFirstFrameSizes;
   Saved := True;
   pbRecord.Invalidate;
@@ -1353,6 +1408,7 @@ procedure TMainForm.actSaveAsExecute(Sender: TObject);
 var
   i: Integer;
   NewPath: string;
+  AudioName: string;
 begin
   dlgSaveMovie.InitialDir := PhotoFolder;
   if not dlgSaveMovie.Execute then
@@ -1368,25 +1424,34 @@ begin
     'а не относительно '#13#10+
     '  "' + NewPath + '".'#13#10+
     'При загрузке проекта придётся восстанавливать структуру каталогов с изображениями относительно файла проекта.');
-  WaveStorage.Wave.SaveToFile(dlgSaveMovie.FileName + '.wav');
+  if FExternalAudioFileName <> '' then
+    AudioName := ExtractFileName(FExternalAudioFileName)
+  else
+    AudioName := ExtractFileName(dlgSaveMovie.FileName) + '.wav';
+  // если внешний файл под другим именем уже хранится в папке проекта, не будем его перезаписывать. 
+  if ExpandFileName(NewPath + AudioName) <> ExpandFileName(FExternalAudioFileName) then
+    WaveStorage.Wave.SaveToFile(NewPath + AudioName);
   with TStringList.Create do
     try
-      Add('Wave = ' + ExtractFileName(dlgSaveMovie.FileName) + '.wav');
+      Add('Wave = ' + AudioName);
       Add(Format('ExportWidth = %d', [ExportSize.cx]));
       Add(Format('ExportHeight = %d', [ExportSize.cy]));
       Add(FilesSectionStart);
-      for i := 0 to FramesCount - 1 do
-        Add(Frames[i].Path + Frames[i].FileName);
+      for i := 0 to FrameInfoCount - 1 do
+        Add(FrameInfoList[i].Path + FrameInfoList[i].FileName);
+      Add(WorkingSetSectionStart);
+      for i := 0 to WorkingSetFrames.Count - 1 do
+        Add(IntToStr(WorkingSetFrames[i].FrameInfoIndex));
       Add(BookmarkSectionStart);
       for i := 0 to 9 do
         Add('Bookmark' + IntToStr(i) + ' = ' + IntToStr(Integer(Bookmarks[i])));
       Add(TeleportsSectionStart);
-        for i := 0 to FramesCount - 1 do
-          if Frames[i].Teleport <> -1 then
-            Add(IntToStr(i) + ' = ' + IntToStr(Frames[i].Teleport));
+      for i := 0 to FrameInfoCount - 1 do
+        if FrameInfoList[i].Teleport <> -1 then
+          Add(IntToStr(i) + ' = ' + IntToStr(FrameInfoList[i].Teleport));
       Add(FrameSectionStart);
       for i := 0 to RecordedFrames.Count - 1 do
-        Add(IntToStr(Integer(RecordedFrames[i])));
+        Add(IntToStr(RecordedFrames[i].FrameInfoIndex));
       SaveToFile(dlgSaveMovie.FileName);
       Saved := True;
     finally
@@ -1396,7 +1461,7 @@ end;
 
 procedure TMainForm.actSaveAsUpdate(Sender: TObject);
 begin
-  actSaveAs.Enabled := not Exporting and (RecordedFrames.Count > 0);// and not Saved;
+  actSaveAs.Enabled := not Exporting and (WorkingSetFrames.Count > 0);// and not Saved;
 end;
 
 procedure TMainForm.actScreenWindowExecute(Sender: TObject);
@@ -1419,10 +1484,10 @@ begin
     StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
 end;
 
-procedure TMainForm.SetFrameTipIndex(const Value: Integer);
+procedure TMainForm.SetFrameTipRecordedFrame(const Value: TRecordedFrame);
 begin
-  FFrameTipIndex := Value;
-  pbFrameTip.Visible := (FFrameTipIndex <> -1);
+  FFrameTipRecordedFrame := Value;
+  pbFrameTip.Visible := (FFrameTipRecordedFrame <> nil);
 end;
 
 procedure TMainForm.SetStatus(const Value: string);
@@ -1430,20 +1495,41 @@ begin
   StatusBar.SimpleText := Value;
 end;
 
-procedure TMainForm.SetCurrentFrameIndex(const Value: Integer);
+procedure TMainForm.SetCurrentWorkingSetFrame(const Value: TRecordedFrame);
 begin
-  FCurrentFrameIndex := Value;
-  LoadPhoto(Value);
-  if not Exporting then
-    SetCaption(Frames[CurrentFrameIndex].Path +  Frames[CurrentFrameIndex].FileName);
-//  pnlDisplay.Repaint;
-//  pnlTimeLine.Repaint;
+  FCurrentWorkingSetFrame := Value;
+  if Assigned(Value) then
+    DisplayedFrameIndex := Value.FrameInfoIndex; // else do not change for calls from SetDisplayedFrameIndex
+end;
 
+procedure TMainForm.SetDisplayedFrameIndex(const Value: Integer);
+resourcestring
+  rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
+begin
+  if FDisplayedFrameIndex = Value then // break recursion
+    Exit;
+
+  FDisplayedFrameIndex := Value;
+  CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(Value);
+  if Value >= 0 then
+    begin
+      LoadPhoto(Value);
+      if not Exporting then
+        if Assigned(CurrentWorkingSetFrame) then
+          SetCaption(FrameInfoList[Value].Path + FrameInfoList[Value].FileName)
+        else
+          SetCaption(FrameInfoList[Value].Path + FrameInfoList[Value].FileName + rs_FrameNotInWorkingSet);
+    end;
+
+  //  pnlDisplay.Repaint;
   pbDisplay.Repaint;
+
   if Assigned(ScreenForm) and ScreenForm.Visible then
     ScreenForm.Repaint;
 
-  pbTimeLine.Repaint;
+  //  pnlWorkingSet.Repaint;
+  pbWorkingSet.Repaint;
+
   if Assigned(ControllerForm) and ControllerForm.Visible then
     ControllerForm.Repaint;
 end;
@@ -1505,27 +1591,46 @@ begin
   StockAudioPlayer.Active := False;
 end;
 
-procedure TMainForm.LoadPhoto(Index: Integer);
+procedure TMainForm.LoadPhoto(AFrameInfoIndex: Integer);
 var
   Image: TGraphic;
   R: TRect;
-  i, UnloadCounter: Integer;
+  i, j, UnloadCounter: Integer;
+  NearestNeighbour: Boolean;
 begin
-  if (FramesCount = 0) or Frames[Index].Loaded then
+  if (FrameInfoCount = 0) or FrameInfoList[AFrameInfoIndex].Loaded then
     Exit;
 
-  if OutOfMemoryRaised then
-    for i := 0 to FramesCount - 1 do
-      if Frames[i].Loaded and (Abs(Index - i) > 5) then // skip nearest neighbours
+  if OutOfMemoryRaised then // unload first loaded frame info
+    for i := 0 to FrameInfoCount - 1 do
+      if FrameInfoList[i].Loaded then
         begin
-          Frames[i].Loaded := False;
-    //        FreeAndNil(Frames[i].OriginalJpeg);
-          FreeAndNil(Frames[i].Preview);
+          // skip nearest neighbours in both lists
+          NearestNeighbour := False;
+          for j := Max(0, CurrentWorkingSetFrame.Index - 5) to Min(WorkingSetFrames.Count - 1, CurrentWorkingSetFrame.Index + 5) do
+            if i = WorkingSetFrames[j].FrameInfoIndex then
+              begin
+                NearestNeighbour := True;
+                Break;
+              end;
+          if NearestNeighbour then
+            Continue;
+          for j := CurrentRecordPosition to Min(RecordedFrames.Count - 1, CurrentRecordPosition + 10) do
+            if i = RecordedFrames[j].FrameInfoIndex then
+            begin
+              NearestNeighbour := True;
+              Break;
+            end;
+          if NearestNeighbour then
+            Continue;
+          // unload
+          FrameInfoList[i].Loaded := False;
+          FreeAndNil(FrameInfoList[i].Preview);
           Break;
         end;
 
   try
-    with Frames[Index] do
+    with FrameInfoList[AFrameInfoIndex] do
       try
         try
           Image := ImageFromDisc;
@@ -1555,13 +1660,15 @@ begin
     on EOutOfResources do
       begin
         OutOfMemoryRaised := True;
-        UnloadCounter := Index div 5; // unload twenty percents for leave a some memory back
-        for i := 0 to FramesCount - 1 do
-          if Frames[i].Loaded then
+        // only first time, on mass loading frames from first to last at working set
+        // unload twenty percents for leave a some memory back
+        // TODO: use WorkingSet frames order
+        UnloadCounter := AFrameInfoIndex div 5;
+        for i := 0 to FrameInfoCount - 1 do
+          if FrameInfoList[i].Loaded then
             begin
-              Frames[i].Loaded := False;
-      //        FreeAndNil(Frames[i].OriginalJpeg);
-              FreeAndNil(Frames[i].Preview);
+              FrameInfoList[i].Loaded := False;
+              FreeAndNil(FrameInfoList[i].Preview);
               Dec(UnloadCounter);
               if UnloadCounter <= 0 then
                 Break;
@@ -1573,29 +1680,29 @@ end;
 
 procedure TMainForm.actToggleBookmarkExecute(Sender: TObject);
 begin
-  if Bookmarks[TMenuItem(Sender).Tag] = CurrentFrameIndex then
+  if Bookmarks[TMenuItem(Sender).Tag] = DisplayedFrameIndex then
     Bookmarks[TMenuItem(Sender).Tag] := -1
   else
-    Bookmarks[TMenuItem(Sender).Tag] := CurrentFrameIndex;
-  pbTimeLine.Invalidate;
+    Bookmarks[TMenuItem(Sender).Tag] := DisplayedFrameIndex;
+  pbWorkingSet.Invalidate;
   Saved := False;
 end;
 
 procedure TMainForm.actToggleTeleport0Execute(Sender: TObject);
 begin
-  with Frames[CurrentFrameIndex] do
+  with FrameInfoList[DisplayedFrameIndex] do
     if Teleport = TMenuItem(Sender).Tag then
       Teleport := -1
     else
       Teleport := TMenuItem(Sender).Tag;
-  pbTimeLine.Invalidate;
+  pbWorkingSet.Invalidate;
   Saved := False;
 end;
 
 procedure TMainForm.actGotoBookmark0Execute(Sender: TObject);
 begin
   if Bookmarks[TMenuItem(Sender).Tag] <> -1 then
-    CurrentFrameIndex := Bookmarks[TMenuItem(Sender).Tag];
+    DisplayedFrameIndex := Bookmarks[TMenuItem(Sender).Tag];
 end;
 
 procedure TMainForm.actExitExecute(Sender: TObject);
@@ -1634,7 +1741,7 @@ end;
 procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  if FramesCount = 0 then
+  if FrameInfoCount = 0 then
     if (ssRight in Shift) or ((ssLeft in Shift) and (ssShift in Shift)) then // открытие вешаем не только на шифт+левую кнопку мыши, но и просто на правую кнопку мыши.
       actOpen.Execute
     else if (ssLeft in Shift) then
@@ -1656,15 +1763,14 @@ var
   R_PrevNextPreview: TRect;
   Offset: Integer;
   Image: TBitmap;
-  Index: Integer;
+  WorkSetFrame: TRecordedFrame;
 begin
   try
     pbDisplay.Canvas.Brush.Color := clWhite;
     pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
     pbDisplay.Canvas.Brush.Color := clBtnFace;
 
-    LoadPhoto(CurrentFrameIndex); // на всякий случай
-    if FramesCount = 0 then
+    if (FrameInfoCount = 0) or (DisplayedFrameIndex = -1) then
       begin
         R_MainScreen.Left := (pbDisplay.Width  - imgBackgroundSource.Picture.Width ) div 2;
         R_MainScreen.Top  := (pbDisplay.Height - imgBackgroundSource.Picture.Height) div 2;
@@ -1672,22 +1778,22 @@ begin
         Exit;
       end;
 
-    // основной кадр
-    Index := IncrementCurrentFrameIndex(-1);
-    LoadPhoto(Index); // на всякий случай
     CreateAdvertisementFrame; // на всякий случай
-    if Frames[Index].Loaded then
+    LoadPhoto(DisplayedFrameIndex); // на всякий случай
+    // основной кадр.
+    // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
+    if FrameInfoList[DisplayedFrameIndex].Loaded then
       begin
-        Image := Frames[Index].Preview;
+        Image := FrameInfoList[DisplayedFrameIndex].Preview;
         R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
       end;
 
-    if Frames[CurrentFrameIndex].Loaded or AdvertisementShowing then
+    if FrameInfoList[DisplayedFrameIndex].Loaded or AdvertisementShowing then
       begin
         if AdvertisementShowing then
           Image := AdvertisementFrameImagePreview
         else
-          Image := Frames[CurrentFrameIndex].Preview;
+          Image := FrameInfoList[DisplayedFrameIndex].Preview;
         if actStretchImages.Checked or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
           begin
             R_MainScreen := StretchSize(Image.Width, Image.Height, pbDisplay.Width - MainScreenBorder * 2, pbDisplay.Height - MainScreenBorder * 2);
@@ -1730,55 +1836,59 @@ begin
             pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, Image);
           end;
       end;
-    // левая миниатюра
-    Index := IncrementCurrentFrameIndex(-1);
-    LoadPhoto(Index); // на всякий случай
-    if Frames[Index].Loaded then
-      begin
-        Image := Frames[Index].Preview;
-        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
-        R_PrevNextPreview.Top    := 0;
-        R_PrevNextPreview.Left   := R_PrevNextPreview.Left   + PrevNextPreviewBorder;
-        R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
-        R_PrevNextPreview.Right  := R_PrevNextPreview.Right  + PrevNextPreviewBorder;
-        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
-        with R_PrevNextPreview do
-          pbDisplay.Canvas.RoundRect(
-            Left   - PrevNextPreviewBorder,
-            Top    - PrevNextPreviewBorder,
-            Right  + PrevNextPreviewBorder,
-            Bottom + PrevNextPreviewBorder,
-            PrevNextPreviewBorder,
-            PrevNextPreviewBorder
-          );
-        pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
-      end;
-    // правая миниатюра
-    Index := IncrementCurrentFrameIndex(+1);
-    LoadPhoto(Index); // на всякий случай
-    if Frames[Index].Loaded then
-      begin
-        Image := Frames[Index].Preview;
-        R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
-        R_PrevNextPreview.Left := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Left;
-        R_PrevNextPreview.Right := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Right;
-        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
-        R_PrevNextPreview.Top := 0;
-        R_PrevNextPreview.Left   := R_PrevNextPreview.Left   - PrevNextPreviewBorder;
-        R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
-        R_PrevNextPreview.Right  := R_PrevNextPreview.Right  - PrevNextPreviewBorder;
-        R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
-        with R_PrevNextPreview do
-          pbDisplay.Canvas.RoundRect(
-            Left   - PrevNextPreviewBorder,
-            Top    - PrevNextPreviewBorder,
-            Right  + PrevNextPreviewBorder,
-            Bottom + PrevNextPreviewBorder,
-            PrevNextPreviewBorder,
-            PrevNextPreviewBorder
-          );
-        pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
-      end;
+
+    if Assigned(CurrentWorkingSetFrame) then    
+      begin    
+        // левая миниатюра
+        WorkSetFrame := FindWorkingSetFrameByOffset(-1);
+        LoadPhoto(WorkSetFrame.FrameInfoIndex); // на всякий случай
+        if FrameInfoList[WorkSetFrame.FrameInfoIndex].Loaded then
+          begin
+            Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
+            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+            R_PrevNextPreview.Top    := 0;
+            R_PrevNextPreview.Left   := R_PrevNextPreview.Left   + PrevNextPreviewBorder;
+            R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+            R_PrevNextPreview.Right  := R_PrevNextPreview.Right  + PrevNextPreviewBorder;
+            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+            with R_PrevNextPreview do
+              pbDisplay.Canvas.RoundRect(
+                Left   - PrevNextPreviewBorder,
+                Top    - PrevNextPreviewBorder,
+                Right  + PrevNextPreviewBorder,
+                Bottom + PrevNextPreviewBorder,
+                PrevNextPreviewBorder,
+                PrevNextPreviewBorder
+              );
+            pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
+          end;
+        // правая миниатюра
+        WorkSetFrame := FindWorkingSetFrameByOffset(+1);
+        LoadPhoto(WorkSetFrame.FrameInfoIndex); // на всякий случай
+        if FrameInfoList[WorkSetFrame.FrameInfoIndex].Loaded then
+          begin
+            Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
+            R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
+            R_PrevNextPreview.Left := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Left;
+            R_PrevNextPreview.Right := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Right;
+            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+            R_PrevNextPreview.Top := 0;
+            R_PrevNextPreview.Left   := R_PrevNextPreview.Left   - PrevNextPreviewBorder;
+            R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+            R_PrevNextPreview.Right  := R_PrevNextPreview.Right  - PrevNextPreviewBorder;
+            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+            with R_PrevNextPreview do
+              pbDisplay.Canvas.RoundRect(
+                Left   - PrevNextPreviewBorder,
+                Top    - PrevNextPreviewBorder,
+                Right  + PrevNextPreviewBorder,
+                Bottom + PrevNextPreviewBorder,
+                PrevNextPreviewBorder,
+                PrevNextPreviewBorder
+              );
+            pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
+          end;
+      end;        
   except
     ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
   end;
@@ -1800,8 +1910,8 @@ begin
       pbFrameTip.Canvas.StretchDraw(Rect(FrameTipT, FrameTipT, FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT), AdvertisementFrameImagePreview);
     end
   else
-    if FrameTipIndex <> -1 then
-      if FrameTipMode = ftmTimeLine then
+    if FrameTipRecordedFrame <> nil then
+      if FrameTipMode = ftmWorkingSet then
         begin
           pbFrameTip.Canvas.Polygon([
             Point(0, 0),
@@ -1812,7 +1922,7 @@ begin
             Point(FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT),
             Point(FrameTipW+FrameTipT+FrameTipT, 0)
           ]);
-          pbFrameTip.Canvas.StretchDraw(Rect(FrameTipT, FrameTipT, FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT), Frames[FrameTipIndex].Preview);
+          pbFrameTip.Canvas.StretchDraw(Rect(FrameTipT, FrameTipT, FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT), FrameInfoList[FrameTipRecordedFrame.FrameInfoIndex].Preview);
         end
       else
         begin
@@ -1825,7 +1935,7 @@ begin
             Point(FrameTipW+FrameTipT+FrameTipT, FrameTipArrow - FrameTipD),
             Point(FrameTipW+FrameTipT+FrameTipT, 0)
           ]);
-          pbFrameTip.Canvas.StretchDraw(Rect(FrameTipT, FrameTipT, FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT), Frames[FrameTipIndex].Preview);
+          pbFrameTip.Canvas.StretchDraw(Rect(FrameTipT, FrameTipT, FrameTipW+FrameTipT+FrameTipT, FrameTipH+FrameTipT+FrameTipT), FrameInfoList[FrameTipRecordedFrame.FrameInfoIndex].Preview);
         end;
 end;
 
@@ -1900,7 +2010,7 @@ begin
   if not AdvertisementShowing and (NewPosition < RecordedFrames.Count) then
     begin
       CurrentRecordPosition := NewPosition;
-      CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
+      DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
     end;
 
   pbRecord.Invalidate;
@@ -1912,7 +2022,7 @@ end;
 
 procedure TMainForm.pbRecordMouseLeave(Sender: TObject);
 begin
-  FrameTipIndex := -1;
+  FrameTipRecordedFrame := nil;
 end;
 
 procedure TMainForm.pbRecordMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -1926,13 +2036,13 @@ begin
 
   AdvertisementFrameTipShowing := (LocalCurrentRecordPosition >= RecordedFrames.Count) and (Y <= AdvertisementFrameBottom);
   if not AdvertisementFrameTipShowing and ((LocalCurrentRecordPosition < 0) or (LocalCurrentRecordPosition > RecordedFrames.Count)) then
-    FrameTipIndex := -1
+    FrameTipRecordedFrame := nil
   else
     begin
       if AdvertisementFrameTipShowing then
-        FrameTipIndex := 0
+        FrameTipRecordedFrame := nil
       else
-        FrameTipIndex := Integer(RecordedFrames[LocalCurrentRecordPosition]);
+        FrameTipRecordedFrame := RecordedFrames[LocalCurrentRecordPosition];
       FrameTipMode := ftmRecord;
       pbFrameTip.Width  := FrameTipT + FrameTipW + FrameTipD + FrameTipD + FrameTipT + 1;
       pbFrameTip.Height := FrameTipT + FrameTipH + FrameTipT + 1;
@@ -1953,7 +2063,7 @@ type
   PSampleArray = ^TSampleArray;
 var
   y: Integer;
-  FrameIndex: Integer;
+  RecordedFrameIndex: Integer;
   R: TRect;
   TopOfMainRecord: Integer;
   DataWidth: Integer;
@@ -1991,9 +2101,9 @@ var
 
   procedure DrawScaleMark;
   begin
-    if FrameIndex mod FrameRate        = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 1));
-    if FrameIndex mod (FrameRate * 10) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 2));
-    if FrameIndex mod (FrameRate * 60) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 3));
+    if RecordedFrameIndex mod FrameRate        = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 1));
+    if RecordedFrameIndex mod (FrameRate * 10) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 2));
+    if RecordedFrameIndex mod (FrameRate * 60) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 3));
   end;
 
 begin
@@ -2052,23 +2162,23 @@ begin
   pbRecord.Canvas.Pen.Style := psSolid;
   TopOfMainRecord := R.Top;
   // content of main record
-  FrameIndex := pbRecordOffset;
+  RecordedFrameIndex := pbRecordOffset;
   for y := R.Top to R.Bottom - 1 do
     begin
       DrawSoundLine;
 
       DrawScaleMark;
 
-      pbRecord.Canvas.Pixels[R.Left + MulDiv(Integer(RecordedFrames[FrameIndex]), DataWidth, FramesCount - 1), y] := clBlack;
+      pbRecord.Canvas.Pixels[R.Left + MulDiv(RecordedFrames[RecordedFrameIndex].FrameInfoIndex, DataWidth, FrameInfoCount - 1), y] := clBlack;
 
-      Inc(FrameIndex);
+      Inc(RecordedFrameIndex);
     end;
 
   // current position in main record
   pbRecord.Canvas.Brush.Color := clWhite;
   if not AdvertisementShowing and (CurrentRecordPosition >= 0) and (CurrentRecordPosition < RecordedFrames.Count) then
     with Point(
-      MulDiv(Integer(RecordedFrames[CurrentRecordPosition]), DataWidth, FramesCount - 1) + R.Left,
+      MulDiv(RecordedFrames[CurrentRecordPosition].FrameInfoIndex, DataWidth, FrameInfoCount - 1) + R.Left,
       CurrentRecordPosition - pbRecordOffset + R.Top
     ) do
       pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
@@ -2134,21 +2244,13 @@ begin
   LevelGauge.Progress := Round(MaxVolume / 128 * 100);
 end;
 
-procedure TMainForm.pbTimeLineMouseDown(Sender: TObject; Button: TMouseButton;
+procedure TMainForm.pbWorkingSetMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  NewFrameIndex: Integer;
 begin
-  if FramesCount = 0 then
+  if WorkingSetFrames.Count = 0 then
     Exit;
 
-  NewFrameIndex := TimeLineXToFrameIndex(X);
-  if NewFrameIndex >= FramesCount then
-    NewFrameIndex := FramesCount - 1;
-  if NewFrameIndex < 0 then
-    NewFrameIndex := 0;
-
-  CurrentFrameIndex := NewFrameIndex;
+  CurrentWorkingSetFrame := WorkingSetXToWorkingFrame(X);
   AdvertisementShowing := False;
 
   pbRecord.Invalidate;
@@ -2158,55 +2260,60 @@ begin
   UpdateActions;
 end;
 
-procedure TMainForm.pbTimeLineMouseLeave(Sender: TObject);
+procedure TMainForm.pbWorkingSetMouseLeave(Sender: TObject);
 begin
-  FrameTipIndex := -1;
+  FrameTipRecordedFrame := nil;
 end;
 
-procedure TMainForm.pbTimeLineMouseMove(Sender: TObject; Shift: TShiftState; X,
+procedure TMainForm.pbWorkingSetMouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   if ssLeft in Shift then
-    pbTimeLineMouseDown(Sender, mbLeft, Shift, X, Y);
+    pbWorkingSetMouseDown(Sender, mbLeft, Shift, X, Y);
 
-  FrameTipIndex := TimeLineXToFrameIndex(X);
-  FrameTipMode := ftmTimeLine;
+  FrameTipRecordedFrame := WorkingSetXToWorkingFrame(X);
+  FrameTipMode := ftmWorkingSet;
   pbFrameTip.Width  := FrameTipT + FrameTipW + FrameTipT + 1;
   pbFrameTip.Height := FrameTipT + FrameTipH + FrameTipD + FrameTipD + FrameTipT + 1;
   pbFrameTip.Top  := pnlDisplay.Height - pbFrameTip.Height;
   pbFrameTip.Left := Min(Max(0, X - pbFrameTip.Width div 2), pnlDisplay.Width - pbFrameTip.Width);
-  FrameTipArrow := FrameIndexToTimeLineX(FrameTipIndex) - pbFrameTip.Left;
+  FrameTipArrow := WorkingFrameToWorkingSetX(FrameTipRecordedFrame) - pbFrameTip.Left;
 
   pbFrameTip.Invalidate;
 end;
 
-function TMainForm.FrameIndexToTimeLineX(FrameIndex: Integer): Integer;
+function TMainForm.WorkingFrameToWorkingSetX(AWorkingSetFrame: TRecordedFrame): Integer;
 begin
-  if FramesCount = 0 then
+  if AWorkingSetFrame = nil then
     Result := -1
   else
-    Result := 4 + MulDiv(FrameIndex, pbTimeLine.Width - 8, FramesCount - 1);
+    Result := 4 + MulDiv(AWorkingSetFrame.Index, pbWorkingSet.Width - 8, WorkingSetFrames.Count - 1);
 end;
 
-function TMainForm.TimeLineXToFrameIndex(X: Integer): Integer;
+function TMainForm.WorkingSetXToWorkingFrame(X: Integer): TRecordedFrame;
+var
+  FrameIndex: Integer;
 begin
-  if FramesCount = 0 then
-    Result := -1
-  else
+  Result := nil;
+  if WorkingSetFrames.Count > 0 then
     begin
-      Result := MulDiv(X - 4, FramesCount, pbTimeLine.Width - 8);
+      FrameIndex := MulDiv(X - 4, WorkingSetFrames.Count, pbWorkingSet.Width - 8);
 
-      if Result >= FramesCount then
-        Result := FramesCount - 1;
-      if Result < 0 then
-        Result := 0;
+      if FrameIndex >= WorkingSetFrames.Count then
+        Result := WorkingSetFrames[WorkingSetFrames.Count - 1]
+      else
+        if FrameIndex < 0 then
+          Result := WorkingSetFrames[0]
+      else
+        Result := WorkingSetFrames[FrameIndex];
     end;
 end;
 
-procedure TMainForm.pbTimeLinePaint(Sender: TObject);
+procedure TMainForm.pbWorkingSetPaint(Sender: TObject);
 var
   SecondIndex: Integer;
-  FrameIndex: integer;
+  WorkingFrameIndex: integer;
+  CurrentWorkingFrameIndex: Integer;
   BookmarkIndex: Integer;
   x, y1, y2: Integer;
   BookmarkText: string;
@@ -2214,91 +2321,95 @@ var
   TextSize: TSize;
 begin
   y1 := 4;
+  if Assigned(CurrentWorkingSetFrame) then
+    CurrentWorkingFrameIndex := CurrentWorkingSetFrame.Index
+  else
+    CurrentWorkingFrameIndex := -1;
 
-  for SecondIndex := 0 To FramesCount * CurrentSpeedInterval div FrameRate - 1 do
+  for SecondIndex := 0 to WorkingSetFrames.Count * CurrentSpeedInterval div FrameRate - 1 do
     begin
-      x := 4 + MulDiv(pbTimeLine.Width - 8, SecondIndex, FramesCount * CurrentSpeedInterval div FrameRate);
-      pbTimeLine.Canvas.Brush.Style := bsSolid;
-      pbTimeLine.Canvas.Rectangle(x, y1 + 8, x+1, y1 + 16);
+      x := 4 + MulDiv(pbWorkingSet.Width - 8, SecondIndex, WorkingSetFrames.Count * CurrentSpeedInterval div FrameRate);
+      pbWorkingSet.Canvas.Brush.Style := bsSolid;
+      pbWorkingSet.Canvas.Rectangle(x, y1 + 8, x+1, y1 + 16);
     end;
 
-  for FrameIndex := 0 to FramesCount - 1 do
+  for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
     begin
-      x := FrameIndexToTimeLineX(FrameIndex);
-      if Frames[FrameIndex].Loaded then
+      x := WorkingFrameToWorkingSetX(WorkingSetFrames[WorkingFrameIndex]);
+      if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Loaded then
         y2 := y1 + 8
       else
         y2 := y1 + 4;
 
-      pbTimeLine.Canvas.Brush.Style := bsSolid;
-      if FrameIndex <> CurrentFrameIndex then
-        pbTimeLine.Canvas.Rectangle(x, y1, x+1, y2)
+      pbWorkingSet.Canvas.Brush.Style := bsSolid;
+      if WorkingFrameIndex <> CurrentWorkingFrameIndex then
+        pbWorkingSet.Canvas.Rectangle(x, y1, x+1, y2)
       else
         begin
-          pbTimeLine.Canvas.Brush.Color := clHighlight;
-          pbTimeLine.Canvas.Rectangle(x-1, y1, x+2, y2);
+          pbWorkingSet.Canvas.Brush.Color := clHighlight;
+          pbWorkingSet.Canvas.Rectangle(x-1, y1, x+2, y2);
         end;
 
       for BookmarkIndex := 0 to 9 do
-        if FrameIndex = Bookmarks[BookmarkIndex] then
+        if WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex = Bookmarks[BookmarkIndex] then
         begin
           BookmarkText := IntToStr(BookmarkIndex);
-          BookmarkRect := Rect(x - 20, y1, x + 21, pbTimeLine.Height);
-//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
+          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
+//          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
-          TextSize := pbTimeLine.Canvas.TextExtent(BookmarkText);
+          TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
           BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
-          pbTimeLine.Canvas.Brush.Style := bsSolid;
-          if FrameIndex = CurrentFrameIndex then
+          pbWorkingSet.Canvas.Brush.Style := bsSolid;
+          if WorkingFrameIndex = CurrentWorkingFrameIndex then
           begin
-            pbTimeLine.Canvas.Brush.Color := clHighlight;
-            pbTimeLine.Canvas.Font.Color := clHighlightText;
+            pbWorkingSet.Canvas.Brush.Color := clHighlight;
+            pbWorkingSet.Canvas.Font.Color := clHighlightText;
           end
           else
           begin
-            pbTimeLine.Canvas.Brush.Color := clBtnFace;
-            pbTimeLine.Canvas.Brush.Style := bsSolid;
-            pbTimeLine.Canvas.Font.Color := clBtnText;
+            pbWorkingSet.Canvas.Brush.Color := clBtnFace;
+            pbWorkingSet.Canvas.Brush.Style := bsSolid;
+            pbWorkingSet.Canvas.Font.Color := clBtnText;
           end;
           with BookmarkRect do
-            pbTimeLine.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
+            pbWorkingSet.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
           Inc(BookmarkRect.Left, 2);
-          pbTimeLine.Canvas.Brush.Style := bsClear;
-//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
-          pbTimeLine.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
+          pbWorkingSet.Canvas.Brush.Style := bsClear;
+//          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+          pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
         end;
 
-      if Frames[FrameIndex].Teleport <> -1 then
+      if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport <> -1 then
         begin
-          BookmarkText := IntToStr(Frames[FrameIndex].Teleport);
-          BookmarkRect := Rect(x - 20, y1, x + 21, pbTimeLine.Height);
-//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
+          BookmarkText := IntToStr(FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport);
+          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
+//          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
-          TextSize := pbTimeLine.Canvas.TextExtent(BookmarkText);
+          TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
           BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
-          pbTimeLine.Canvas.Brush.Style := bsSolid;
-          if not TeleportEnabled or (Bookmarks[Frames[FrameIndex].Teleport] = -1) then
+          pbWorkingSet.Canvas.Brush.Style := bsSolid;
+          if not TeleportEnabled or (Bookmarks[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport] = -1) then
             begin
-              pbTimeLine.Canvas.Brush.Color := clLtGray;
-              pbTimeLine.Canvas.Font.Color := clDkGray;
+              pbWorkingSet.Canvas.Brush.Color := clLtGray;
+              pbWorkingSet.Canvas.Font.Color := clDkGray;
             end
-          else if FrameIndex = CurrentFrameIndex then
+          else if WorkingFrameIndex = CurrentWorkingFrameIndex then
             begin
-              pbTimeLine.Canvas.Brush.Color := clLime;
-              pbTimeLine.Canvas.Font.Color := clBlack;
+              pbWorkingSet.Canvas.Brush.Color := clLime;
+              pbWorkingSet.Canvas.Font.Color := clBlack;
             end
           else
             begin
-              pbTimeLine.Canvas.Brush.Color := clGreen;
-              pbTimeLine.Canvas.Brush.Style := bsSolid;
-              pbTimeLine.Canvas.Font.Color := clWhite;
+              pbWorkingSet.Canvas.Brush.Color := clGreen;
+              pbWorkingSet.Canvas.Brush.Style := bsSolid;
+              pbWorkingSet.Canvas.Font.Color := clWhite;
             end;
           with BookmarkRect do
-            pbTimeLine.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
+            pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
           Inc(BookmarkRect.Left, 2);
-          pbTimeLine.Canvas.Brush.Style := bsClear;
-//          pbTimeLine.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
-          pbTimeLine.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
+          pbWorkingSet.Canvas.Brush.Style := bsClear;
+//          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+          pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
         end;
     end;
 end;
@@ -2326,12 +2437,11 @@ procedure TMainForm.RecalculatePreview;
 var
   i: Integer;
 begin
-  for i := 0 to FramesCount - 1 do
-    if Frames[i].Loaded then
+  for i := 0 to FrameInfoCount - 1 do
+    if FrameInfoList[i].Loaded then
       begin
-        Frames[i].Loaded := False;
-//        FreeAndNil(Frames[i].OriginalJpeg);
-        FreeAndNil(Frames[i].Preview);
+        FrameInfoList[i].Loaded := False;
+        FreeAndNil(FrameInfoList[i].Preview);
         OutOfMemoryRaised := False;
       end;
 end;
@@ -2366,7 +2476,7 @@ begin
     17: ExportSize := Size(7680, 4320);
   end;
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + TrimLeft(TMenuItem(Sender).Caption);
-  if FramesCount > 0 then
+  if FrameInfoCount > 0 then
     Saved := False;
 end;
 
@@ -2374,14 +2484,14 @@ procedure TMainForm.actExportResolutionCustomExecute(Sender: TObject);
 begin
   if TExportSizeCustomRequestDialog.Execute(ExportSize) then
     mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
-  if FramesCount > 0 then
+  if FrameInfoCount > 0 then
     Saved := False;
 end;
 
 procedure TMainForm.CaptureFirstFrameSizes;
 begin
-  if FramesCount > 0 then
-    with Frames[0].ImageFromDisc do
+  if FrameInfoCount > 0 then
+    with FrameInfoList[0].ImageFromDisc do
       begin
         FirstFrameSize := Size(Width, Height);
         actExportResolutionFirstFrame.Caption := Copy(actExportResolutionFirstFrame.Caption, 1, Pos('-', mmiExportResolution.Caption)) + Format('(%d, %d)', [FirstFrameSize.cx, FirstFrameSize.cy]);
@@ -2395,13 +2505,13 @@ procedure TMainForm.actExportResolutionFirstFrameExecute(Sender: TObject);
 begin
   ExportSize := FirstFrameSize;
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
-  if FramesCount > 0 then
+  if FrameInfoCount > 0 then
     Saved := False;
 end;
 
 procedure TMainForm.actExportResolutionFirstFrameUpdate(Sender: TObject);
 begin
-  actExportResolutionFirstFrame.Enabled := (FramesCount > 0);
+  actExportResolutionFirstFrame.Enabled := (FrameInfoCount > 0);
 end;
 
 function TMainForm.TeleportEnabled: Boolean;
@@ -2411,7 +2521,7 @@ end;
 
 procedure TMainForm.TimerTimer(Sender: TObject);
 begin
-  if (csDestroying in ComponentState) or (FramesCount = 0) or Exporting then
+  if (csDestroying in ComponentState) or (FrameInfoCount = 0) or Exporting then
     Exit;
 
   if Playing then
@@ -2419,7 +2529,7 @@ begin
       AdvertisementShowing := False;
       if CurrentRecordPosition < RecordedFrames.Count then
         begin
-          CurrentFrameIndex := Integer(RecordedFrames[CurrentRecordPosition]);
+          DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
           pbRecord.Invalidate;
           Inc(FCurrentRecordPosition);
         end
@@ -2442,12 +2552,12 @@ begin
       case NextControlAction of
         caStepBackward:
           begin
-            CurrentFrameIndex := IncrementCurrentFrameIndex(-1);
+            CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1);
             PopControlAction;
           end;
         caStepForward:
           begin
-            CurrentFrameIndex := IncrementCurrentFrameIndex(1);
+            CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
             PopControlAction;
           end;
         caPlayBackward, caPlayForward, // должны перекрываться нажатыми actBackwardWhilePressed и actForwardWhilePressed
@@ -2455,22 +2565,22 @@ begin
           if Interval <= 1 then
             begin
               if actBackwardWhilePressed.Checked or (GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0) then //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
-                CurrentFrameIndex := IncrementCurrentFrameIndex(-1)
+                CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1)
               else if actForwardWhilePressed.Checked or (GetAsyncKeyState(Ord('D')) < 0)  or (GetAsyncKeyState(Ord('M')) < 0) then
-                CurrentFrameIndex := IncrementCurrentFrameIndex(1)
+                CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1)
               else
                 case NextControlAction of
                   caPlayBackward:
-                    CurrentFrameIndex := IncrementCurrentFrameIndex(-1);
+                    CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1);
                   caPlayForward:
-                    CurrentFrameIndex := IncrementCurrentFrameIndex(1);
+                    CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
                 end;
             end;
       end;
 
       if Recording then
         begin
-          RecordedFrames.Add(Pointer(CurrentFrameIndex));
+          TRecordedFrame.Create(RecordedFrames, CurrentWorkingSetFrame.FrameInfoIndex);
           pbRecord.Invalidate;
           CurrentRecordPosition := RecordedFrames.Count - 1;
         end;
@@ -2504,7 +2614,7 @@ end;
 
 procedure TMainForm.actNavigate_Update(Sender: TObject);
 begin
-  TAction(Sender).Enabled := not Exporting and (FramesCount > 0);
+  TAction(Sender).Enabled := not Exporting and (FrameInfoCount > 0);
 end;
 
 procedure TMainForm.actUpdate_HaveRecorded(Sender: TObject);
@@ -2583,18 +2693,22 @@ resourcestring
   rs_PreloadStatus = 'Загрузка кадра: ';
 var
   i: integer;
+  FrameInfo: TFrameInfo;
 begin
   Done := True;
   if not OutOfMemoryRaised then
-    for i := 0 to FramesCount - 1 do
-      if not Frames[i].Loaded then
-        begin
-          SetStatus(rs_PreloadStatus + Frames[i].Path + Frames[i].FileName);
-          LoadPhoto(i);
-          pbTimeLine.Repaint;
-          Done := False;
-          Exit;
-        end;
+    for i := 0 to WorkingSetFrames.Count - 1 do
+      begin
+        FrameInfo := FrameInfoList[WorkingSetFrames[i].FrameInfoIndex];
+        if not FrameInfo.Loaded then
+          begin
+            SetStatus(rs_PreloadStatus + FrameInfo.Path + FrameInfo.FileName);
+            LoadPhoto(WorkingSetFrames[i].FrameInfoIndex);
+            pbWorkingSet.Repaint;
+            Done := False;
+            Exit;
+          end;
+      end;
   if Done then
     SetStatus('');
 end;
@@ -2672,35 +2786,51 @@ begin
   mmiDoubleFramerate.Click;
 end;
 
-function TMainForm.IncrementCurrentFrameIndex(AOffset: Integer): Integer;
+function TMainForm.FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
 var
-  Count: Integer;
+  Count, Direction: Integer;
   i: Integer;
+  ResultIndex: Integer;
+  TargetFrame: TRecordedFrame;
 begin
-  Result := CurrentFrameIndex;
+  Result := CurrentWorkingSetFrame;
   if AOffset = 0 then
     Exit;
 
-  if FramesCount = 0 then
+  if WorkingSetFrames.Count = 0 then
     begin
-      Result := 0;
+      Result := nil;
       Exit;
     end;
+  if CurrentWorkingSetFrame = nil then
+    Exit;
 
   // TODO: Stop frames. Stop frames must break this incrementing
-
+  ResultIndex := CurrentWorkingSetFrame.Index;
   Count := Abs(AOffset);
-  AOffset := AOffset div Count;
+  Direction := AOffset div Count;
   for i := 1 to Count do
     begin
-      Result := Result + AOffset;
-      while Result < 0 do
-        Result := FramesCount + Result;
-      while Result > (FramesCount - 1) do
-        Result := Result - FramesCount;
+      ResultIndex := ResultIndex + Direction;
+      while ResultIndex < 0 do
+        ResultIndex := WorkingSetFrames.Count + ResultIndex;
+      while ResultIndex > (WorkingSetFrames.Count - 1) do
+        ResultIndex := ResultIndex - WorkingSetFrames.Count;
 
-      if TeleportEnabled and (Frames[Result].Teleport <> -1) and (Bookmarks[Frames[Result].Teleport] <> -1) then
-        Result := Bookmarks[Frames[Result].Teleport];
+      Result := WorkingSetFrames[ResultIndex];
+
+      if TeleportEnabled and
+        (FrameInfoList[Result.FrameInfoIndex].Teleport <> -1) and
+        (Bookmarks[FrameInfoList[Result.FrameInfoIndex].Teleport] <> -1)
+      then
+        begin
+          TargetFrame := WorkingSetFrames.FindByFrameIndex(Bookmarks[FrameInfoList[WorkingSetFrames[ResultIndex].FrameInfoIndex].Teleport]);
+          if Assigned(TargetFrame) then // if can work - it work. if not - not.
+            begin
+              ResultIndex := TargetFrame.Index;
+              Result := TargetFrame;
+            end;
+        end;
     end;
 end;
 
@@ -2733,21 +2863,20 @@ end;
 
 { TFrame }
 
-constructor TFrame.Create(APath, AFileName: string);
+constructor TFrameInfo.Create(APath, AFileName: string);
 begin
   FPath := APath;
   FFileName := AFileName;
   Teleport := -1;
 end;
 
-destructor TFrame.Destroy;
+destructor TFrameInfo.Destroy;
 begin
-//  FreeAndNil(OriginalJpeg);
   FreeAndNil(Preview);
   inherited;
 end;
 
-function TFrame.ImageFromDisc: TGraphic;
+function TFrameInfo.ImageFromDisc: TGraphic;
 var
   pic: TPicture;
 begin
@@ -2767,7 +2896,7 @@ begin
       end;
 end;
 
-function TFrame.GenerateStubFrame(ErrorMessage: string): TGraphic;
+function TFrameInfo.GenerateStubFrame(ErrorMessage: string): TGraphic;
 begin
   Result := TBitmap.Create;
   with TBitmap(Result) do
@@ -2781,6 +2910,36 @@ begin
       Canvas.TextOut(20, 20, Path + FileName);
       Canvas.TextOut(20, 80, ErrorMessage);
     end;
+end;
+
+{ TRecordedFrameList }
+
+constructor TRecordedFrameList.Create;
+begin
+  inherited Create(TRecordedFrame);
+end;
+
+function TRecordedFrameList.FindByFrameIndex(AFrameInfoIndex: Integer): TRecordedFrame;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+    if Items[i].FrameInfoIndex = AFrameInfoIndex then
+      Exit(Items[i]);
+end;
+
+function TRecordedFrameList.GetItems(AIndex: Integer): TRecordedFrame;
+begin
+  Result := inherited Items[AIndex] as TRecordedFrame;
+end;
+
+{ TRecordedFrame }
+
+constructor TRecordedFrame.Create(AFrameList: TRecordedFrameList; AFrameInfoIndex: Integer);
+begin
+  inherited Create(AFrameList);
+  FFrameInfoIndex := AFrameInfoIndex;
 end;
 
 end.
