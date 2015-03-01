@@ -6594,9 +6594,9 @@ object MainForm: TMainForm
       Caption = #1053#1072#1079#1072#1076' '#1085#1072' '#1082#1072#1076#1088
       Hint = #1053#1072#1079#1072#1076' '#1085#1072' '#1082#1072#1076#1088' (Left, A)'
       ImageIndex = 2
-      ShortCut = 86
       SecondaryShortCuts.Strings = (
         'v')
+      ShortCut = 86
       OnExecute = actStepPrevExecute
       OnUpdate = actNavigate_Update
     end
@@ -6612,9 +6612,9 @@ object MainForm: TMainForm
       Caption = #1042#1087#1077#1088#1105#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       Hint = #1042#1087#1077#1088#1105#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       ImageIndex = 5
-      ShortCut = 188
       SecondaryShortCuts.Strings = (
         'Ctrl+Right')
+      ShortCut = 188
       OnExecute = actPlayForwardExecute
       OnUpdate = actNavigate_Update
     end
@@ -6622,9 +6622,9 @@ object MainForm: TMainForm
       Caption = #1053#1072#1079#1072#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       Hint = #1053#1072#1079#1072#1076' '#1072#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1080
       ImageIndex = 0
-      ShortCut = 88
       SecondaryShortCuts.Strings = (
         'Ctrl+Left')
+      ShortCut = 88
       OnExecute = actPlayBackwardExecute
       OnUpdate = actNavigate_Update
     end
@@ -6950,6 +6950,69 @@ object MainForm: TMainForm
       end
       object mmiExit: TMenuItem
         Action = actExit
+      end
+    end
+    object N4: TMenuItem
+      Caption = #1050#1072#1076#1088#1099
+      object N5: TMenuItem
+        Caption = #1059#1087#1088#1072#1074#1083#1077#1085#1080#1077'...'
+        Enabled = False
+      end
+      object mmiHideFrame: TMenuItem
+        Caption = #1057#1082#1088#1099#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088
+        OnClick = mmiHideFrameClick
+      end
+      object N10: TMenuItem
+        Caption = #1044#1091#1073#1083#1080#1088#1086#1074#1072#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088
+        Enabled = False
+      end
+      object N7: TMenuItem
+        Caption = #1057#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1087#1088#1072#1074#1077#1077
+        Enabled = False
+      end
+      object N8: TMenuItem
+        Caption = #1057#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1083#1077#1074#1077#1077
+        Enabled = False
+      end
+      object N16: TMenuItem
+        Caption = '-'
+        Enabled = False
+      end
+      object N9: TMenuItem
+        Caption = #1054#1090#1082#1088#1099#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1087#1088#1086#1075#1088#1072#1084#1084#1086#1081' '#1087#1086' '#1091#1084#1086#1083#1095#1072#1085#1080#1102
+        Enabled = False
+      end
+      object N11: TMenuItem
+        Caption = #1055#1086#1082#1072#1079#1072#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1055#1088#1086#1074#1086#1076#1085#1080#1082#1077' (Explorer)'
+        Enabled = False
+      end
+      object N15: TMenuItem
+        Caption = '-'
+        Enabled = False
+      end
+      object N12: TMenuItem
+        Caption = #1054#1090#1088#1072#1079#1080#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1087#1086' '#1075#1086#1088#1080#1079#1086#1085#1090#1072#1083#1080
+        Enabled = False
+      end
+      object N13: TMenuItem
+        Caption = #1054#1090#1088#1072#1079#1080#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1087#1086' '#1074#1077#1088#1090#1080#1082#1072#1083#1080
+        Enabled = False
+      end
+      object N14: TMenuItem
+        Caption = #1055#1086#1074#1077#1088#1085#1091#1090#1100', '#1086#1073#1088#1077#1079#1072#1090#1100' '#1080#1083#1080' '#1089#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088
+        Enabled = False
+      end
+      object N17: TMenuItem
+        Caption = '-'
+        Enabled = False
+      end
+      object N18: TMenuItem
+        Caption = #1055#1086#1083#1091#1095#1080#1090#1100' '#1082#1072#1076#1088#1099' '#1089' '#1074#1077#1073'-'#1082#1072#1084#1077#1088#1099'...'
+        Enabled = False
+      end
+      object N19: TMenuItem
+        Caption = #1056#1072#1079#1073#1080#1090#1100' '#1082#1072#1076#1088' '#1085#1072' '#1084#1085#1086#1075#1086' '#1084#1072#1083#1077#1085#1100#1082#1080#1093
+        Enabled = False
       end
     end
     object mmiNavigation: TMenuItem

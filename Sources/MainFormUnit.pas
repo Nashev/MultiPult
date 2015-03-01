@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns, Vcl.StdActns, System.Actions{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.26'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.27'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2015';
 
 const
@@ -202,6 +202,22 @@ type
     N2: TMenuItem;
     mmiUseMicrophone: TMenuItem;
     N3: TMenuItem;
+    N4: TMenuItem;
+    N5: TMenuItem;
+    mmiHideFrame: TMenuItem;
+    N7: TMenuItem;
+    N8: TMenuItem;
+    N9: TMenuItem;
+    N10: TMenuItem;
+    N11: TMenuItem;
+    N12: TMenuItem;
+    N13: TMenuItem;
+    N14: TMenuItem;
+    N15: TMenuItem;
+    N16: TMenuItem;
+    N17: TMenuItem;
+    N18: TMenuItem;
+    N19: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -292,6 +308,7 @@ type
     procedure actExportResolutionFirstFrameUpdate(Sender: TObject);
     procedure actSelectAudioFileExecute(Sender: TObject);
     procedure mmiUseMicrophoneClick(Sender: TObject);
+    procedure mmiHideFrameClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -568,6 +585,15 @@ begin
     AdvertisementFrameImagePreview.Assign(AdvertisementFrameImage);
 end;
 
+procedure TMainForm.mmiHideFrameClick(Sender: TObject);
+var
+  OldCurrentFrame: TRecordedFrame;
+begin
+  OldCurrentFrame := CurrentWorkingSetFrame;
+  CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
+  OldCurrentFrame.Free;
+end;
+
 function TMainForm.NextControlAction: TControlAction;
 begin
   if NextControlActionStackPosition >= 1 then
@@ -706,7 +732,7 @@ begin
     begin
       DragQueryFile(Msg.Drop, i, @FileName, SizeOf(FileName)); // Get N file
       if DirectoryExists(FileName) then
-        LoadPhotoFolder(FileName)
+        LoadPhotoFolder(string(FileName) + '\')
       else if LowerCase(ExtractFileExt(FileName)) = '.mp' then
         OpenMovie(FileName)
       else
