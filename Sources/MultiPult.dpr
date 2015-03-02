@@ -23,6 +23,14 @@ uses
   AVICompression in 'avi_work\AVICompression.pas',
   AVIFile32 in 'avi_work\AVIFile32.pas',
   ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm},
+  Direct3D9 in 'Webcam_Capture_V2\Common\DirectX\Direct3D9.pas',
+  DirectDraw in 'Webcam_Capture_V2\Common\DirectX\DirectDraw.pas',
+  DirectShow9 in 'Webcam_Capture_V2\Common\DirectX\DirectShow9.pas',
+  DirectSound in 'Webcam_Capture_V2\Common\DirectX\DirectSound.pas',
+  DXTypes in 'Webcam_Capture_V2\Common\DirectX\DXTypes.pas',
+  VFrames in 'Webcam_Capture_V2\Common\VFrames.pas',
+  VSample in 'Webcam_Capture_V2\Common\VSample.pas',
+  CameraFormUnit in 'CameraFormUnit.pas' {CameraForm},
   ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog},
   WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm};
 
@@ -38,5 +46,6 @@ begin
   Application.CreateForm(TControllerForm, ControllerForm);
   Application.CreateForm(TScreenForm, ScreenForm);
   Application.CreateForm(TWorkingSetManagementForm, WorkingSetManagementForm);
+  Application.CreateForm(TCameraForm, CameraForm);
   Application.Run;
 end.

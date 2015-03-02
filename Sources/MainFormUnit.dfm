@@ -6816,6 +6816,11 @@ object MainForm: TMainForm
       ShortCut = 112
       URL = 'https://github.com/Nashev/MultiPult/wiki'
     end
+    object actShowCameraForm: TAction
+      Caption = #1055#1086#1083#1091#1095#1080#1090#1100' '#1082#1072#1076#1088#1099' '#1089' '#1074#1077#1073'-'#1082#1072#1084#1077#1088#1099'...'
+      OnExecute = actShowCameraFormExecute
+      OnUpdate = actShowCameraFormUpdate
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -7061,9 +7066,8 @@ object MainForm: TMainForm
         Caption = '-'
         Enabled = False
       end
-      object N18: TMenuItem
-        Caption = #1055#1086#1083#1091#1095#1080#1090#1100' '#1082#1072#1076#1088#1099' '#1089' '#1074#1077#1073'-'#1082#1072#1084#1077#1088#1099'...'
-        Enabled = False
+      object mmiShowCameraForm: TMenuItem
+        Action = actShowCameraForm
       end
       object N19: TMenuItem
         Caption = #1056#1072#1079#1073#1080#1074#1072#1090#1100' '#1082#1072#1076#1088#1099' '#1085#1072' '#1084#1085#1086#1075#1086' '#1084#1072#1083#1077#1085#1100#1082#1080#1093
@@ -8074,5 +8078,10 @@ object MainForm: TMainForm
     Options = [ofOverwritePrompt, ofHideReadOnly, ofNoChangeDir, ofPathMustExist, ofNoReadOnlyReturn, ofEnableSizing]
     Left = 184
     Top = 88
+  end
+  object ApplicationEvents: TApplicationEvents
+    OnIdle = ApplicationEventsIdle
+    Left = 224
+    Top = 8
   end
 end

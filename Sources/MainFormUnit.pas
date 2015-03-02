@@ -22,10 +22,10 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns, Vcl.StdActns, System.Actions{$IFDEF Delphi6}, Actions{$ENDIF};
+  ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.28'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.29'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2015';
 
 const
@@ -86,6 +86,7 @@ type
   // TODO: AudioSources
 
   TMainForm = class(TForm)
+    ApplicationEvents: TApplicationEvents;
     pnlDisplay: TPanel;
     pbDisplay: TPaintBox;
     ActionList: TActionList;
@@ -220,7 +221,7 @@ type
     N15: TMenuItem;
     N16: TMenuItem;
     N17: TMenuItem;
-    N18: TMenuItem;
+    mmiShowCameraForm: TMenuItem;
     N19: TMenuItem;
     actMoveFrameLeft: TAction;
     actMoveFrameRight: TAction;
@@ -233,6 +234,7 @@ type
     actOpenHelp: TBrowseURL;
     mmiRefreshPreview: TMenuItem;
     mmiOpenHelp: TMenuItem;
+    actShowCameraForm: TAction;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -333,6 +335,9 @@ type
     procedure actWorkingSetManagementExecute(Sender: TObject);
     procedure actRefreshPreviewExecute(Sender: TObject);
     procedure actHaveDisplayedFrame(Sender: TObject);
+    procedure ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
+    procedure actShowCameraFormExecute(Sender: TObject);
+    procedure actShowCameraFormUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -341,7 +346,6 @@ type
     procedure PushControlAction(Value: TControlAction);
     procedure ReplaceControlActions(Value: TControlAction);
   private
-    PhotoFolder: string;
     ProjectFileName: string;
     FFrameInfoList: TObjectList;
     FWorkingSetFrames: TRecordedFrameList;
@@ -399,7 +403,6 @@ type
     function WorkingSetXToWorkingFrame(X: Integer): TRecordedFrame;
 //    Drawing: Boolean;
     procedure LoadPhotoFolder(ANewPhotoFolder: string);
-    procedure ApplicationIdle(Sender: TObject; var Done: Boolean);
     procedure RecalculatePreview;
     procedure CreateAdvertisementFrame;
   protected
@@ -407,6 +410,7 @@ type
     procedure DestroyWindowHandle; override;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
   public
+    PhotoFolder: string;
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
     AdvertisementDuration: Integer;
@@ -424,6 +428,7 @@ type
     property FrameInfoList[Index: Integer]: TFrameInfo read GetFrameInfo;
     // Used in ScreenForm
     procedure LoadPhoto(AFrameInfoIndex: Integer);
+    procedure AddNewFrame(ARelativePath, AFileName: string);
   end;
 
 var
@@ -435,7 +440,8 @@ function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRe
 
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit,
-  ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit;
+  ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit, 
+  CameraFormUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -505,7 +511,17 @@ begin
     , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
     {$ENDIF}
   ) then
-    LoadPhotoFolder(NewPhotoFolder);
+    LoadPhotoFolder(NewPhotoFolder + '\');
+end;
+
+procedure TMainForm.actShowCameraFormExecute(Sender: TObject);
+begin
+  CameraForm.Execute;
+end;
+
+procedure TMainForm.actShowCameraFormUpdate(Sender: TObject);
+begin
+  actShowCameraForm.Enabled := PhotoFolder <> '';
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -583,7 +599,6 @@ begin
   FRecordedFrames := TRecordedFrameList.Create;
   FWorkingSetFrames := TRecordedFrameList.Create;
   RecordedAudioCopy := TMemoryStream.Create;
-  Application.OnIdle := ApplicationIdle;
   DisplayedFrameIndex := -1;
   for i := 0 to 9 do
     Bookmarks[i] := -1;
@@ -981,7 +996,7 @@ begin
 
   UnloadFrames;
 
-  InternalLoadDirectory('\');
+  InternalLoadDirectory('');
 
   FFrameInfoList.Sort(CompareFramesFileName);
   for i := 0 to FFrameInfoList.Count - 1 do
@@ -2850,7 +2865,13 @@ begin
     end;
 end;
 
-procedure TMainForm.ApplicationIdle(Sender: TObject; var Done: Boolean);
+procedure TMainForm.AddNewFrame(ARelativePath, AFileName: string);
+begin
+  DisplayedFrameIndex := FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, AFileName));
+  CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
+end;
+
+procedure TMainForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
 resourcestring
   rs_PreloadStatus = 'Загрузка кадра: ';
 var
