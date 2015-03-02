@@ -23,7 +23,8 @@ uses
   AVICompression in 'avi_work\AVICompression.pas',
   AVIFile32 in 'avi_work\AVIFile32.pas',
   ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm},
-  ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog};
+  ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog},
+  WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm};
 
 {$R *.res}
 
@@ -36,5 +37,6 @@ begin
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TControllerForm, ControllerForm);
   Application.CreateForm(TScreenForm, ScreenForm);
+  Application.CreateForm(TWorkingSetManagementForm, WorkingSetManagementForm);
   Application.Run;
 end.

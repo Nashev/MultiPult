@@ -25,7 +25,7 @@ uses
   ToolWin, ExtActns, Vcl.StdActns, System.Actions{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.27'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.28'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2015';
 
 const
@@ -51,6 +51,8 @@ type
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
     property Path: string read FPath;
+    function FullFileName: string;
+    function RelativeFileName: string;
     constructor Create(APath, AFileName: string);
     destructor Destroy; override;
   end;
@@ -59,6 +61,8 @@ type
   TRecordedFrame = class(TCollectionItem)
   private
     FFrameInfoIndex: Integer;
+  protected
+    procedure AssignTo(Dest: TPersistent); override;
   public
     constructor Create(AFrameList: TRecordedFrameList; AFrameInfoIndex: Integer); reintroduce;
     property FrameInfoIndex: Integer read FFrameInfoIndex write FFrameInfoIndex;
@@ -203,13 +207,13 @@ type
     mmiUseMicrophone: TMenuItem;
     N3: TMenuItem;
     N4: TMenuItem;
-    N5: TMenuItem;
+    mmiWorkingSetManagement: TMenuItem;
     mmiHideFrame: TMenuItem;
-    N7: TMenuItem;
-    N8: TMenuItem;
-    N9: TMenuItem;
-    N10: TMenuItem;
-    N11: TMenuItem;
+    mmiMoveFrameRight: TMenuItem;
+    mmiMoveFrameLeft: TMenuItem;
+    mmiOpenFrameFileInDefaultProgram: TMenuItem;
+    mmiDuplicateFrame: TMenuItem;
+    mmiShowFrameInExplorer: TMenuItem;
     N12: TMenuItem;
     N13: TMenuItem;
     N14: TMenuItem;
@@ -218,6 +222,17 @@ type
     N17: TMenuItem;
     N18: TMenuItem;
     N19: TMenuItem;
+    actMoveFrameLeft: TAction;
+    actMoveFrameRight: TAction;
+    actDuplicateFrame: TAction;
+    actHideFrame: TAction;
+    actShowFrameInExplorer: TAction;
+    actOpenFrameFileInDefaultProgram: TAction;
+    actWorkingSetManagement: TAction;
+    actRefreshPreview: TAction;
+    actOpenHelp: TBrowseURL;
+    mmiRefreshPreview: TMenuItem;
+    mmiOpenHelp: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -308,7 +323,16 @@ type
     procedure actExportResolutionFirstFrameUpdate(Sender: TObject);
     procedure actSelectAudioFileExecute(Sender: TObject);
     procedure mmiUseMicrophoneClick(Sender: TObject);
-    procedure mmiHideFrameClick(Sender: TObject);
+    procedure actHideFrameClick(Sender: TObject);
+    procedure actDuplicateFrameClick(Sender: TObject);
+    procedure actMoveFrameRightClick(Sender: TObject);
+    procedure actMoveFrameLeftClick(Sender: TObject);
+    procedure actHaveCurrentFrame(Sender: TObject);
+    procedure actShowFrameInExplorerExecute(Sender: TObject);
+    procedure actOpenFrameFileInDefaultProgramExecute(Sender: TObject);
+    procedure actWorkingSetManagementExecute(Sender: TObject);
+    procedure actRefreshPreviewExecute(Sender: TObject);
+    procedure actHaveDisplayedFrame(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -318,6 +342,7 @@ type
     procedure ReplaceControlActions(Value: TControlAction);
   private
     PhotoFolder: string;
+    ProjectFileName: string;
     FFrameInfoList: TObjectList;
     FWorkingSetFrames: TRecordedFrameList;
     FRecordedFrames: TRecordedFrameList;
@@ -359,6 +384,7 @@ type
     procedure StopPlaying;
     procedure SetDisplayedFrameIndex(const Value: Integer);
     procedure InitMicrophoneUsage;
+    procedure RepaintAll;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -409,7 +435,7 @@ function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRe
 
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit,
-  ExportSizeCustomRequestDialogUnit, ShellAPI;
+  ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -490,6 +516,59 @@ end;
 procedure TMainForm.actShowControllerFormUpdate(Sender: TObject);
 begin
   actShowControllerForm.Checked := ControllerForm.Visible;
+end;
+
+procedure InfoMsg(AText: string);
+begin
+  Application.MessageBox(
+    PChar(AText),
+    PChar(Application.Title),
+    MB_OK + MB_ICONINFORMATION + MB_SETFOREGROUND
+  );
+end;
+
+procedure SafeShellExecute(hWnd: HWND; const Operation, FileName, Parameters, Directory: string; ShowCmd: Integer = SW_NORMAL);
+var
+  res: DWORD;
+begin
+  res := ShellExecute(hWnd, PChar(Operation), PChar(FileName), PChar(Parameters), PChar(Directory), ShowCmd);
+  if Res <= 32 then
+    case Res of
+      0: InfoMsg('The operating system is out of memory or resources ('+FileName+').');
+      ERROR_FILE_NOT_FOUND: InfoMsg('The specified file "'+FileName+'" was not found.');
+      ERROR_PATH_NOT_FOUND: InfoMsg('The specified path was not found. ('+FileName+')');
+      ERROR_BAD_FORMAT: InfoMsg('The .EXE ('+FileName+') file is invalid (non-Win32 .EXE or error in .EXE image).');
+      SE_ERR_ACCESSDENIED: InfoMsg('The operating system denied access to the specified file ('+FileName+').');
+      SE_ERR_ASSOCINCOMPLETE: InfoMsg('The FileName association is incomplete or invalid ('+FileName+').');
+      SE_ERR_DDEBUSY: InfoMsg('The DDE transaction could not be completed because other DDE transactions were being processed.');
+      SE_ERR_DDEFAIL: InfoMsg('The DDE transaction failed ('+FileName+').');
+      SE_ERR_DDETIMEOUT: InfoMsg('The DDE transaction could not be completed because the request timed out ('+FileName+').');
+      SE_ERR_DLLNOTFOUND: InfoMsg('The specified dynamic-link library was not found ('+FileName+').');
+      SE_ERR_NOASSOC: InfoMsg('There is no application associated with the given FileName extension ('+FileName+').');
+      SE_ERR_OOM: InfoMsg('There was not enough memory to complete the operation ('+FileName+').');
+      SE_ERR_SHARE: InfoMsg('A sharing violation occurred ('+FileName+').');
+    else
+      InfoMsg('Unknown error ('+FileName+')');
+    end;
+end;
+
+procedure SafeDeleteFile(const FileName: string);
+begin
+  if FileExists(FileName) then
+    DeleteFile(FileName);
+end;
+
+procedure SafeLocateFile(const FileName: string);
+begin
+  if FileExists(FileName) then
+    SafeShellExecute(HWND(nil), 'open', 'explorer', '/select,"' + FileName + '"', '', SW_SHOW)
+  else
+    InfoMsg('Файл "' + FileName + '" не существует.');
+end;
+
+procedure TMainForm.actShowFrameInExplorerExecute(Sender: TObject);
+begin
+  SafeLocateFile(FrameInfoList[DisplayedFrameIndex].FullFileName);
 end;
 
 constructor TMainForm.Create(AOwner: TComponent);
@@ -585,13 +664,33 @@ begin
     AdvertisementFrameImagePreview.Assign(AdvertisementFrameImage);
 end;
 
-procedure TMainForm.mmiHideFrameClick(Sender: TObject);
+procedure TMainForm.actHideFrameClick(Sender: TObject);
 var
   OldCurrentFrame: TRecordedFrame;
 begin
   OldCurrentFrame := CurrentWorkingSetFrame;
   CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
+  if OldCurrentFrame = CurrentWorkingSetFrame then // last frame
+    CurrentWorkingSetFrame := nil;
   OldCurrentFrame.Free;
+end;
+
+procedure TMainForm.actMoveFrameLeftClick(Sender: TObject);
+begin
+  if CurrentWorkingSetFrame.Index > 0 then
+    CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index - 1
+  else
+    CurrentWorkingSetFrame.Index := WorkingSetFrames.Count - 1;
+  RepaintAll;
+end;
+
+procedure TMainForm.actMoveFrameRightClick(Sender: TObject);
+begin
+  if CurrentWorkingSetFrame.Index < (WorkingSetFrames.Count - 1) then
+    CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index + 1
+  else
+    CurrentWorkingSetFrame.Index := 0;
+  RepaintAll;
 end;
 
 function TMainForm.NextControlAction: TControlAction;
@@ -834,8 +933,8 @@ end;
 function CompareFramesFileName(Item1, Item2: Pointer): Integer;
 begin
   Result := CompareText(
-    TFrameInfo(Item1).Path + TFrameInfo(Item1).FileName,
-    TFrameInfo(Item2).Path + TFrameInfo(Item2).FileName
+    TFrameInfo(Item1).RelativeFileName,
+    TFrameInfo(Item2).RelativeFileName
   )
 end;
 
@@ -878,7 +977,7 @@ begin
   actNew.Execute;
   PhotoFolder := ANewPhotoFolder;
 
-  SetCaption(PhotoFolder);
+  SetCaption('');
 
   UnloadFrames;
 
@@ -908,7 +1007,7 @@ resourcestring
     ''#13#10 +
     '(А Вы знаете, что Ctrl+C в подобных окошках работает?)';
 begin
-  ShowMessage(
+  InfoMsg(
     Application.Title + #13#10 +
     Format(rs_AboutText, [rs_VersionName])
   );
@@ -986,8 +1085,7 @@ begin
   RecalculatePreview;
   FreeAndNil(AdvertisementFrameImage);
   FreeAndNil(AdvertisementFrameImagePreview);
-  pnlDisplay.Invalidate;
-  pbWorkingSet.Repaint;
+  RepaintAll;
 end;
 
 type
@@ -1056,7 +1154,7 @@ begin
             Cancel := False;
             NewFileName := Dir + Format('Frame%.5d.jpg', [i]);
             if not CopyFileEx(
-              PChar(PhotoFolder + FrameInfoList[RecordedFrames[i].FrameInfoIndex].Path + FrameInfoList[RecordedFrames[i].FrameInfoIndex].FileName),
+              PChar(FrameInfoList[RecordedFrames[i].FrameInfoIndex].FullFileName),
               PChar(NewFileName),
               @CopyProgressHandler,
               @Self,
@@ -1068,13 +1166,10 @@ begin
             SetCurrentCreateDatetime(NewFileName);
           end;
         AdvertisementShowing := True;
-        pbRecord.Invalidate;
-        pbDisplay.Invalidate;
-        if Assigned(ScreenForm) and ScreenForm.Visible then
-          ScreenForm.Repaint;
+        RepaintAll;
         Application.ProcessMessages;
         AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.jpg', [RecordedFrames.Count]));
-        ShowMessage('Экспорт завершён.');
+        InfoMsg('Экспорт завершён.');
       finally
         Exporting := False;
       end;
@@ -1254,6 +1349,8 @@ begin
     end;
 
   ClearRecorded;
+  ProjectFileName := '';
+  SetCaption('');
   Saved := True;
   pbRecord.Invalidate;
   UpdateActions;
@@ -1325,6 +1422,7 @@ begin
 
   UnloadFrames;
   PhotoFolder := ExtractFilePath(AFileName);
+  ProjectFileName := ExtractFileName(AFileName);
 
   with TStringList.Create do
     try
@@ -1430,6 +1528,27 @@ begin
   OpenMovie(dlgOpenMovie.FileName);
 end;
 
+procedure TMainForm.actHaveCurrentFrame(Sender: TObject);
+begin
+  TAction(Sender).Enabled := Assigned(CurrentWorkingSetFrame);
+end;
+
+procedure TMainForm.actHaveDisplayedFrame(Sender: TObject);
+begin
+  TAction(Sender).Enabled := DisplayedFrameIndex <> -1;
+end;
+
+procedure TMainForm.actDuplicateFrameClick(Sender: TObject);
+begin
+  WorkingSetFrames.Insert(CurrentWorkingSetFrame.Index).Assign(CurrentWorkingSetFrame);
+  pbWorkingSet.Refresh;
+end;
+
+procedure TMainForm.actOpenFrameFileInDefaultProgramExecute(Sender: TObject);
+begin
+  SafeShellExecute(HWND(nil), 'edit', FrameInfoList[DisplayedFrameIndex].FullFileName, '', '', SW_SHOW);
+end;
+
 procedure TMainForm.actSaveAsExecute(Sender: TObject);
 var
   i: Integer;
@@ -1441,20 +1560,23 @@ begin
     Abort;
 
   NewPath := ExtractFilePath(dlgSaveMovie.FileName);
+  ProjectFileName := ExtractFileName(dlgSaveMovie.FileName);
+  SetCaption('');
   if NewPath <> PhotoFolder then
     // TODO: не уведомлять, а исправлять относительные пути по возможности
-    ShowMessage(
-    'Внимание!'#13#10+
-    'Пути к файлам кадров в файле проекта будут всё равно сохранены относительно '#13#10+
-    '  "' + PhotoFolder + '", '#13#10+
-    'а не относительно '#13#10+
-    '  "' + NewPath + '".'#13#10+
-    'При загрузке проекта придётся восстанавливать структуру каталогов с изображениями относительно файла проекта.');
+    InfoMsg(
+      'Внимание!'#13#10+
+      'Пути к файлам кадров в файле проекта будут всё равно сохранены относительно '#13#10+
+      '  "' + PhotoFolder + '", '#13#10+
+      'а не относительно '#13#10+
+      '  "' + NewPath + '".'#13#10+
+      'При загрузке проекта придётся восстанавливать структуру каталогов с изображениями относительно файла проекта.'
+    );
   if FExternalAudioFileName <> '' then
     AudioName := ExtractFileName(FExternalAudioFileName)
   else
     AudioName := ExtractFileName(dlgSaveMovie.FileName) + '.wav';
-  // если внешний файл под другим именем уже хранится в папке проекта, не будем его перезаписывать. 
+  // если внешний файл под другим именем уже хранится в папке проекта, не будем его перезаписывать.
   if ExpandFileName(NewPath + AudioName) <> ExpandFileName(FExternalAudioFileName) then
     WaveStorage.Wave.SaveToFile(NewPath + AudioName);
   with TStringList.Create do
@@ -1464,7 +1586,7 @@ begin
       Add(Format('ExportHeight = %d', [ExportSize.cy]));
       Add(FilesSectionStart);
       for i := 0 to FrameInfoCount - 1 do
-        Add(FrameInfoList[i].Path + FrameInfoList[i].FileName);
+        Add(FrameInfoList[i].RelativeFileName);
       Add(WorkingSetSectionStart);
       for i := 0 to WorkingSetFrames.Count - 1 do
         Add(IntToStr(WorkingSetFrames[i].FrameInfoIndex));
@@ -1500,7 +1622,7 @@ end;
 
 procedure TMainForm.SetCaption(const Value: TCaption);
 begin
-  Caption := Value + ' - ' + Application.Title;
+  Caption := ProjectFileName + ' — ' + Value + ' — ' + Application.Title;
 end;
 
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
@@ -1526,6 +1648,7 @@ begin
   FCurrentWorkingSetFrame := Value;
   if Assigned(Value) then
     DisplayedFrameIndex := Value.FrameInfoIndex; // else do not change for calls from SetDisplayedFrameIndex
+  RepaintAll;
 end;
 
 procedure TMainForm.SetDisplayedFrameIndex(const Value: Integer);
@@ -1536,25 +1659,34 @@ begin
     Exit;
 
   FDisplayedFrameIndex := Value;
-  CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(Value);
+  // При вызовах из SetCurrentWorkingSetFrame оставляем тот экземпляр,
+  // какой был установлен и не ищем первый аналогичный. В других случаях - ищем.
+  if not Assigned(CurrentWorkingSetFrame) or (CurrentWorkingSetFrame.FrameInfoIndex <> Value) then
+    CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(Value);
+
   if Value >= 0 then
     begin
       LoadPhoto(Value);
       if not Exporting then
         if Assigned(CurrentWorkingSetFrame) then
-          SetCaption(FrameInfoList[Value].Path + FrameInfoList[Value].FileName)
+          SetCaption(FrameInfoList[Value].RelativeFileName)
         else
-          SetCaption(FrameInfoList[Value].Path + FrameInfoList[Value].FileName + rs_FrameNotInWorkingSet);
+          SetCaption(FrameInfoList[Value].RelativeFileName + rs_FrameNotInWorkingSet);
     end;
 
-  //  pnlDisplay.Repaint;
+  RepaintAll;
+end;
+
+procedure TMainForm.RepaintAll;
+begin
   pbDisplay.Repaint;
 
   if Assigned(ScreenForm) and ScreenForm.Visible then
     ScreenForm.Repaint;
 
-  //  pnlWorkingSet.Repaint;
   pbWorkingSet.Repaint;
+
+  pbRecord.Repaint;
 
   if Assigned(ControllerForm) and ControllerForm.Visible then
     ControllerForm.Repaint;
@@ -1764,6 +1896,13 @@ begin
     AudioRecorder.Active := not Recording
 end;
 
+procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
+begin
+  FrameInfoList[DisplayedFrameIndex].Loaded := False;
+  FreeAndNil(FrameInfoList[DisplayedFrameIndex].Preview);
+  pbDisplay.Refresh;
+end;
+
 procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
@@ -1863,8 +2002,8 @@ begin
           end;
       end;
 
-    if Assigned(CurrentWorkingSetFrame) then    
-      begin    
+    if Assigned(CurrentWorkingSetFrame) then
+      begin
         // левая миниатюра
         WorkSetFrame := FindWorkingSetFrameByOffset(-1);
         LoadPhoto(WorkSetFrame.FrameInfoIndex); // на всякий случай
@@ -1914,7 +2053,7 @@ begin
               );
             pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
           end;
-      end;        
+      end;
   except
     ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
   end;
@@ -2039,10 +2178,7 @@ begin
       DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
     end;
 
-  pbRecord.Invalidate;
-  pbDisplay.Invalidate;
-  if Assigned(ScreenForm) and ScreenForm.Visible then
-    ScreenForm.Repaint;
+  RepaintAll;
   UpdateActions;
 end;
 
@@ -2279,10 +2415,6 @@ begin
   CurrentWorkingSetFrame := WorkingSetXToWorkingFrame(X);
   AdvertisementShowing := False;
 
-  pbRecord.Invalidate;
-  pbDisplay.Invalidate;
-  if Assigned(ScreenForm) and ScreenForm.Visible then
-    ScreenForm.Repaint;
   UpdateActions;
 end;
 
@@ -2352,9 +2484,9 @@ begin
   else
     CurrentWorkingFrameIndex := -1;
 
-  for SecondIndex := 0 to WorkingSetFrames.Count * CurrentSpeedInterval div FrameRate - 1 do
+  for SecondIndex := 0 to MulDiv(WorkingSetFrames.Count, CurrentSpeedInterval, FrameRate) - 1 do
     begin
-      x := 4 + MulDiv(pbWorkingSet.Width - 8, SecondIndex, WorkingSetFrames.Count * CurrentSpeedInterval div FrameRate);
+      x := 4 + MulDiv(pbWorkingSet.Width - 8, SecondIndex, MulDiv(WorkingSetFrames.Count, CurrentSpeedInterval, FrameRate));
       pbWorkingSet.Canvas.Brush.Style := bsSolid;
       pbWorkingSet.Canvas.Rectangle(x, y1 + 8, x+1, y1 + 16);
     end;
@@ -2567,10 +2699,7 @@ begin
             Playing := False;
             StockAudioPlayer.Active := False;
             AdvertisementShowing := True;
-            pbDisplay.Invalidate;
-            pbRecord.Invalidate;
-            if Assigned(ScreenForm) and ScreenForm.Visible then
-              ScreenForm.Repaint;
+            RepaintAll;
           end;
     end
   else
@@ -2606,6 +2735,8 @@ begin
 
       if Recording then
         begin
+          if not Assigned(CurrentWorkingSetFrame) then
+            CurrentWorkingSetFrame := WorkingSetFrames[0];
           TRecordedFrame.Create(RecordedFrames, CurrentWorkingSetFrame.FrameInfoIndex);
           pbRecord.Invalidate;
           CurrentRecordPosition := RecordedFrames.Count - 1;
@@ -2646,6 +2777,11 @@ end;
 procedure TMainForm.actUpdate_HaveRecorded(Sender: TObject);
 begin
   TAction(Sender).Enabled := not Exporting and (RecordedFrames.Count > 0);
+end;
+
+procedure TMainForm.actWorkingSetManagementExecute(Sender: TObject);
+begin
+  WorkingSetManagementForm.Execute;
 end;
 
 procedure TMainForm.actStepNextExecute(Sender: TObject);
@@ -2728,7 +2864,7 @@ begin
         FrameInfo := FrameInfoList[WorkingSetFrames[i].FrameInfoIndex];
         if not FrameInfo.Loaded then
           begin
-            SetStatus(rs_PreloadStatus + FrameInfo.Path + FrameInfo.FileName);
+            SetStatus(rs_PreloadStatus + FrameInfo.RelativeFileName);
             LoadPhoto(WorkingSetFrames[i].FrameInfoIndex);
             pbWorkingSet.Repaint;
             Done := False;
@@ -2902,12 +3038,22 @@ begin
   inherited;
 end;
 
+function TFrameInfo.RelativeFileName: string;
+begin
+  Result := Path + FileName;
+end;
+
+function TFrameInfo.FullFileName: string;
+begin
+  Result := MainForm.PhotoFolder + RelativeFileName;
+end;
+
 function TFrameInfo.ImageFromDisc: TGraphic;
 var
   pic: TPicture;
 begin
   pic := TPicture.Create;
-  pic.LoadFromFile(MainForm.PhotoFolder + Path + FileName);
+  pic.LoadFromFile(FullFileName);
   try
     Result := TGraphicClass(pic.Graphic.ClassType).Create;
     Result.Assign(pic.Graphic);
@@ -2933,7 +3079,7 @@ begin
       Width := 640;
       Height := 480;
       {$ENDIF}
-      Canvas.TextOut(20, 20, Path + FileName);
+      Canvas.TextOut(20, 20, RelativeFileName);
       Canvas.TextOut(20, 80, ErrorMessage);
     end;
 end;
@@ -2961,6 +3107,14 @@ begin
 end;
 
 { TRecordedFrame }
+
+procedure TRecordedFrame.AssignTo(Dest: TPersistent);
+begin
+  if Dest is TRecordedFrame then
+    TRecordedFrame(Dest).FFrameInfoIndex := FFrameInfoIndex
+  else
+    inherited;
+end;
 
 constructor TRecordedFrame.Create(AFrameList: TRecordedFrameList; AFrameInfoIndex: Integer);
 begin
