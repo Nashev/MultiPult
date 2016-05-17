@@ -1,5 +1,7 @@
 ﻿MultiPult
 =========
+
+[![Join the chat at https://gitter.im/Nashev/MultiPult](https://badges.gitter.im/Nashev/MultiPult.svg)](https://gitter.im/Nashev/MultiPult?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ![ScreenShot](https://raw.github.com/Nashev/MultiPult/origin/ScreenShot.png)
 
 Автор: [Илья Ненашев](http://innenashev.narod.ru).
