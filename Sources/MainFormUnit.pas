@@ -2446,6 +2446,7 @@ begin
 
   FrameTipRecordedFrame := WorkingSetXToWorkingFrame(X);
   FrameTipMode := ftmWorkingSet;
+  AdvertisementFrameTipShowing := False;
   pbFrameTip.Width  := FrameTipT + FrameTipW + FrameTipT + 1;
   pbFrameTip.Height := FrameTipT + FrameTipH + FrameTipD + FrameTipD + FrameTipT + 1;
   pbFrameTip.Top  := pnlDisplay.Height - pbFrameTip.Height;
