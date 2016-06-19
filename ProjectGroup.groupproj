@@ -1,48 +1,60 @@
-﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-		<PropertyGroup>
-			<ProjectGuid>{95126CC8-1E11-4D9A-87B4-51A667D5456A}</ProjectGuid>
-		</PropertyGroup>
-		<ItemGroup>
-			<Projects Include="Sources\WaveAudio\WA2010.dproj">
-				<Dependencies/>
-			</Projects>
-			<Projects Include="Sources\MultiPult.dproj">
-				<Dependencies/>
-			</Projects>
-		</ItemGroup>
-		<ProjectExtensions>
-			<Borland.Personality>Default.Personality.12</Borland.Personality>
-			<Borland.ProjectType/>
-			<BorlandProject>
-				<Default.Personality/>
-			</BorlandProject>
-		</ProjectExtensions>
-		<Target Name="WA2010">
-			<MSBuild Projects="Sources\WaveAudio\WA2010.dproj"/>
-		</Target>
-		<Target Name="WA2010:Clean">
-			<MSBuild Targets="Clean" Projects="Sources\WaveAudio\WA2010.dproj"/>
-		</Target>
-		<Target Name="WA2010:Make">
-			<MSBuild Targets="Make" Projects="Sources\WaveAudio\WA2010.dproj"/>
-		</Target>
-		<Target Name="MultiPult">
-			<MSBuild Projects="Sources\MultiPult.dproj"/>
-		</Target>
-		<Target Name="MultiPult:Clean">
-			<MSBuild Targets="Clean" Projects="Sources\MultiPult.dproj"/>
-		</Target>
-		<Target Name="MultiPult:Make">
-			<MSBuild Targets="Make" Projects="Sources\MultiPult.dproj"/>
-		</Target>
-		<Target Name="Build">
-			<CallTarget Targets="WA2010;MultiPult"/>
-		</Target>
-		<Target Name="Clean">
-			<CallTarget Targets="WA2010:Clean;MultiPult:Clean"/>
-		</Target>
-		<Target Name="Make">
-			<CallTarget Targets="WA2010:Make;MultiPult:Make"/>
-		</Target>
-		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
-	</Project>
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{95126CC8-1E11-4D9A-87B4-51A667D5456A}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Sources\WaveAudio\WA2010.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Sources\MultiPult.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Sources\newac\src\NewAC_10.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="WA2010">
+        <MSBuild Projects="Sources\WaveAudio\WA2010.dproj"/>
+    </Target>
+    <Target Name="WA2010:Clean">
+        <MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="WA2010:Make">
+        <MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="MultiPult">
+        <MSBuild Projects="Sources\MultiPult.dproj"/>
+    </Target>
+    <Target Name="MultiPult:Clean">
+        <MSBuild Projects="Sources\MultiPult.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="MultiPult:Make">
+        <MSBuild Projects="Sources\MultiPult.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="NewAC_10">
+        <MSBuild Projects="Sources\newac\src\NewAC_10.dproj"/>
+    </Target>
+    <Target Name="NewAC_10:Clean">
+        <MSBuild Projects="Sources\newac\src\NewAC_10.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="NewAC_10:Make">
+        <MSBuild Projects="Sources\newac\src\NewAC_10.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="WA2010;MultiPult;NewAC_10"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="WA2010:Clean;MultiPult:Clean;NewAC_10:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="WA2010:Make;MultiPult:Make;NewAC_10:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

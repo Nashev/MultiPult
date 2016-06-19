@@ -32,7 +32,8 @@ uses
   VSample in 'Webcam_Capture_V2\Common\VSample.pas',
   CameraFormUnit in 'CameraFormUnit.pas' {CameraForm},
   ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog},
-  WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm};
+  WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm},
+  MP3ConvertFormUnit in 'MP3ConvertFormUnit.pas' {MP3ConvertForm};
 
 {$R *.res}
 

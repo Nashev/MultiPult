@@ -8067,7 +8067,7 @@ object MainForm: TMainForm
   end
   object dlgOpenAudio: TOpenDialog
     DefaultExt = '.wav'
-    Filter = #1040#1091#1076#1080#1086#1092#1072#1081#1083#1099' (*.wav)|*.wav|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    Filter = #1040#1091#1076#1080#1086#1092#1072#1081#1083#1099' (*.wav, *.mp3)|*.wav;*.mp3|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
     Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofNoTestFileCreate, ofEnableSizing]
     Left = 152
     Top = 88
