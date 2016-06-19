@@ -6758,6 +6758,7 @@ object MainForm: TMainForm
     object actSelectAudioFile: TAction
       Caption = #1042#1099#1073#1088#1072#1090#1100' '#1075#1086#1090#1086#1074#1091#1102' '#1086#1079#1074#1091#1095#1082#1091'...'
       OnExecute = actSelectAudioFileExecute
+      OnUpdate = actSelectAudioFileUpdate
     end
     object actMoveFrameLeft: TAction
       Caption = #1057#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1083#1077#1074#1077#1077
@@ -8067,7 +8068,7 @@ object MainForm: TMainForm
   end
   object dlgOpenAudio: TOpenDialog
     DefaultExt = '.wav'
-    Filter = #1040#1091#1076#1080#1086#1092#1072#1081#1083#1099' (*.wav)|*.wav|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
+    Filter = #1040#1091#1076#1080#1086#1092#1072#1081#1083#1099' (*.wav, *.mp3)|*.wav;*.mp3|'#1042#1089#1077' '#1092#1072#1081#1083#1099'|*.*'
     Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofNoTestFileCreate, ofEnableSizing]
     Left = 152
     Top = 88

@@ -22,11 +22,12 @@ uses
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
-  ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts{$IFDEF Delphi6}, Actions{$ENDIF};
+  ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
+  System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.29'; // и в ProjectOptions не забыть поменять
-  rs_VersionYear = '2015';
+  rs_VersionName = '0.9.30'; // и в ProjectOptions не забыть поменять
+  rs_VersionYear = '2016';
 
 const
   ControlActionStackDeep = 10;
@@ -338,6 +339,7 @@ type
     procedure ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
     procedure actShowCameraFormExecute(Sender: TObject);
     procedure actShowCameraFormUpdate(Sender: TObject);
+    procedure actSelectAudioFileUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -441,7 +443,7 @@ function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRe
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit, 
-  CameraFormUnit;
+  CameraFormUnit, MP3ConvertFormUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -1383,13 +1385,24 @@ resourcestring
 
 procedure TMainForm.OpenAudio(AFileName: string);
 begin
-  FExternalAudioFileName := AFileName;
+  if LowerCase(ExtractFileExt(AFileName)) = '.mp3' then
+    begin
+      FExternalAudioFileName := PhotoFolder + ChangeFileExt(ExtractFileName(AFileName), '.wav');
+      if not TMP3ConvertForm.Execute(AFileName, FExternalAudioFileName) then
+        begin
+          FExternalAudioFileName := '';
+          Exit;
+        end;
+    end
+  else
+    FExternalAudioFileName := AFileName;
+
   actSelectAudioFile.Checked := True;
   mmiUseMicrophone.Checked := False;
   LiveAudioRecorder.Active := False;
   lblAudioFileName.Visible := True;
-  lblAudioFileName.Caption := MinimizeName(AFileName, Canvas, lblAudioFileName.Width);
-  WaveStorage.Wave.LoadFromFile(AFileName);
+  lblAudioFileName.Caption := MinimizeName(FExternalAudioFileName, Canvas, lblAudioFileName.Width);
+  WaveStorage.Wave.LoadFromFile(FExternalAudioFileName);
   WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
   RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
   pbRecord.Invalidate;
@@ -3142,6 +3155,11 @@ constructor TRecordedFrame.Create(AFrameList: TRecordedFrameList; AFrameInfoInde
 begin
   inherited Create(AFrameList);
   FFrameInfoIndex := AFrameInfoIndex;
+end;
+
+procedure TMainForm.actSelectAudioFileUpdate(Sender: TObject);
+begin
+  actSelectAudioFile.Enabled := PhotoFolder <> '';
 end;
 
 end.
