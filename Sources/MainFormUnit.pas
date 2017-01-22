@@ -26,8 +26,8 @@ uses
   System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.30'; // и в ProjectOptions не забыть поменять
-  rs_VersionYear = '2016';
+  rs_VersionName = '0.9.31'; // и в ProjectOptions не забыть поменять
+  rs_VersionYear = '2017';
 
 const
   ControlActionStackDeep = 10;
@@ -358,7 +358,13 @@ type
     LoopMode: Boolean;
     FrameTipMode: TFrameTipMode;
     FrameTipArrow: Integer;
-    Bookmarks: array [0..9] of Integer; // TODO: move to ResultFrameList (?)
+    const
+      BookmarkKey: array [0..19] of Char = (
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+        'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'
+      );
+  private
+    Bookmarks: array [0..19] of Integer; // TODO: move to ResultFrameList (?)
     Saved: Boolean;
      // RecordedAudioCopy - рисуемая копия звука. По мере записи мульта пополняется из AudioRecorder
      // копиями очередных порций записываемого им себе звука.
@@ -391,6 +397,7 @@ type
     procedure SetDisplayedFrameIndex(const Value: Integer);
     procedure InitMicrophoneUsage;
     procedure RepaintAll;
+    procedure ClearBookmarks;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -590,8 +597,6 @@ begin
 end;
 
 constructor TMainForm.Create(AOwner: TComponent);
-var
-  i: Integer;
 begin
   inherited Create(AOwner);
   CurrentSpeedInterval := 3;
@@ -602,7 +607,14 @@ begin
   FWorkingSetFrames := TRecordedFrameList.Create;
   RecordedAudioCopy := TMemoryStream.Create;
   DisplayedFrameIndex := -1;
-  for i := 0 to 9 do
+  ClearBookmarks;
+end;
+
+procedure TMainForm.ClearBookmarks;
+var
+  i: Integer;
+begin
+  for i := Low(Bookmarks) to High(Bookmarks) do
     Bookmarks[i] := -1;
 end;
 
@@ -611,7 +623,7 @@ procedure TMainForm.CreateAdvertisementFrame;
 resourcestring
   rs_AdFrame1 = 'Фильм собран из отдельных кадров и озвучен';
   rs_AdFrame2 = 'при помощи общедоступной программы МультиПульт';
-  rs_AdFrame3 = 'версии %s, МультиСтудия, Москва, %s';
+  rs_AdFrame3 = 'версии %s (МультиСтудия, Москва, %s)';
   rs_AdFrame4 = 'http://MultiStudia.ru';
 
 var
@@ -760,37 +772,39 @@ var
     MenuItem := TMenuItem.Create(Self);
     MenuItem.Action := actToggleBookmark0;
     MenuItem.Tag := Index;
-    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', IntToStr(Index), []);
+    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', BookmarkKey[Index], []);
     MenuItem.Hint := MenuItem.Caption;
-    MenuItem.ShortCut := TextToShortCut('Ctrl+' + IntToStr(Index));
+    MenuItem.ShortCut := TextToShortCut('Ctrl+' + BookmarkKey[Index]);
     mmiToggleBookmark0.Parent.Insert(mmiToggleBookmark0.Parent.IndexOf(mmiToggleBookmark0), MenuItem);
     MenuItem.Action := nil;
 
     MenuItem := TMenuItem.Create(Self);
     MenuItem.Action := actGotoBookmark0;
     MenuItem.Tag := Index;
-    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', IntToStr(Index), []);
+    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', BookmarkKey[Index], []);
     MenuItem.Hint := MenuItem.Caption;
-    MenuItem.ShortCut := TextToShortCut(IntToStr(Index));
+    MenuItem.ShortCut := TextToShortCut(BookmarkKey[Index]);
     mmiGotoBookmark0.Parent.Insert(mmiGotoBookmark0.Parent.IndexOf(mmiGotoBookmark0), MenuItem);
     MenuItem.Action := nil;
 
     MenuItem := TMenuItem.Create(Self);
     MenuItem.Action := actToggleTeleport0;
     MenuItem.Tag := Index;
-    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', IntToStr(Index), []);
+    MenuItem.Caption := StringReplace(MenuItem.Caption, '0', BookmarkKey[Index], []);
     MenuItem.Hint := MenuItem.Caption;
-    MenuItem.ShortCut := TextToShortCut('Shift+' + IntToStr(Index));
+    MenuItem.ShortCut := TextToShortCut('Shift+' + BookmarkKey[Index]);
     mmiToggleTeleport0.Parent.Insert(mmiToggleTeleport0.Parent.IndexOf(mmiToggleTeleport0), MenuItem);
     MenuItem.Action := nil;
   end;
 
 begin
-  for i := 1 to 9 do
+  for i := Low(Bookmarks) to High(Bookmarks) do
     AppendBookmarkMenu(i);
 
-  mmiToggleBookmark0.Action.Free;
-  mmiGotoBookmark0.Action.Free;
+  mmiToggleBookmark0.Free;
+  mmiGotoBookmark0.Free;
+  mmiToggleTeleport0.Free;
+
   LiveAudioRecorder.Active := True;
 
   pnlDisplay.DoubleBuffered := True;
@@ -992,6 +1006,7 @@ var
 //  i: Integer;
 begin
   actNew.Execute;
+  ClearBookmarks;
   PhotoFolder := ANewPhotoFolder;
 
   SetCaption('');
@@ -1040,20 +1055,21 @@ procedure TMainForm.mmiNewBookmarkClick(Sender: TObject);
 var
   i: Integer;
 begin
-  for i := 1 to 10 do // сначала попробуем снять закладку, если она тут уже есть. Пусть Enter тоже выключателем работает
-    // перебираем 1-10 и используем i mod 10, чтобы индекс 0 был после 9, как на клавиатуре
-    if Bookmarks[i mod 10] = DisplayedFrameIndex then
+  // сначала попробуем снять закладку, если она тут уже есть. Пусть Enter тоже выключателем работает
+  for i := Low(Bookmarks) to High(Bookmarks) do
+    if Bookmarks[i] = DisplayedFrameIndex then
       begin
-        Bookmarks[i mod 10] := -1;
+        Bookmarks[i] := -1;
         pbWorkingSet.Invalidate;
         Saved := False;
         Exit;
       end;
 
-  for i := 1 to 10 do // если не было закладки - то ставим первую свободную
-    if Bookmarks[i mod 10] = -1 then
+  // если не было закладки - то ставим первую свободную
+  for i := Low(Bookmarks) to High(Bookmarks) do
+    if Bookmarks[i] = -1 then
       begin
-        Bookmarks[i mod 10] := DisplayedFrameIndex;
+        Bookmarks[i] := DisplayedFrameIndex;
         pbWorkingSet.Invalidate;
         Saved := False;
         Exit;
@@ -1449,6 +1465,7 @@ begin
     end;
 
   UnloadFrames;
+  ClearBookmarks;
   PhotoFolder := ExtractFilePath(AFileName);
   ProjectFileName := ExtractFileName(AFileName);
 
@@ -1520,7 +1537,7 @@ begin
               Break;
             if s = TeleportsSectionStart then
               Break;
-            Bookmarks[StrToInt(s[Length('Bookmark') + 1])] := StrToInt(Copy(s, Length('Bookmark0 = ') + 1, MaxInt));
+            Bookmarks[StrToInt(Copy(s, Length('Bookmark') + 1, Pos(' = ', s) - Length('Bookmark') - 1))] := StrToInt(Copy(s, Length('Bookmark0 = ') + 1, MaxInt));
           end;
       if s = TeleportsSectionStart then
         while i < (Count - 1) do
@@ -1619,8 +1636,8 @@ begin
       for i := 0 to WorkingSetFrames.Count - 1 do
         Add(IntToStr(WorkingSetFrames[i].FrameInfoIndex));
       Add(BookmarkSectionStart);
-      for i := 0 to 9 do
-        Add('Bookmark' + IntToStr(i) + ' = ' + IntToStr(Integer(Bookmarks[i])));
+      for i := Low(Bookmarks) to High(Bookmarks) do
+        Add('Bookmark' + IntToStr(i) + ' = ' + IntToStr(Bookmarks[i]));
       Add(TeleportsSectionStart);
       for i := 0 to FrameInfoCount - 1 do
         if FrameInfoList[i].Teleport <> -1 then
@@ -2537,10 +2554,10 @@ begin
           pbWorkingSet.Canvas.Rectangle(x-1, y1, x+2, y2);
         end;
 
-      for BookmarkIndex := 0 to 9 do
+      for BookmarkIndex := Low(Bookmarks) to High(Bookmarks) do
         if WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex = Bookmarks[BookmarkIndex] then
         begin
-          BookmarkText := IntToStr(BookmarkIndex);
+          BookmarkText := BookmarkKey[BookmarkIndex];
           BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
@@ -2568,7 +2585,7 @@ begin
 
       if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport <> -1 then
         begin
-          BookmarkText := IntToStr(FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport);
+          BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport];
           BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);

@@ -7024,15 +7024,18 @@ object MainForm: TMainForm
       end
       object mmiHideFrame: TMenuItem
         Action = actHideFrame
+        ShortCut = 16430
       end
       object mmiDuplicateFrame: TMenuItem
         Action = actDuplicateFrame
       end
       object mmiMoveFrameLeft: TMenuItem
         Action = actMoveFrameLeft
+        ShortCut = 16458
       end
       object mmiMoveFrameRight: TMenuItem
         Action = actMoveFrameRight
+        ShortCut = 16460
       end
       object N16: TMenuItem
         Caption = '-'
@@ -7046,6 +7049,7 @@ object MainForm: TMainForm
       end
       object mmiRefreshPreview: TMenuItem
         Action = actRefreshPreview
+        Caption = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1082#1072#1076#1088#1072
       end
       object N15: TMenuItem
         Caption = '-'
