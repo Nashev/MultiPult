@@ -1,6 +1,6 @@
 object MainForm: TMainForm
-  Left = 111
-  Top = 106
+  Left = 455
+  Top = 96
   Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
   ClientHeight = 473
   ClientWidth = 798
@@ -7139,13 +7139,18 @@ object MainForm: TMainForm
       object N2: TMenuItem
         Caption = '-'
       end
-      object mmiSelectAudioFile: TMenuItem
-        Action = actSelectAudioFile
-      end
       object mmiUseMicrophone: TMenuItem
         Caption = #1047#1072#1087#1080#1089#1099#1074#1072#1090#1100' '#1079#1074#1091#1082' '#1089' '#1084#1080#1082#1088#1086#1092#1086#1085#1072' ('#1085#1072#1095#1085#1105#1090' '#1085#1086#1074#1099#1081' '#1084#1091#1083#1100#1090')...'
         Checked = True
         OnClick = mmiUseMicrophoneClick
+      end
+      object mmiSelectAudioFile: TMenuItem
+        Action = actSelectAudioFile
+      end
+      object mmiStopRecordingOnSoundtrackFinish: TMenuItem
+        AutoCheck = True
+        Caption = #1054#1089#1090#1072#1085#1072#1074#1083#1080#1074#1072#1090#1100' '#1079#1072#1087#1080#1089#1100' '#1074' '#1082#1086#1085#1094#1077' '#1092#1072#1081#1083#1072' '#1086#1079#1074#1091#1095#1082#1080
+        Checked = True
       end
       object mmiSeparatorSteps: TMenuItem
         Caption = '-'

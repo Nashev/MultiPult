@@ -26,7 +26,7 @@ uses
   System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.31'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.32'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2017';
 
 const
@@ -236,6 +236,7 @@ type
     mmiRefreshPreview: TMenuItem;
     mmiOpenHelp: TMenuItem;
     actShowCameraForm: TAction;
+    mmiStopRecordingOnSoundtrackFinish: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -545,7 +546,8 @@ end;
 
 procedure InfoMsg(AText: string);
 begin
-  Application.MessageBox(
+  MessageBox(
+    MainForm.Handle,
     PChar(AText),
     PChar(Application.Title),
     MB_OK + MB_ICONINFORMATION + MB_SETFOREGROUND
@@ -747,6 +749,11 @@ resourcestring
     'Если его не сохранить сейчас, то он пропадёт.'#13#10+
     'Желаете его сохранить, прежде чем закрыть программу?';
 begin
+  if Recording then
+    StopRecording;
+  if Playing then
+    StopPlaying;
+
   actSaveAs.Update;
   if actSaveAs.Enabled and not Saved then
     case MessageBox(
@@ -1673,7 +1680,7 @@ end;
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
 begin
   FCurrentRecordPosition := Value;
-  if Playing then
+  if not Recording then
     StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
 end;
 
@@ -1739,14 +1746,14 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
-  if RecordingMustBeChanged then
+  if RecordingMustBeChanged then // значит, начали играть для записи мультика
     begin
       Recording := True;
       RecordingMustBeChanged := False;
       actRecord.Checked := True;
     end
   else
-    begin
+    begin  // значит, начали играть для проигрывания записанного мультика
       // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
       actPlay.Checked := True;
       ReplaceControlActions(caNone);
@@ -1761,14 +1768,10 @@ end;
 
 procedure TMainForm.StockAudioPlayerDeactivate(Sender: TObject);
 begin
-  if RecordingMustBeChanged then
+  if Recording and mmiStopRecordingOnSoundtrackFinish.Checked then
     begin
-      Recording := False;
-      RecordingMustBeChanged := False;
-      actRecord.Checked := False;
-      ReplaceControlActions(caNone);
-
-      UpdatePlayActions;
+      StopRecording;
+      InfoMsg('Конец файла озвучки, запись остановлена согласно выбранному режиму.');
     end;
 //  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
 //  actPlay.Checked := False;
@@ -1784,14 +1787,27 @@ begin
     Exit;
   StockAudioPlayer.Active := False;
 end;
-procedure TMainForm.StopRecording;
 
+procedure TMainForm.StopRecording;
 begin
   if not Recording then
     Exit;
-  RecordingMustBeChanged := True;
-  AudioRecorder.Active := False;
-  StockAudioPlayer.Active := False;
+
+  if FExternalAudioFileName <> '' then
+    begin
+      Recording := False;
+      actRecord.Checked := False;
+      ReplaceControlActions(caNone);
+      UpdatePlayActions;
+
+      RecordingMustBeChanged := False;
+      StockAudioPlayer.Active := False;
+    end
+  else // через деактивацию записи
+    begin
+      RecordingMustBeChanged := True;
+      AudioRecorder.Active := False;
+    end;
 end;
 
 procedure TMainForm.LoadPhoto(AFrameInfoIndex: Integer);
@@ -1915,24 +1931,20 @@ end;
 
 procedure TMainForm.actRecordExecute(Sender: TObject);
 begin
+  Saved := False;
   if FExternalAudioFileName <> '' then
     begin
-      Playing := False; // это перед установкой CurrentRecordPosition, чтобы с ним установилась и позиция звука.
-      RecordingMustBeChanged := True;
-      // Запуск самой записи и последующая остановка - через обработчики
-      // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
-      // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
-      // Но вот останавливать вручную, на всякий случай, будем сразу, а не когда звук соизволит.
-      if Recording then
-        CurrentRecordPosition := RecordedFrames.Count // заодно пинаем позиционирование звука
+      if not Recording then
+        begin
+          CurrentRecordPosition := RecordedFrames.Count; // заодно пинаем позиционирование звука
+          // Запуск самой записи и последующая остановка - через обработчики
+          // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
+          // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
+          RecordingMustBeChanged := True;
+          StockAudioPlayer.Active := True;
+        end
       else
-//        begin
-          actRecord.Checked := False;
-
-          //CurrentRecordPosition := 0;
-          //Interval := 0;
-//        end;
-      StockAudioPlayer.Active := not Recording;
+        StopRecording;
     end
   else
     // если звук с микрофона - то запись кадров начнётся в
@@ -3177,6 +3189,7 @@ end;
 procedure TMainForm.actSelectAudioFileUpdate(Sender: TObject);
 begin
   actSelectAudioFile.Enabled := PhotoFolder <> '';
+  mmiStopRecordingOnSoundtrackFinish.Enabled := actSelectAudioFile.Checked;
 end;
 
 end.
