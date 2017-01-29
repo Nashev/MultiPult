@@ -3,7 +3,7 @@ object ControllerForm: TControllerForm
   Top = 0
   BorderIcons = []
   BorderStyle = bsToolWindow
-  Caption = #1059#1087#1088#1072#1074#1083#1077#1085#1080#1077
+  Caption = #1059#1087#1088#1072#1074#1083#1077#1085#1080#1077' (F4)'
   ClientHeight = 318
   ClientWidth = 325
   Color = clBtnFace

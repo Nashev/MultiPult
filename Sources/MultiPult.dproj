@@ -30,9 +30,9 @@
         <SanitizedProjectName>MultiPult</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.31.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=МультиСтудия;FileDescription=;FileVersion=0.9.33.0;InternalName=MultiPult;LegalCopyright=;LegalTrademarks=;OriginalFilename=MultiPult.exe;ProductName=МультиПульт;ProductVersion=0.9.0.0;Comments=</VerInfo_Keys>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Release>31</VerInfo_Release>
+        <VerInfo_Release>33</VerInfo_Release>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_Inlining>off</DCC_Inlining>

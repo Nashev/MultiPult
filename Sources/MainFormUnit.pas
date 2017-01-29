@@ -26,7 +26,7 @@ uses
   System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 resourcestring
-  rs_VersionName = '0.9.32'; // и в ProjectOptions не забыть поменять
+  rs_VersionName = '0.9.33'; // и в ProjectOptions не забыть поменять
   rs_VersionYear = '2017';
 
 const
@@ -341,6 +341,8 @@ type
     procedure actShowCameraFormExecute(Sender: TObject);
     procedure actShowCameraFormUpdate(Sender: TObject);
     procedure actSelectAudioFileUpdate(Sender: TObject);
+    procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -348,6 +350,7 @@ type
     procedure PopControlAction;
     procedure PushControlAction(Value: TControlAction);
     procedure ReplaceControlActions(Value: TControlAction);
+    procedure ClearSound;
   private
     ProjectFileName: string;
     FFrameInfoList: TObjectList;
@@ -450,7 +453,7 @@ function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRe
 
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit,
-  ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit, 
+  ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
   CameraFormUnit, MP3ConvertFormUnit;
 {$R *.dfm}
 
@@ -610,6 +613,7 @@ begin
   RecordedAudioCopy := TMemoryStream.Create;
   DisplayedFrameIndex := -1;
   ClearBookmarks;
+  MultimediaTimer.Enabled := True;
 end;
 
 procedure TMainForm.ClearBookmarks;
@@ -892,8 +896,8 @@ begin
           ReplaceControlActions(caPlayForward)
         else
           ReplaceControlActions(caNone);
-      vk_Up:   begin Inc(CurrentSpeedInterval); end;
-      vk_Down: begin Dec(CurrentSpeedInterval); if CurrentSpeedInterval < 1  then CurrentSpeedInterval := 1; end;
+      vk_Up:   begin Inc(CurrentSpeedInterval); pbWorkingSet.Repaint; end;
+      vk_Down: begin Dec(CurrentSpeedInterval); if CurrentSpeedInterval < 1  then CurrentSpeedInterval := 1; pbWorkingSet.Repaint; end;
     end
   else
     if not KeyPressBlocked then
@@ -905,8 +909,7 @@ begin
       end;
 
   UpdatePlayActions;
-//  pbIndicator.Invalidate;
-//  pbIndicator.Refresh;
+  pbIndicator.Repaint;
 end;
 
 procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
@@ -917,6 +920,19 @@ begin
     vk_Shift: pbWorkingSet.Invalidate; // телепорты включаются
   end;
 //  pbIndicator.Refresh;
+end;
+
+procedure TMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+begin
+  if Playing then
+    Exit;
+
+  if WheelDelta > 0 then
+    actStepPrev.Execute
+  else
+    actStepNext.Execute;
+  Handled := True;
 end;
 
 function TMainForm.GetFrameInfo(Index: Integer): TFrameInfo;
@@ -959,6 +975,7 @@ end;
 procedure TMainForm.UnloadFrames;
 begin
   ClearRecorded;
+  ClearSound;
 
   DisplayedFrameIndex := -1;
   FCurrentWorkingSetFrame := nil;
@@ -1109,6 +1126,8 @@ end;
 
 procedure TMainForm.actDoubleFramerateExecute(Sender: TObject);
 begin
+  actNew.Execute;
+
   if FrameRate = 25 then
     FrameRate := 50
   else
@@ -1116,8 +1135,7 @@ begin
   actDoubleFramerate.Checked := (FrameRate = 50);
 
   MultimediaTimer.Interval := 1000 div FrameRate;
-  pnlToolls.Invalidate;
-//  Invalidate;
+  RepaintAll;
 end;
 
 procedure TMainForm.actPreviewModeExecute(Sender: TObject);
@@ -1251,12 +1269,12 @@ begin
       Exporting := True;
       try
         SetStatus(rs_AVIExportingAudioStore);
-        if WaveStorage.Wave.Length = MulDiv(RecordedFrames.Count, 1000, Framerate) then
+        if WaveStorage.Wave.Length = MulDiv(RecordedFrames.Count, 1000, FrameRate) then
           WaveToSave := WaveStorage.Wave
         else
           begin
             WaveToSave := TWave.Create;
-            WaveToSave.Copy(WaveStorage.Wave, 0, MulDiv(RecordedFrames.Count, 1000, Framerate));
+            WaveToSave.Copy(WaveStorage.Wave, 0, MulDiv(RecordedFrames.Count, 1000, FrameRate));
           end;
 
         WaveToSave.SaveToFile(Dir + '~Audio.wav');
@@ -1378,21 +1396,24 @@ begin
       PChar(Application.Title),
       MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
     of
-      IDCANCEL: Exit;
+      IDCANCEL: Abort;
       IDYES:
         begin
           actSaveAs.Execute;
           if not Saved then
-            Exit;
+            Abort;
         end;
       IDNO: ;
     end;
 
   ClearRecorded;
+  if FExternalAudioFileName = '' then
+    ClearSound;
   ProjectFileName := '';
   SetCaption('');
   Saved := True;
-  pbRecord.Invalidate;
+  AdvertisementShowing := False;
+  RepaintAll;
   UpdateActions;
 end;
 
@@ -1614,7 +1635,7 @@ begin
   NewPath := ExtractFilePath(dlgSaveMovie.FileName);
   ProjectFileName := ExtractFileName(dlgSaveMovie.FileName);
   SetCaption('');
-  if NewPath <> PhotoFolder then
+  if UpperCase(NewPath) <> UpperCase(PhotoFolder) then
     // TODO: не уведомлять, а исправлять относительные пути по возможности
     InfoMsg(
       'Внимание!'#13#10+
@@ -1771,7 +1792,9 @@ begin
   if Recording and mmiStopRecordingOnSoundtrackFinish.Checked then
     begin
       StopRecording;
-      InfoMsg('Конец файла озвучки, запись остановлена согласно выбранному режиму.');
+      AdvertisementShowing := True;
+      RepaintAll;
+      InfoMsg('Конец файла озвучки, запись остановлена'#13#10'согласно выбранному режиму.');
     end;
 //  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
 //  actPlay.Checked := False;
@@ -2016,7 +2039,7 @@ begin
           Image := AdvertisementFrameImagePreview
         else
           Image := FrameInfoList[DisplayedFrameIndex].Preview;
-        if actStretchImages.Checked or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
+        if (not AdvertisementShowing and actStretchImages.Checked) or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
           begin
             R_MainScreen := StretchSize(Image.Width, Image.Height, pbDisplay.Width - MainScreenBorder * 2, pbDisplay.Height - MainScreenBorder * 2);
             R_MainScreen.Left   := R_MainScreen.Left   + MainScreenBorder;
@@ -2170,23 +2193,33 @@ resourcestring
 var
 //  X: TPoint;
   a: Double;
+  c: Byte;
 begin
   with pbIndicator, Canvas do
     begin
+      Brush.Style := bsSolid;
+      Brush.Color := clBtnFace;
+      FillRect(pbIndicator.ClientRect);
+
       Pen.Style := psClear;
       Brush.Style := bsClear;
       SetTextAlign(Handle, TA_TOP + TA_LEFT);
       TextOut(58, 8, Format(rs_Framerate, [CurrentSpeedInterval, FrameRate]));
+
       Brush.Style := bsSolid;
-      Brush.Color := clBlack;
-      if Playing then
+      Brush.Color := clWhite;
+        Ellipse(15-10, 15-10, 15+10+1, 15+10+1);
+
+      c := 255 - MulDiv(255, Interval - 1, CurrentSpeedInterval - 1);
+      Brush.Color := RGB(c, c, c);
+      if not Recording then
         a := -(CurrentRecordPosition mod FrameRate)* 2 * Pi / FrameRate
       else
         a := -(RecordedFrames.Count mod FrameRate)* 2 * Pi / FrameRate;
       with Point(15 + Round(10 * Cos(a)), 15 - Round(10 * Sin(a))) do
         Ellipse(X-2, Y-2, X+3, Y+3);
 
-      a := -(GetTickCount mod 1000)* 2 * Pi / 1000; // текущая милисекунда. Просто 25 раз в секунду перерисовывается.
+      a := -(GetTickCount mod 1000)* 2 * Pi / 1000; // текущая милисекунда. Просто FrameRate раз в секунду перерисовывается.
       with Point(15 + Round(10 * Cos(a)), 15 - Round(10 * Sin(a))) do
         FillRect(Rect(X-1, Y-1, X+2, Y+2));
 
@@ -2203,7 +2236,8 @@ begin
           MoveTo(45 + 1, 25);
           LineTo(45 + 5, 5);
         end;
-      OddTick := not OddTick;
+      if Interval = CurrentSpeedInterval then
+        OddTick := not OddTick;
       Pen.Width := 1;
       Polyline([
         Point(45-2, 7),
@@ -2213,6 +2247,7 @@ begin
         Point(45-2, 7)
       ]);
 
+      Brush.Color := clBlack;
       FillRect(Rect(0, Height - 2, NextControlActionStackPosition * 2, Height));
     end;
 end;
@@ -2737,7 +2772,7 @@ end;
 
 procedure TMainForm.TimerTimer(Sender: TObject);
 begin
-  if (csDestroying in ComponentState) or (FrameInfoCount = 0) or Exporting then
+  if (csDestroying in ComponentState) or Exporting then
     Exit;
 
   if Playing then
@@ -2806,7 +2841,10 @@ begin
           pbIndicator.Repaint;
         end
       else
-        dec(Interval);
+        begin
+          dec(Interval);
+          pbIndicator.Repaint;
+        end;
     end;
 end;
 
@@ -2912,6 +2950,12 @@ procedure TMainForm.AddNewFrame(ARelativePath, AFileName: string);
 begin
   DisplayedFrameIndex := FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, AFileName));
   CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
+end;
+
+procedure TMainForm.ClearSound;
+begin
+  WaveStorage.Wave.Clear;
+  RecordedAudioCopy.Clear;
 end;
 
 procedure TMainForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
@@ -3079,8 +3123,6 @@ end;
 
 procedure TMainForm.ClearRecorded;
 begin
-  WaveStorage.Wave.Clear;
-  RecordedAudioCopy.Clear;
   RecordedFrames.Clear;
   FCurrentRecordPosition := 0;
   FreeAndNil(AdvertisementFrameImage);

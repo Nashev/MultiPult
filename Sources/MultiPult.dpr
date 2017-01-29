@@ -43,6 +43,7 @@ resourcestring
 begin
   Application.Initialize;
   Application.Title := rs_AppCaption;
+  Application.HintHidePause := 8000;
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TControllerForm, ControllerForm);
   Application.CreateForm(TScreenForm, ScreenForm);
