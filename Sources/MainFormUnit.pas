@@ -25,10 +25,6 @@ uses
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
   System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
-resourcestring
-  rs_VersionName = '0.9.33'; // и в ProjectOptions не забыть поменять
-  rs_VersionYear = '2017';
-
 const
   ControlActionStackDeep = 10;
 type
@@ -292,7 +288,6 @@ type
     procedure btnBackwardWhilePressedMouseUp(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure btnBackwardWhilePressedMouseLeave(Sender: TObject);
-    procedure actBackwardWhilePressedExecute(Sender: TObject);
     procedure btnForwardWhilePressedMouseDown(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure btnForwardWhilePressedMouseLeave(Sender: TObject);
@@ -343,6 +338,7 @@ type
     procedure actSelectAudioFileUpdate(Sender: TObject);
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+    procedure btnBackwardWhilePressedClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -351,7 +347,11 @@ type
     procedure PushControlAction(Value: TControlAction);
     procedure ReplaceControlActions(Value: TControlAction);
     procedure ClearSound;
+    function FrameIndexToTimeStamp(AFrameIndex: Integer): string;
+    procedure Stop;
   private
+    VersionNameString: string; // '0.9.34' - задаётся в ProjectOptions
+    VersionCopyrightString: string; // '2017' - тоже в ProjectOptions
     ProjectFileName: string;
     FFrameInfoList: TObjectList;
     FWorkingSetFrames: TRecordedFrameList;
@@ -402,6 +402,7 @@ type
     procedure InitMicrophoneUsage;
     procedure RepaintAll;
     procedure ClearBookmarks;
+    procedure SaveBeforeClose(const APurpose: string);
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -418,6 +419,7 @@ type
     procedure LoadPhotoFolder(ANewPhotoFolder: string);
     procedure RecalculatePreview;
     procedure CreateAdvertisementFrame;
+    procedure ShowTimes;
   protected
     procedure CreateWindowHandle(const Params: TCreateParams); override;
     procedure DestroyWindowHandle; override;
@@ -487,8 +489,7 @@ procedure TMainForm.actSelectAudioFileExecute(Sender: TObject);
 resourcestring
   rs_SaveAudioBeforeOpenRequest = 'Хотите сохранить записанную озвучку перед подключением готовой?';
 begin
-  StopRecording;
-  StopPlaying;
+  Stop;
   if (WaveStorage.Wave.Length > 0) and (FExternalAudioFileName = '') then
     case MessageBox(
       0,
@@ -511,12 +512,38 @@ begin
   OpenAudio(dlgOpenAudio.FileName);
 end;
 
-procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
+procedure TMainForm.SaveBeforeClose(const APurpose: string);
 resourcestring
-  rs_SelectPhotoFolderCaption = 'С какой папки начинать искать кадры?';
+  rs_SaveMovieBeforeSomethingRequest = 'Хотите сохранить текущий мульт перед ';
+begin
+  if (RecordedFrames.Count > 0) and not Saved then
+    case MessageBox(
+      0,
+      PChar(rs_SaveMovieBeforeSomethingRequest + APurpose + '?'),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+    of
+      IDCANCEL: Abort;
+      IDYES:
+        begin
+          actSaveAs.Execute;
+          if not Saved then
+            Abort;
+        end;
+      IDNO: ;
+    end;
+end;
+
+procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
 var
   NewPhotoFolder: string;
+resourcestring
+  rs_SelectPhotoFolderCaption = 'С какой папки начинать искать кадры?';
+  rs_SaveBeforeChooseFolderRequest = 'созданием нового';
 begin
+  Stop;
+  SaveBeforeClose(rs_SaveBeforeChooseFolderRequest);
+
   NewPhotoFolder := ExtractFilePath(ExpandFileName('..\testdata\'));
   if SelectDirectory(
     rs_SelectPhotoFolderCaption, '', NewPhotoFolder
@@ -529,6 +556,7 @@ end;
 
 procedure TMainForm.actShowCameraFormExecute(Sender: TObject);
 begin
+  Stop;
   CameraForm.Execute;
 end;
 
@@ -598,6 +626,7 @@ end;
 
 procedure TMainForm.actShowFrameInExplorerExecute(Sender: TObject);
 begin
+  Stop;
   SafeLocateFile(FrameInfoList[DisplayedFrameIndex].FullFileName);
 end;
 
@@ -629,7 +658,7 @@ procedure TMainForm.CreateAdvertisementFrame;
 resourcestring
   rs_AdFrame1 = 'Фильм собран из отдельных кадров и озвучен';
   rs_AdFrame2 = 'при помощи общедоступной программы МультиПульт';
-  rs_AdFrame3 = 'версии %s (МультиСтудия, Москва, %s)';
+  rs_AdFrame3 = 'версии %s (%s)';
   rs_AdFrame4 = 'http://MultiStudia.ru';
 
 var
@@ -670,7 +699,7 @@ begin
       TextTop := Canvas.Font.Height * 2;
       DrawCentredText(AdvertisementFrameImage, rs_AdFrame1);
       DrawCentredText(AdvertisementFrameImage, rs_AdFrame2);
-      DrawCentredText(AdvertisementFrameImage, Format(rs_AdFrame3, [rs_VersionName, rs_VersionYear]));
+      DrawCentredText(AdvertisementFrameImage, Format(rs_AdFrame3, [VersionNameString, VersionCopyrightString]));
       DrawCentredText(AdvertisementFrameImage, rs_AdFrame4);
       DrawCentredText(AdvertisementFrameImage, DateToStr(Now));
 
@@ -703,6 +732,7 @@ procedure TMainForm.actHideFrameClick(Sender: TObject);
 var
   OldCurrentFrame: TRecordedFrame;
 begin
+  Stop;
   OldCurrentFrame := CurrentWorkingSetFrame;
   CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
   if OldCurrentFrame = CurrentWorkingSetFrame then // last frame
@@ -712,6 +742,7 @@ end;
 
 procedure TMainForm.actMoveFrameLeftClick(Sender: TObject);
 begin
+  Stop;
   if CurrentWorkingSetFrame.Index > 0 then
     CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index - 1
   else
@@ -721,6 +752,7 @@ end;
 
 procedure TMainForm.actMoveFrameRightClick(Sender: TObject);
 begin
+  Stop;
   if CurrentWorkingSetFrame.Index < (WorkingSetFrames.Count - 1) then
     CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index + 1
   else
@@ -753,10 +785,7 @@ resourcestring
     'Если его не сохранить сейчас, то он пропадёт.'#13#10+
     'Желаете его сохранить, прежде чем закрыть программу?';
 begin
-  if Recording then
-    StopRecording;
-  if Playing then
-    StopPlaying;
+  Stop;
 
   actSaveAs.Update;
   if actSaveAs.Enabled and not Saved then
@@ -785,7 +814,7 @@ var
     MenuItem.Tag := Index;
     MenuItem.Caption := StringReplace(MenuItem.Caption, '0', BookmarkKey[Index], []);
     MenuItem.Hint := MenuItem.Caption;
-    MenuItem.ShortCut := TextToShortCut('Ctrl+' + BookmarkKey[Index]);
+    MenuItem.ShortCut := TextToShortCut('Alt+' + BookmarkKey[Index]);
     mmiToggleBookmark0.Parent.Insert(mmiToggleBookmark0.Parent.IndexOf(mmiToggleBookmark0), MenuItem);
     MenuItem.Action := nil;
 
@@ -808,7 +837,69 @@ var
     MenuItem.Action := nil;
   end;
 
+  procedure TakeVersionInfo;
+
+    function AppFileName: string;
+    var
+      FileName: array [0 .. 255] of Char;
+    begin
+      if IsLibrary then
+        begin
+          GetModuleFileName(HInstance, FileName, SizeOf(FileName) - 1);
+          Result := StrPas(FileName);
+        end
+      else
+        Result := ParamStr(0);
+    end;
+
+  type
+    TLongVersion = record
+      case Integer of
+      0: (All: array[1..4 ] of Word);
+      1: (MS, LS: LongInt);
+    end;
+  var
+    FileName: string;
+    VersionInfoHandle: DWORD;
+    VersionInfoSize: DWORD;
+    VersionInfoBuffer: PByte;
+    Len: UINT;
+    FixedFileInfo: PVSFixedFileInfo;
+    V: TLongVersion;
+    Translation: Pointer;
+    TranslationString: string;
+    Copyright: Pointer;
+  begin
+    // на случай, если что-то пойдёт не так
+    VersionNameString := '0.9.???';
+    VersionCopyrightString := 'МультиСтудия, Москва, 20??';
+    // пробуем получить от файла:
+    FileName := AppFileName;
+    VersionInfoSize := GetFileVersionInfoSize(PWideChar(FileName), VersionInfoHandle);
+    if VersionInfoSize > 0 then
+      try
+        GetMem(VersionInfoBuffer, VersionInfoSize);
+        if not GetFileVersionInfo(PWideChar(FileName), VersionInfoHandle, VersionInfoSize, VersionInfoBuffer) then
+          Exit;
+        VerQueryValue(VersionInfoBuffer, '\', Pointer(FixedFileInfo), Len);
+        V.MS := FixedFileInfo^.dwFileVersionMS;
+        V.LS := FixedFileInfo^.dwFileVersionLS;
+        with V do
+          VersionNameString := Format('%d.%d.%d', [All[2], All[1], All[4]]);
+
+        if VerQueryValue(VersionInfoBuffer, '\VarFileInfo\Translation', Translation, Len) then
+          begin
+            TranslationString := IntToHex(MakeLong(HiWord(LongInt(Translation^)), LoWord(LongInt(Translation^))), 8);
+            if VerQueryValue(VersionInfoBuffer, PWideChar('\StringFileInfo\' + TranslationString + '\LegalCopyright'), Copyright, Len) then
+              VersionCopyrightString := StrPas(PChar(Copyright));
+          end;
+      finally
+        FreeMem(VersionInfoBuffer, VersionInfoSize);
+      end;
+  end;
+
 begin
+  TakeVersionInfo;
   for i := Low(Bookmarks) to High(Bookmarks) do
     AppendBookmarkMenu(i);
 
@@ -867,15 +958,26 @@ var
   i: Integer;
   FileCount: Integer;
   FileName: array [0..MAX_PATH] of Char;
+resourcestring
+  rs_SaveBeforeChooseFolderRequest = 'созданием нового в другой папке кадров';
+  rs_SaveBeforeOpenRequest = 'открытием другого';
 begin
+  Stop;
+
   FileCount := DragQueryFile(Msg.Drop, $FFFFFFFF, nil, 0); // Get count of files
   for i := 0 to FileCount-1 do
     begin
       DragQueryFile(Msg.Drop, i, @FileName, SizeOf(FileName)); // Get N file
       if DirectoryExists(FileName) then
-        LoadPhotoFolder(string(FileName) + '\')
+        begin
+          SaveBeforeClose(rs_SaveBeforeChooseFolderRequest);
+          LoadPhotoFolder(string(FileName) + '\')
+        end
       else if LowerCase(ExtractFileExt(FileName)) = '.mp' then
-        OpenMovie(FileName)
+        begin
+          SaveBeforeClose(rs_SaveBeforeOpenRequest);
+          OpenMovie(FileName)
+        end
       else
         Beep;
     end;
@@ -948,16 +1050,20 @@ end;
 procedure TMainForm.imgLeftRightByMouseDownControllerMouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if X < 20 then
+  if X < 40 then
     if ssLeft in Shift then
       actStepPrev.Execute
     else
       actStepNext.Execute
-  else if X < 50 then
-    if ssLeft in Shift then
-      actBackwardWhilePressed.Checked := True
-    else
-      actForwardWhilePressed.Checked := True
+  else if X < 104 then
+    begin
+      ReplaceControlActions(caNone);
+      UpdatePlayActions;
+      if ssLeft in Shift then
+        actBackwardWhilePressed.Checked := True
+      else
+        actForwardWhilePressed.Checked := True
+    end
   else
     if ssLeft in Shift then
       actPlayBackward.Execute
@@ -1065,7 +1171,7 @@ resourcestring
 begin
   InfoMsg(
     Application.Title + #13#10 +
-    Format(rs_AboutText, [rs_VersionName])
+    Format(rs_AboutText, [VersionNameString])
   );
 end;
 
@@ -1104,8 +1210,7 @@ end;
 
 procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
 begin
-  if not actNew.Execute then
-    Exit;
+  actNew.Execute;
   InitMicrophoneUsage;
 end;
 
@@ -1119,9 +1224,10 @@ begin
   pbRecord.Invalidate;
 end;
 
-procedure TMainForm.actBackwardWhilePressedExecute(Sender: TObject);
+procedure TMainForm.btnBackwardWhilePressedClick(Sender: TObject);
 begin
- //
+  ReplaceControlActions(caNone);
+  UpdatePlayActions;
 end;
 
 procedure TMainForm.actDoubleFramerateExecute(Sender: TObject);
@@ -1187,6 +1293,7 @@ resourcestring
   rs_ExportSelectFolderCaption = 'Выберите папку для экспорта';
   rs_FramesExportingCaption = 'Экспорт. Копирование кадра %0:d из %1:d';
 begin
+  Stop;
   Dir := GetCurrentDir;
   if SelectDirectory(
     rs_ExportSelectFolderCaption, '', Dir
@@ -1260,6 +1367,7 @@ resourcestring
   rs_ExportFinished = 'Экспорт завершён. Открыть созданый файл?';
 
 begin
+  Stop;
   Dir := GetCurrentDir;
   OldCurrentWorkingFrame := CurrentWorkingSetFrame;
   if SaveToAVIDialog.Execute then
@@ -1290,6 +1398,7 @@ begin
         Options.Handler := 'DIB '; // без компрессии
         CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
         Bmp := TBitmap.Create;
+        Bmp.Canvas.Brush.Color := clBlack;
         {$IFDEF DelphiXE+}
         Bmp.SetSize(ExportSize.cx, ExportSize.cy);
         {$ELSE}
@@ -1346,7 +1455,8 @@ end;
 
 procedure TMainForm.actForwardWhilePressedExecute(Sender: TObject);
 begin
-  //
+  ReplaceControlActions(caNone);
+  UpdatePlayActions;
 end;
 
 procedure TMainForm.actFullScreenModeExecute(Sender: TObject);
@@ -1387,24 +1497,10 @@ end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
 resourcestring
-  rs_SaveMovieBeforeNewRequest = 'Хотите сохранить текущий мульт перед созданием нового?';
+  rs_SaveBeforeOpenRequest = 'созданием нового';
 begin
-  if (RecordedFrames.Count > 0) and not Saved then
-    case MessageBox(
-      0,
-      PChar(rs_SaveMovieBeforeNewRequest),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    of
-      IDCANCEL: Abort;
-      IDYES:
-        begin
-          actSaveAs.Execute;
-          if not Saved then
-            Abort;
-        end;
-      IDNO: ;
-    end;
+  Stop;
+  SaveBeforeClose(rs_SaveBeforeOpenRequest);
 
   ClearRecorded;
   if FExternalAudioFileName = '' then
@@ -1472,26 +1568,8 @@ var
     TargetIndex := StrToInt(Trim(Copy(s, SeparatorPos+1, Length(s))));
     FrameInfoList[FrameInfoIndex].Teleport := TargetIndex;
   end;
-resourcestring
-  rs_SaveBeforeOpenRequest = 'Хотите сохранить текущий мульт перед открытием другого?';
-begin
-  if (RecordedFrames.Count > 0) and not Saved then
-    case MessageBox(
-      0,
-      PChar(rs_SaveBeforeOpenRequest),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    of
-      IDCANCEL: Exit;
-      IDYES:
-        begin
-          actSaveAs.Execute;
-          if not Saved then
-            Exit;
-        end;
-      IDNO: ;
-    end;
 
+begin
   UnloadFrames;
   ClearBookmarks;
   PhotoFolder := ExtractFilePath(AFileName);
@@ -1595,7 +1673,12 @@ begin
 end;
 
 procedure TMainForm.actOpenExecute(Sender: TObject);
+resourcestring
+  rs_SaveBeforeOpenRequest = 'открытием другого';
 begin
+  Stop;
+  SaveBeforeClose(rs_SaveBeforeOpenRequest);
+
   if not dlgOpenMovie.Execute then
     Abort;
   OpenMovie(dlgOpenMovie.FileName);
@@ -1613,12 +1696,14 @@ end;
 
 procedure TMainForm.actDuplicateFrameClick(Sender: TObject);
 begin
+  Stop;
   WorkingSetFrames.Insert(CurrentWorkingSetFrame.Index).Assign(CurrentWorkingSetFrame);
   pbWorkingSet.Refresh;
 end;
 
 procedure TMainForm.actOpenFrameFileInDefaultProgramExecute(Sender: TObject);
 begin
+  Stop;
   SafeShellExecute(HWND(nil), 'edit', FrameInfoList[DisplayedFrameIndex].FullFileName, '', '', SW_SHOW);
 end;
 
@@ -1628,6 +1713,7 @@ var
   NewPath: string;
   AudioName: string;
 begin
+  Stop;
   dlgSaveMovie.InitialDir := PhotoFolder;
   if not dlgSaveMovie.Execute then
     Abort;
@@ -1703,6 +1789,7 @@ begin
   FCurrentRecordPosition := Value;
   if not Recording then
     StockAudioPlayer.Position := MulDiv(CurrentRecordPosition, 1000, FrameRate);
+  ShowTimes;
 end;
 
 procedure TMainForm.SetFrameTipRecordedFrame(const Value: TRecordedFrame);
@@ -1714,6 +1801,31 @@ end;
 procedure TMainForm.SetStatus(const Value: string);
 begin
   StatusBar.SimpleText := Value;
+end;
+
+procedure TMainForm.ShowTimes;
+resourcestring
+  rsPlayingFrameStatus = '%d:%d';
+var
+  s: string;
+  SoundFramesCount: Integer;
+  WaveFormat: TWaveFormatEx;
+begin
+  if FExternalAudioFileName <> '' then
+    begin
+      SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
+      SoundFramesCount := MulDiv(RecordedAudioCopy.Size, FrameRate, WaveFormat.nSamplesPerSec);
+    end;
+
+  if Playing then
+    s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, RecordedFrames.Count, 100)) + '%)'
+  else // if Recording then
+    if FExternalAudioFileName <> '' then
+      s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(SoundFramesCount) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, SoundFramesCount, 100)) + '%)'
+    else
+      s := FrameIndexToTimeStamp(CurrentRecordPosition);
+
+  SetStatus(s);
 end;
 
 procedure TMainForm.SetCurrentWorkingSetFrame(const Value: TRecordedFrame);
@@ -1949,6 +2061,7 @@ end;
 
 procedure TMainForm.actExitExecute(Sender: TObject);
 begin
+  Stop;
   Close;
 end;
 
@@ -1978,6 +2091,7 @@ end;
 
 procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
 begin
+  Stop;
   FrameInfoList[DisplayedFrameIndex].Loaded := False;
   FreeAndNil(FrameInfoList[DisplayedFrameIndex].Preview);
   pbDisplay.Refresh;
@@ -2011,7 +2125,7 @@ var
   WorkSetFrame: TRecordedFrame;
 begin
   try
-    pbDisplay.Canvas.Brush.Color := clWhite;
+    pbDisplay.Canvas.Brush.Color := clBlack;
     pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
     pbDisplay.Canvas.Brush.Color := clBtnFace;
 
@@ -2705,6 +2819,7 @@ end;
 
 procedure TMainForm.mmiExportResolutionClick(Sender: TObject);
 begin
+  Stop;
   case (Sender as TMenuItem).Tag of
   //3:4
     1: ExportSize := Size(320, 240);
@@ -2733,6 +2848,7 @@ end;
 
 procedure TMainForm.actExportResolutionCustomExecute(Sender: TObject);
 begin
+  Stop;
   if TExportSizeCustomRequestDialog.Execute(ExportSize) then
     mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
   if FrameInfoCount > 0 then
@@ -2754,6 +2870,7 @@ end;
 
 procedure TMainForm.actExportResolutionFirstFrameExecute(Sender: TObject);
 begin
+  Stop;
   ExportSize := FirstFrameSize;
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
   if FrameInfoCount > 0 then
@@ -2952,6 +3069,57 @@ begin
   CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
 end;
 
+procedure TMainForm.Stop;
+begin
+  if Recording then
+    StopRecording;
+  if Playing then
+    StopPlaying;
+end;
+
+function TMainForm.FrameIndexToTimeStamp(AFrameIndex: Integer): string;
+var
+  d, d2: Integer;
+begin
+  d := AFrameIndex;
+  d2 := d mod FrameRate;
+  // frames in last second
+  Result := Format('%2d', [d2]);
+  d := d div FrameRate;
+  // seconds
+  if d < 60 then
+    Result := Format('00:%2d', [d]) + ':' + Result
+  else
+    begin
+      d2 := d mod 60;
+      // seconds in a last minute
+      Result := Format('%2d', [d2]) + ':' + Result;
+      d := d div 60;
+      // minutes
+      if d < 60 then
+        Result := Format('00:%2d', [d]) + ':' + Result
+      else
+      begin
+        d2 := d mod 60;
+        // minutes in a last hour
+        Result := Format('%2d', [d2]) + ':' + Result;
+        d := d div 60;
+        // hours
+        if d < 24 then
+          Result := Format('00:%2d', [d]) + ':' + Result
+        else
+        begin
+          d2 := d mod 24;
+          // hours in a last day
+          Result := Format('%2d', [d2]) + ':' + Result;
+          d := d div 24;
+          // days
+          Result := Format('%2dd', [d]) + ':' + Result;
+        end;
+      end;
+    end;
+end;
+
 procedure TMainForm.ClearSound;
 begin
   WaveStorage.Wave.Clear;
@@ -2979,8 +3147,8 @@ begin
             Exit;
           end;
       end;
-  if Done then
-    SetStatus('');
+  //if Done then
+//    SetStatus('');
 end;
 
 procedure TMainForm.AudioRecorderActivate(Sender: TObject);
