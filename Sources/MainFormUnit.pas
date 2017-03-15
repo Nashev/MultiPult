@@ -873,6 +873,7 @@ var
     // на случай, если что-то пойдёт не так
     VersionNameString := '0.9.???';
     VersionCopyrightString := 'МультиСтудия, Москва, 20??';
+    VersionInfoBuffer := nil;
     // пробуем получить от файла:
     FileName := AppFileName;
     VersionInfoSize := GetFileVersionInfoSize(PWideChar(FileName), VersionInfoHandle);
@@ -1219,6 +1220,8 @@ begin
   FExternalAudioFileName := '';
   actSelectAudioFile.Checked := False;
   mmiUseMicrophone.Checked := True;
+  WaveStorage.Wave.Clear;
+  RecordedAudioCopy.Clear;
   LiveAudioRecorder.Active := True;
   lblAudioFileName.Visible := False;
   pbRecord.Invalidate;
@@ -1811,19 +1814,20 @@ var
   SoundFramesCount: Integer;
   WaveFormat: TWaveFormatEx;
 begin
+  SoundFramesCount := 1;
   if FExternalAudioFileName <> '' then
     begin
       SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
       SoundFramesCount := MulDiv(RecordedAudioCopy.Size, FrameRate, WaveFormat.nSamplesPerSec);
     end;
 
-  if Playing then
-    s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, RecordedFrames.Count, 100)) + '%)'
-  else // if Recording then
+  if Recording then
     if FExternalAudioFileName <> '' then
-      s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(SoundFramesCount) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, SoundFramesCount, 100)) + '%)'
+      s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(SoundFramesCount) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, SoundFramesCount)) + '%)'
     else
-      s := FrameIndexToTimeStamp(CurrentRecordPosition);
+      s := FrameIndexToTimeStamp(CurrentRecordPosition)
+  else //if Playing then
+    s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
 
   SetStatus(s);
 end;
@@ -2900,6 +2904,7 @@ begin
           DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
           pbRecord.Invalidate;
           Inc(FCurrentRecordPosition);
+          ShowTimes;
         end
       else
         if LoopMode then
@@ -3084,37 +3089,37 @@ begin
   d := AFrameIndex;
   d2 := d mod FrameRate;
   // frames in last second
-  Result := Format('%2d', [d2]);
+  Result := Format('%2.2d', [d2]);
   d := d div FrameRate;
   // seconds
   if d < 60 then
-    Result := Format('00:%2d', [d]) + ':' + Result
+    Result := Format('00:%2.2d', [d]) + ':' + Result
   else
     begin
       d2 := d mod 60;
       // seconds in a last minute
-      Result := Format('%2d', [d2]) + ':' + Result;
+      Result := Format('%2.2d', [d2]) + ':' + Result;
       d := d div 60;
       // minutes
       if d < 60 then
-        Result := Format('00:%2d', [d]) + ':' + Result
+        Result := Format('00:%2.2d', [d]) + ':' + Result
       else
       begin
         d2 := d mod 60;
         // minutes in a last hour
-        Result := Format('%2d', [d2]) + ':' + Result;
+        Result := Format('%2.2d', [d2]) + ':' + Result;
         d := d div 60;
         // hours
         if d < 24 then
-          Result := Format('00:%2d', [d]) + ':' + Result
+          Result := Format('00:%2.2d', [d]) + ':' + Result
         else
         begin
           d2 := d mod 24;
           // hours in a last day
-          Result := Format('%2d', [d2]) + ':' + Result;
+          Result := Format('%2.2d', [d2]) + ':' + Result;
           d := d div 24;
           // days
-          Result := Format('%2dd', [d]) + ':' + Result;
+          Result := Format('%dd', [d]) + ':' + Result;
         end;
       end;
     end;
