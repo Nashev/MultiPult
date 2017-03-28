@@ -32,7 +32,6 @@ object MainForm: TMainForm
     FullRepaint = False
     ParentBackground = False
     TabOrder = 0
-    ExplicitHeight = 376
     DesignSize = (
       798
       419)
@@ -7064,7 +7063,6 @@ object MainForm: TMainForm
     Align = alBottom
     BevelOuter = bvLowered
     TabOrder = 1
-    ExplicitTop = 376
     object pbWorkingSet: TPaintBox
       Left = 1
       Top = 1
@@ -7090,7 +7088,6 @@ object MainForm: TMainForm
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
-    ExplicitTop = 420
     DesignSize = (
       798
       34)
@@ -7656,7 +7653,6 @@ object MainForm: TMainForm
     Height = 19
     Panels = <>
     SimplePanel = True
-    ExplicitTop = 454
   end
   object ActionList: TActionList
     Images = ilActions
@@ -8331,7 +8327,7 @@ object MainForm: TMainForm
     OnActivate = AudioRecorderActivate
     OnDeactivate = AudioRecorderDeactivate
     OnFilter = AudioRecorderFilter
-    Left = 24
+    Left = 16
     Top = 128
   end
   object StockAudioPlayer: TStockAudioPlayer

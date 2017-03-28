@@ -399,10 +399,11 @@ type
     procedure StopRecording;
     procedure StopPlaying;
     procedure SetDisplayedFrameIndex(const Value: Integer);
-    procedure InitMicrophoneUsage;
+    procedure InitMicrophoneUsage(AKeepOpenedWave: Boolean);
     procedure RepaintAll;
     procedure ClearBookmarks;
     procedure SaveBeforeClose(const APurpose: string);
+    function CalculateSoundFramesCount: Integer;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -1212,19 +1213,23 @@ end;
 procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
 begin
   actNew.Execute;
-  InitMicrophoneUsage;
+  InitMicrophoneUsage(False);
 end;
 
-procedure TMainForm.InitMicrophoneUsage;
+procedure TMainForm.InitMicrophoneUsage(AKeepOpenedWave: Boolean);
 begin
   FExternalAudioFileName := '';
   actSelectAudioFile.Checked := False;
   mmiUseMicrophone.Checked := True;
-  WaveStorage.Wave.Clear;
-  RecordedAudioCopy.Clear;
+  if not AKeepOpenedWave then
+    begin
+      WaveStorage.Wave.Clear;
+      RecordedAudioCopy.Clear;
+    end;
   LiveAudioRecorder.Active := True;
   lblAudioFileName.Visible := False;
   pbRecord.Invalidate;
+  ShowTimes;
 end;
 
 procedure TMainForm.btnBackwardWhilePressedClick(Sender: TObject);
@@ -1234,7 +1239,23 @@ begin
 end;
 
 procedure TMainForm.actDoubleFramerateExecute(Sender: TObject);
+resourcestring
+  rs_ConfirmNewBeforeChangeFramerate =
+    'Вы меняете базовую частоту кадров. Наиграть запись придётся с чистого листа.'#13#10+
+    'Поменять базовую частоту кадров и начать новый мульт?';
 begin
+  Stop;
+  actSaveAs.Update;
+  if actSaveAs.Enabled and Saved then // на случай not saved спросит actNew.Execute
+    case MessageBox(
+      0,
+      PChar(rs_ConfirmNewBeforeChangeFramerate),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1
+    ) of
+      IDCANCEL: Exit;
+    end;
+
   actNew.Execute;
 
   if FrameRate = 25 then
@@ -1543,13 +1564,17 @@ begin
   actSelectAudioFile.Checked := True;
   mmiUseMicrophone.Checked := False;
   LiveAudioRecorder.Active := False;
+  LiveAudioRecorder.WaitForStop;
+  LevelGauge.Progress := 0;
   lblAudioFileName.Visible := True;
   lblAudioFileName.Caption := MinimizeName(FExternalAudioFileName, Canvas, lblAudioFileName.Width);
   WaveStorage.Wave.LoadFromFile(FExternalAudioFileName);
   WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
+  RecordedAudioCopy.Clear;
   RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
   pbRecord.Invalidate;
   WaveStorage.Wave.Position := 0;
+  ShowTimes;
 end;
 
 procedure TMainForm.OpenMovie(AFileName: string);
@@ -1592,8 +1617,6 @@ begin
           if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
             begin
               OpenAudio(PhotoFolder + WaveFileName);
-              if WaveFileName = ExtractFileName(AFileName) + '.wav' then // TODO: сделать более надёжный и явный признак
-                InitMicrophoneUsage;
             end;
           inc(i);
           s := Strings[i];
@@ -1608,6 +1631,14 @@ begin
         begin
           ExportSize.cy := StrToInt(Copy(s, Length('ExportHeight = ') + 1, MaxInt));
           mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
+          inc(i);
+          s := Strings[i];
+        end;
+      if (Copy(s, 1, Length('FrameRate = ')) = 'FrameRate = ') then
+        begin
+          FrameRate := StrToInt(Copy(s, Length('FrameRate = ') + 1, 25));
+          if not FrameRate in [50, 25] then
+            FrameRate := 25;
           inc(i);
           s := Strings[i];
         end;
@@ -1670,6 +1701,10 @@ begin
   if WorkingSetFrames.Count > 0 then
     DisplayedFrameIndex := WorkingSetFrames[0].FrameInfoIndex;
   CaptureFirstFrameSizes;
+
+  if (WaveFileName = ExtractFileName(AFileName) + '.wav') and (CalculateSoundFramesCount = RecordedFrames.Count) then // TODO: сделать более надёжный и явный признак
+    InitMicrophoneUsage(True);
+
   Saved := True;
   pbRecord.Invalidate;
   UpdateActions;
@@ -1746,6 +1781,7 @@ begin
       Add('Wave = ' + AudioName);
       Add(Format('ExportWidth = %d', [ExportSize.cx]));
       Add(Format('ExportHeight = %d', [ExportSize.cy]));
+      Add(Format('FrameRate = %d', [FrameRate]));
       Add(FilesSectionStart);
       for i := 0 to FrameInfoCount - 1 do
         Add(FrameInfoList[i].RelativeFileName);
@@ -1806,28 +1842,51 @@ begin
   StatusBar.SimpleText := Value;
 end;
 
+function TMainForm.CalculateSoundFramesCount: Integer;
+var
+  WaveFormat: TWaveFormatEx;
+begin
+  SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
+  Result := MulDiv(RecordedAudioCopy.Size, FrameRate, WaveFormat.nSamplesPerSec * 4); // 2 channels by 2 byte per sample
+end;
+
 procedure TMainForm.ShowTimes;
 resourcestring
   rsPlayingFrameStatus = '%d:%d';
 var
   s: string;
   SoundFramesCount: Integer;
-  WaveFormat: TWaveFormatEx;
 begin
-  SoundFramesCount := 1;
   if FExternalAudioFileName <> '' then
     begin
-      SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
-      SoundFramesCount := MulDiv(RecordedAudioCopy.Size, FrameRate, WaveFormat.nSamplesPerSec);
+      SoundFramesCount := CalculateSoundFramesCount;
+      s := ' Длина озвучки ' + FrameIndexToTimeStamp(SoundFramesCount) + '. ';
     end;
 
   if Recording then
-    if FExternalAudioFileName <> '' then
-      s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(SoundFramesCount) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, SoundFramesCount)) + '%)'
-    else
-      s := FrameIndexToTimeStamp(CurrentRecordPosition)
+    begin
+      if FExternalAudioFileName <> '' then
+        s := s + 'Записывается кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, SoundFramesCount)) + '%)'
+      else
+        s := s + 'Записывается кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition)
+    end
   else //if Playing then
-    s := FrameIndexToTimeStamp(CurrentRecordPosition) + ' / ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
+    begin
+      if RecordedFrames.Count = 0 then
+        s := s + 'Кадров пока в мульт не записано.'
+      else
+        s := s + 'Кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' из ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
+    end;
+
+  if FExternalAudioFileName <> '' then
+    begin
+      if mmiStopRecordingOnSoundtrackFinish.Checked then
+        s := s + ', запись будет остановлена по достижении конца озвучки.'
+      else
+        s := s + ', по достижении конца озвучки запись будет продолжена в тишине.';
+    end
+  else
+    s := s + ' Озвучка будет записываться вместе с кадрами.';
 
   SetStatus(s);
 end;
@@ -1838,6 +1897,7 @@ begin
   if Assigned(Value) then
     DisplayedFrameIndex := Value.FrameInfoIndex; // else do not change for calls from SetDisplayedFrameIndex
   RepaintAll;
+  ShowTimes;
 end;
 
 procedure TMainForm.SetDisplayedFrameIndex(const Value: Integer);
@@ -2381,10 +2441,10 @@ begin
   if NewPosition < 0 then
     NewPosition := 0;
 
-  AdvertisementShowing := (NewPosition >= RecordedFrames.Count) and (Y <= AdvertisementFrameBottom);
+  CurrentRecordPosition := NewPosition;
+  AdvertisementShowing := (NewPosition >= RecordedFrames.Count);
   if not AdvertisementShowing and (NewPosition < RecordedFrames.Count) then
     begin
-      CurrentRecordPosition := NewPosition;
       DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
     end;
 
@@ -3148,12 +3208,11 @@ begin
             SetStatus(rs_PreloadStatus + FrameInfo.RelativeFileName);
             LoadPhoto(WorkingSetFrames[i].FrameInfoIndex);
             pbWorkingSet.Repaint;
+            ShowTimes;
             Done := False;
             Exit;
           end;
       end;
-  //if Done then
-//    SetStatus('');
 end;
 
 procedure TMainForm.AudioRecorderActivate(Sender: TObject);
