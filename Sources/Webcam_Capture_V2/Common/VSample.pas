@@ -132,7 +132,7 @@ TYPE
                     SSize  : cardinal;
                     OIndex : integer;
                     pmt    : PAMMediaType;
-                    FourCC : ARRAY[0..3] OF char;
+                    FourCC : ARRAY[0..3] OF AnsiChar;
                   END;
 
   TVideoSample  = class(TObject)
@@ -219,7 +219,7 @@ TYPE
                       PROCEDURE   DeleteCaptureGraph;
                       PROCEDURE   SetCallBack(CB: TVideoSampleCallBack);
                       FUNCTION    GetPlayState: TPlayState;  // Deprecated
-                      PROCEDURE   GetListOfVideoSizes(VidSize: TStringList);
+                      PROCEDURE   GetListOfVideoSizes(VidSize: TStrings);
                       FUNCTION    SetVideoSizeByListIndex(ListIndex: integer): HResult;
                       {$ifdef REGISTER_FILTERGRAPH}
                         FUNCTION AddGraphToRot(pUnkGraph: IUnknown; VAR pdwRegister: DWORD):HRESULT;
@@ -1184,11 +1184,18 @@ VAR
 
   VI    : VideoInfo;
   VIH   : VideoInfoHeader;
+
+  State: TFilterState;
 BEGIN
   Width := 0;
   Height := 0;
-  pIMediaControl.Stop;
-  pIBFVideoSource.Stop;  // nicht zwingend nötig
+//  if pIMediaControl.GetState(100, State) = S_OK then
+//    if State <> State_Stopped then
+//      pIMediaControl.StopWhenReady;
+//
+//  if pIBFVideoSource.GetState(100, State) = S_OK then
+//    if State <> State_Stopped then
+//      pIBFVideoSource.Stop;  // optional
 
   Result := GetCaptureIAMStreamConfig(pSC);
   {$ifdef DXErr} DXErrString := DXGetErrorDescription9A(Result); {$endif}
@@ -1371,7 +1378,7 @@ END;
 
 
 
-PROCEDURE TVideoSample.GetListOfVideoSizes(VidSize: TStringList);
+PROCEDURE TVideoSample.GetListOfVideoSizes(VidSize: TStrings);
 VAR
   i : integer;
 BEGIN

@@ -233,6 +233,7 @@ type
     mmiOpenHelp: TMenuItem;
     actShowCameraForm: TAction;
     mmiStopRecordingOnSoundtrackFinish: TMenuItem;
+    lblWorkPath: TLabel;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -339,6 +340,7 @@ type
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure btnBackwardWhilePressedClick(Sender: TObject);
+    procedure pnlToollsResize(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -1140,6 +1142,7 @@ begin
   actNew.Execute;
   ClearBookmarks;
   PhotoFolder := ANewPhotoFolder;
+  lblWorkPath.Caption := PhotoFolder;
 
   SetCaption('');
 
@@ -1567,7 +1570,7 @@ begin
   LiveAudioRecorder.WaitForStop;
   LevelGauge.Progress := 0;
   lblAudioFileName.Visible := True;
-  lblAudioFileName.Caption := MinimizeName(FExternalAudioFileName, Canvas, lblAudioFileName.Width);
+  lblAudioFileName.Caption := MinimizeName(StringReplace(FExternalAudioFileName, PhotoFolder, '', []), Canvas, lblAudioFileName.Width);
   WaveStorage.Wave.LoadFromFile(FExternalAudioFileName);
   WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
   RecordedAudioCopy.Clear;
@@ -1601,6 +1604,7 @@ begin
   UnloadFrames;
   ClearBookmarks;
   PhotoFolder := ExtractFilePath(AFileName);
+  lblWorkPath.Caption := PhotoFolder;
   ProjectFileName := ExtractFileName(AFileName);
 
   with TStringList.Create do
@@ -1872,7 +1876,9 @@ begin
     end
   else //if Playing then
     begin
-      if RecordedFrames.Count = 0 then
+      if FrameInfoCount = 0 then
+        s := s + 'Кадров для мульта пока не указано.'
+      else if RecordedFrames.Count = 0 then
         s := s + 'Кадров пока в мульт не записано.'
       else
         s := s + 'Кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' из ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
@@ -1885,7 +1891,7 @@ begin
       else
         s := s + ', по достижении конца озвучки запись будет продолжена в тишине.';
     end
-  else
+  else if FrameInfoCount <> 0 then
     s := s + ' Озвучка будет записываться вместе с кадрами.';
 
   SetStatus(s);
@@ -2001,6 +2007,7 @@ begin
 
       RecordingMustBeChanged := False;
       StockAudioPlayer.Active := False;
+      ShowTimes;
     end
   else // через деактивацию записи
     begin
@@ -2843,6 +2850,11 @@ begin
     end;
 end;
 
+procedure TMainForm.pnlToollsResize(Sender: TObject);
+begin
+  imgLeftRightByMouseDownController.Left := tlbNavigation.Left + tlbNavigation.Width + 16;
+end;
+
 procedure TMainForm.PopControlAction;
 begin
   Assert(NextControlActionStackPosition >=1, '{EBDE522B-9ED0-474F-9F3F-4C5CAEDBC757}');
@@ -3235,6 +3247,7 @@ begin
     WaveStorage.Wave.Insert(MAXDWORD, AudioRecorder.Wave);
   AudioRecorder.Wave.Clear;
   Saved := False;
+  ShowTimes;
 end;
 
 procedure TMainForm.AudioRecorderFilter(Sender: TObject; const Buffer: Pointer;

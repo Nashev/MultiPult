@@ -15,12 +15,18 @@ type
     cbCamSelector: TComboBox;
     btnNextCam: TButton;
     lblCamSelector: TLabel;
+    cbbResolution: TComboBox;
+    lblResolution: TLabel;
+    btnPreferences: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure cbCamSelectorChange(Sender: TObject);
+    procedure cbbResolutionChange(Sender: TObject);
+    procedure btnPreferencesClick(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
@@ -66,12 +72,16 @@ begin
   FVideoImage.GetListOfDevices(cbCamSelector.Items);
 
   if cbCamSelector.Items.Count > 0 then
-    begin
-      cbCamSelector.ItemIndex := cbCamSelector.Items.IndexOf(LastUsedCam);
-      if cbCamSelector.ItemIndex = -1 then
-        cbCamSelector.ItemIndex := 0; // TODO: save/restore last used
-      FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
-    end;
+  begin
+    cbCamSelector.ItemIndex := cbCamSelector.Items.IndexOf(LastUsedCam);
+    if cbCamSelector.ItemIndex = -1 then
+      cbCamSelector.ItemIndex := 0; // TODO: save/restore last used
+    FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
+    cbbResolution.Items.Clear;
+    FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
+    cbbResolution.ItemIndex := 0;
+    FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
+  end;
 
   btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
 end;
@@ -125,9 +135,31 @@ begin
   FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
 end;
 
+procedure TCameraForm.btnPreferencesClick(Sender: TObject);
+begin
+  if not SUCCEEDED(FVideoImage.ShowVfWCaptureDlg) then
+    if not SUCCEEDED(FVideoImage.ShowProperty) then
+      ShowMessage('Параметры открыть не удалось');
+end;
+
+procedure TCameraForm.cbbResolutionChange(Sender: TObject);
+begin
+  FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
+end;
+
+procedure TCameraForm.cbCamSelectorChange(Sender: TObject);
+begin
+  FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
+  cbbResolution.Clear;
+  FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
+  cbbResolution.ItemIndex := 0;
+  FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
+end;
+
 procedure TCameraForm.Execute;
 begin
   ShowModal
 end;
 
 end.
+

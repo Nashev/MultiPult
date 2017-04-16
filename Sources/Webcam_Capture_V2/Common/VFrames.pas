@@ -143,12 +143,12 @@ TYPE
                     function      VideoStart(DeviceName: string): integer;
                     procedure     GetBitmap(BMP: TBitmap);
                     procedure     SetDisplayCanvas(Canvas: TCanvas);
-                    procedure     ShowProperty;
+                    function      ShowProperty: HResult;
                     procedure     ShowProperty_Stream;
                     FUNCTION      ShowVfWCaptureDlg: HResult;
                     procedure     GetBrightnessSettings(VAR Actual: integer);
                     procedure     SetBrightnessSettings(const Actual: integer);
-                    PROCEDURE     GetListOfSupportedVideoSizes(VidSize: TStringList);
+                    PROCEDURE     GetListOfSupportedVideoSizes(VidSize: TStrings);
                     PROCEDURE     SetResolutionByIndex(Index: integer);
                     FUNCTION      GetVideoPropertySettings(    VP                : TVideoProperty;
                                                            VAR MinVal, MaxVal,
@@ -751,9 +751,9 @@ end;
 
 
 
-procedure TVideoImage.ShowProperty;
+function TVideoImage.ShowProperty: HResult;
 begin
-  VideoSample.ShowPropertyDialog;
+  Result := VideoSample.ShowPropertyDialog;
 end;
 
 
@@ -803,7 +803,7 @@ begin
 end;
 
 
-PROCEDURE TVideoImage.GetListOfSupportedVideoSizes(VidSize: TStringList);
+PROCEDURE TVideoImage.GetListOfSupportedVideoSizes(VidSize: TStrings);
 BEGIN
   VideoSample.GetListOfVideoSizes(VidSize);
 END;

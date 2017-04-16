@@ -1,6 +1,6 @@
 object MainForm: TMainForm
-  Left = 455
-  Top = 96
+  Left = 451
+  Top = 144
   Caption = #1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090
   ClientHeight = 516
   ClientWidth = 798
@@ -22,11 +22,19 @@ object MainForm: TMainForm
   OnMouseWheel = FormMouseWheel
   PixelsPerInch = 96
   TextHeight = 13
+  object lblWorkPath: TLabel
+    Left = 0
+    Top = 484
+    Width = 798
+    Height = 13
+    Align = alBottom
+    ExplicitWidth = 3
+  end
   object pnlDisplay: TPanel
     Left = 0
     Top = 0
     Width = 798
-    Height = 419
+    Height = 406
     Align = alClient
     BevelOuter = bvLowered
     FullRepaint = False
@@ -34,7 +42,7 @@ object MainForm: TMainForm
     TabOrder = 0
     DesignSize = (
       798
-      419)
+      406)
     object imgBackgroundSource: TImage
       Left = 64
       Top = 19
@@ -1531,7 +1539,7 @@ object MainForm: TMainForm
       Left = 1
       Top = 1
       Width = 577
-      Height = 417
+      Height = 404
       Align = alClient
       OnDblClick = pbDisplayDblClick
       OnMouseDown = pbDisplayMouseDown
@@ -1543,7 +1551,7 @@ object MainForm: TMainForm
       Left = 581
       Top = 1
       Width = 216
-      Height = 417
+      Height = 404
       Align = alRight
       OnMouseDown = pbRecordMouseDown
       OnMouseLeave = pbRecordMouseLeave
@@ -1556,7 +1564,7 @@ object MainForm: TMainForm
     object RecordSplitter: TSplitter
       Left = 578
       Top = 1
-      Height = 417
+      Height = 404
       Align = alRight
       AutoSnap = False
       Beveled = True
@@ -1567,7 +1575,7 @@ object MainForm: TMainForm
     end
     object pbFrameTip: TPaintBox
       Left = 188
-      Top = 315
+      Top = 302
       Width = 135
       Height = 105
       Anchors = [akLeft, akBottom]
@@ -7057,7 +7065,7 @@ object MainForm: TMainForm
   end
   object pnlWorkingSet: TPanel
     Left = 0
-    Top = 419
+    Top = 406
     Width = 798
     Height = 44
     Align = alBottom
@@ -7080,7 +7088,7 @@ object MainForm: TMainForm
   end
   object pnlToolls: TPanel
     Left = 0
-    Top = 463
+    Top = 450
     Width = 798
     Height = 34
     Align = alBottom
@@ -7088,6 +7096,7 @@ object MainForm: TMainForm
     ParentColor = True
     ShowCaption = False
     TabOrder = 2
+    OnResize = pnlToollsResize
     DesignSize = (
       798
       34)
