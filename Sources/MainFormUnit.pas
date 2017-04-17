@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
+  System.ImageList, Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
 
 const
   ControlActionStackDeep = 10;
@@ -1312,7 +1312,7 @@ end;
 
 procedure TMainForm.actExportExecute(Sender: TObject);
 var
-  Dir: string;
+  Dir, Ext: string;
   i: Integer;
   Cancel: BOOL;
   NewFileName: string;
@@ -1344,7 +1344,8 @@ begin
             SetStatus(Format(rs_FramesExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
             Cancel := False;
-            NewFileName := Dir + Format('Frame%.5d.jpg', [i]);
+            Ext := ExtractFileExt(FrameInfoList[RecordedFrames[i].FrameInfoIndex].FullFileName);
+            NewFileName := Dir + Format('Frame%.5d.', [i]) + Ext;
             if not CopyFileEx(
               PChar(FrameInfoList[RecordedFrames[i].FrameInfoIndex].FullFileName),
               PChar(NewFileName),
@@ -1360,7 +1361,7 @@ begin
         AdvertisementShowing := True;
         RepaintAll;
         Application.ProcessMessages;
-        AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.jpg', [RecordedFrames.Count]));
+        AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.bmp', [RecordedFrames.Count]));
         InfoMsg('Экспорт завершён.');
       finally
         Exporting := False;
