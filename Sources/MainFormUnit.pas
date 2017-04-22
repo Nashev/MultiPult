@@ -1862,6 +1862,7 @@ var
   s: string;
   SoundFramesCount: Integer;
 begin
+  SoundFramesCount := 0; // hint
   if FExternalAudioFileName <> '' then
     begin
       SoundFramesCount := CalculateSoundFramesCount;
