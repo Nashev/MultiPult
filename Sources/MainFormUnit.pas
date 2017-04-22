@@ -400,7 +400,7 @@ type
     procedure UpdatePlayActions;
     procedure StopRecording;
     procedure StopPlaying;
-    procedure SetDisplayedFrameIndex(const Value: Integer);
+    procedure SetDisplayedFrameIndex(Value: Integer);
     procedure InitMicrophoneUsage(AKeepOpenedWave: Boolean);
     procedure RepaintAll;
     procedure ClearBookmarks;
@@ -933,7 +933,10 @@ begin
   with btnPlayForward  do ControlStyle := ControlStyle - [csClickEvents];
 //  DoubleBuffered := True;
   if ParamCount >= 1 then
-    OpenMovie(ParamStr(1));
+    if DirectoryExists(ParamStr(1)) then
+      LoadPhotoFolder(ParamStr(1))
+    else
+      OpenMovie(ParamStr(1));
 
   // инициализируем разрешение при экспорте по умолчанию.
   mmiExportResolutionVGA.Click;
@@ -1142,6 +1145,9 @@ begin
   actNew.Execute;
   ClearBookmarks;
   PhotoFolder := ANewPhotoFolder;
+  if PhotoFolder[Length(PhotoFolder)] <> '\' then
+    PhotoFolder := PhotoFolder + '\';
+
   lblWorkPath.Caption := PhotoFolder;
 
   SetCaption('');
@@ -1908,10 +1914,13 @@ begin
   ShowTimes;
 end;
 
-procedure TMainForm.SetDisplayedFrameIndex(const Value: Integer);
+procedure TMainForm.SetDisplayedFrameIndex(Value: Integer);
 resourcestring
   rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
 begin
+  if Value >= GetFrameInfoCount then
+    Value := GetFrameInfoCount - 1;
+
   if FDisplayedFrameIndex = Value then // break recursion
     Exit;
 
