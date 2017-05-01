@@ -1,9 +1,10 @@
 object CameraForm: TCameraForm
-  Left = 607
-  Top = 352
+  Left = 461
+  Top = 110
+  BorderIcons = [biSystemMenu, biMinimize, biMaximize, biHelp]
   Caption = #1055#1086#1083#1091#1095#1077#1085#1080#1077' '#1082#1072#1076#1088#1086#1074' '#1089' '#1074#1077#1073'-'#1082#1072#1084#1077#1088#1099
-  ClientHeight = 427
-  ClientWidth = 531
+  ClientHeight = 421
+  ClientWidth = 528
   Color = clBtnFace
   DoubleBuffered = True
   Font.Charset = DEFAULT_CHARSET
@@ -17,21 +18,20 @@ object CameraForm: TCameraForm
   OnHide = FormHide
   OnShow = FormShow
   DesignSize = (
-    531
-    427)
+    528
+    421)
   PixelsPerInch = 96
   TextHeight = 13
   object imgPreview: TImage
     Left = 16
     Top = 63
-    Width = 499
-    Height = 325
+    Width = 496
+    Height = 296
     Anchors = [akLeft, akTop, akRight, akBottom]
     Center = True
     Proportional = True
     Stretch = True
-    ExplicitWidth = 406
-    ExplicitHeight = 285
+    ExplicitWidth = 499
   end
   object lblCamSelector: TLabel
     Left = 17
@@ -49,15 +49,24 @@ object CameraForm: TCameraForm
   end
   object lblLapseStatus: TLabel
     Left = 450
-    Top = 398
+    Top = 392
     Width = 3
     Height = 13
     Anchors = [akLeft, akBottom]
     Caption = ' '
+    ExplicitTop = 398
+  end
+  object lblFolder: TLabel
+    Left = 16
+    Top = 397
+    Width = 43
+    Height = 13
+    Anchors = [akLeft, akBottom]
+    Caption = #1042' '#1087#1072#1087#1082#1091':'
   end
   object btnMakePhoto: TButton
-    Left = 17
-    Top = 394
+    Left = 14
+    Top = 365
     Width = 113
     Height = 25
     Anchors = [akLeft, akBottom]
@@ -68,38 +77,37 @@ object CameraForm: TCameraForm
   object cbCamSelector: TComboBox
     Left = 64
     Top = 8
-    Width = 351
+    Width = 348
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
     Text = #1050#1072#1084#1077#1088#1072
     OnChange = cbCamSelectorChange
-    ExplicitWidth = 285
+    ExplicitWidth = 351
   end
   object btnNextCam: TButton
-    Left = 421
+    Left = 460
     Top = 8
-    Width = 94
+    Width = 52
     Height = 25
     Anchors = [akTop, akRight]
-    Caption = #1057#1083#1077#1076#1091#1102#1097#1072#1103
+    Caption = #1044#1088#1091#1075#1072#1103
     TabOrder = 2
     OnClick = btnNextCamClick
-    ExplicitLeft = 355
   end
   object cbbResolution: TComboBox
     Left = 64
     Top = 36
-    Width = 351
+    Width = 348
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 3
     Text = '640'#1093'480'
     OnChange = cbbResolutionChange
-    ExplicitWidth = 285
+    ExplicitWidth = 351
   end
   object btnPreferences: TButton
-    Left = 421
+    Left = 418
     Top = 35
     Width = 94
     Height = 25
@@ -107,11 +115,11 @@ object CameraForm: TCameraForm
     Caption = #1055#1072#1088#1072#1084#1077#1090#1088#1099
     TabOrder = 4
     OnClick = btnPreferencesClick
-    ExplicitLeft = 355
+    ExplicitLeft = 421
   end
   object btnTimeLapse: TButton
-    Left = 157
-    Top = 394
+    Left = 154
+    Top = 365
     Width = 154
     Height = 25
     Anchors = [akLeft, akBottom]
@@ -120,8 +128,8 @@ object CameraForm: TCameraForm
     OnClick = btnTimeLapseClick
   end
   object seInterval: TSpinEdit
-    Left = 317
-    Top = 396
+    Left = 314
+    Top = 367
     Width = 62
     Height = 22
     Anchors = [akLeft, akBottom]
@@ -131,8 +139,8 @@ object CameraForm: TCameraForm
     Value = 1
   end
   object cbbUnit: TComboBox
-    Left = 385
-    Top = 396
+    Left = 382
+    Top = 367
     Width = 59
     Height = 21
     Anchors = [akLeft, akBottom]
@@ -141,6 +149,42 @@ object CameraForm: TCameraForm
     Items.Strings = (
       #1084#1089#1077#1082
       #1089#1077#1082)
+  end
+  object edtFolder: TEdit
+    Left = 65
+    Top = 397
+    Width = 447
+    Height = 19
+    Anchors = [akLeft, akRight, akBottom]
+    BevelInner = bvNone
+    BorderStyle = bsNone
+    Color = clBtnFace
+    Ctl3D = False
+    ParentCtl3D = False
+    TabOrder = 8
+    Text = 'edtFolder'
+    ExplicitWidth = 450
+  end
+  object btnFolderLookup: TButton
+    Left = 487
+    Top = 391
+    Width = 25
+    Height = 25
+    Anchors = [akRight, akBottom]
+    Caption = '...'
+    TabOrder = 9
+    Visible = False
+    OnClick = btnFolderLookupClick
+  end
+  object btnStart: TButton
+    Left = 418
+    Top = 8
+    Width = 36
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = #1055#1091#1089#1082
+    TabOrder = 10
+    OnClick = btnStartClick
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer

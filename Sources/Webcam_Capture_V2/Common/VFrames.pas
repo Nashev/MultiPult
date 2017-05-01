@@ -805,6 +805,7 @@ end;
 
 PROCEDURE TVideoImage.GetListOfSupportedVideoSizes(VidSize: TStrings);
 BEGIN
+  Assert(Assigned(VideoSample));
   VideoSample.GetListOfVideoSizes(VidSize);
 END;
 

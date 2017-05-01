@@ -446,7 +446,7 @@ type
     property FrameInfoList[Index: Integer]: TFrameInfo read GetFrameInfo;
     // Used in ScreenForm
     procedure LoadPhoto(AFrameInfoIndex: Integer);
-    procedure AddNewFrame(ARelativePath, AFileName: string);
+    procedure AddNewFrame(AFileName: string);
   end;
 
 var
@@ -558,9 +558,11 @@ begin
 end;
 
 procedure TMainForm.actShowCameraFormExecute(Sender: TObject);
+resourcestring
+  CamFolder = 'FromCam\';
 begin
   Stop;
-  CameraForm.Execute;
+  CameraForm.Execute(PhotoFolder + CamFolder, AddNewFrame);
 end;
 
 procedure TMainForm.actShowCameraFormUpdate(Sender: TObject);
@@ -3151,9 +3153,14 @@ begin
     end;
 end;
 
-procedure TMainForm.AddNewFrame(ARelativePath, AFileName: string);
+procedure TMainForm.AddNewFrame(AFileName: string);
 begin
-  DisplayedFrameIndex := FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, AFileName));
+  DisplayedFrameIndex := FFrameInfoList.Add(
+    TFrameInfo.Create(
+      ExtractRelativePath(PhotoFolder, ExtractFilePath(AFileName)),
+      ExtractFileName(AFileName)
+    )
+  );
   CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
 end;
 
