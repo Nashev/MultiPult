@@ -102,7 +102,7 @@ var
   LastUsedResolution: Integer;
   IniFile: TIniFile;
 begin
-  IniFile := TIniFile.Create(ParamStr(0) + '.ini');
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
     LastUsedCam := IniFile.ReadString('LastUsed', 'Camera', '');
     if LastUsedCam = '' then
@@ -157,7 +157,7 @@ procedure TCameraForm.FormHide(Sender: TObject);
 var
   IniFile: TIniFile;
 begin
-  IniFile := TIniFile.Create(ParamStr(0) + '.ini');
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
     IniFile.WriteString('LastUsed', 'Camera', cbCamSelector.Items[cbCamSelector.ItemIndex]);
     IniFile.WriteString('LastUsed', 'Resolution', cbbResolution.Items[cbbResolution.ItemIndex]);
@@ -245,8 +245,8 @@ var
 begin
   if FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex])) = 0 then
     begin
-      cbbResolution.Clear;
       PrevResolution := cbbResolution.Items[cbbResolution.ItemIndex];
+      cbbResolution.Clear;
       FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
       NewIndex := cbbResolution.Items.IndexOf(PrevResolution);
       if NewIndex = -1 then
@@ -334,7 +334,7 @@ begin
     StoringFile.Free;
   end;
   if Assigned(OnNewFrame)  then
-    OnNewFrame(NewFileName);
+    OnNewFrame(PhotoFolder + NewFileName);
 end;
 
 
@@ -347,7 +347,10 @@ begin
         LookupPhotoFolder
       else
         ForceDirectories(PhotoFolder);
-      
+
+  if (FPhotoFolder <> '') and (FPhotoFolder[Length(FPhotoFolder)] <> '\') then
+    FPhotoFolder := FPhotoFolder + '\';
+
   edtFolder.Text := Value;
 end;
 

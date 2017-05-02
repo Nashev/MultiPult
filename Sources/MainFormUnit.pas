@@ -3162,6 +3162,8 @@ begin
     )
   );
   CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
+  if ProjectFileName <> '' then // FFrameInfoList с диска потребует сохранения. А если имени проекта ещё нет, то эо просто все файлы папки, это не обязательно сохранять.
+    Saved := False;
 end;
 
 procedure TMainForm.Stop;

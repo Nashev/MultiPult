@@ -83,7 +83,6 @@ object CameraForm: TCameraForm
     TabOrder = 1
     Text = #1050#1072#1084#1077#1088#1072
     OnChange = cbCamSelectorChange
-    ExplicitWidth = 351
   end
   object btnNextCam: TButton
     Left = 460
@@ -104,7 +103,6 @@ object CameraForm: TCameraForm
     TabOrder = 3
     Text = '640'#1093'480'
     OnChange = cbbResolutionChange
-    ExplicitWidth = 351
   end
   object btnPreferences: TButton
     Left = 418
@@ -115,7 +113,6 @@ object CameraForm: TCameraForm
     Caption = #1055#1072#1088#1072#1084#1077#1090#1088#1099
     TabOrder = 4
     OnClick = btnPreferencesClick
-    ExplicitLeft = 421
   end
   object btnTimeLapse: TButton
     Left = 154
@@ -163,7 +160,6 @@ object CameraForm: TCameraForm
     ParentCtl3D = False
     TabOrder = 8
     Text = 'edtFolder'
-    ExplicitWidth = 450
   end
   object btnFolderLookup: TButton
     Left = 487
