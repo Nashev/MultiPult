@@ -16,7 +16,7 @@ uses
   Winapi.Windows, Winapi.Messages, VCL.FileCtrl, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, IniFiles, JPEG,
   VFrames, VSample, Direct3D9, DirectDraw, DirectShow9, DirectSound, DXTypes,
-  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer;
+  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer, Vcl.Imaging.pngimage;
 
 type
   TOnNewFrame = procedure(AFileName: string) of object;
@@ -40,6 +40,10 @@ type
     edtFolder: TEdit;
     btnFolderLookup: TButton;
     btnStart: TButton;
+    imgOverlay: TImage;
+    edtOverlay: TEdit;
+    btnSelectOverlay: TButton;
+    chkOverlay: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -54,13 +58,17 @@ type
     procedure TimeLapseStatusTimerTimer(Sender: TObject);
     procedure btnFolderLookupClick(Sender: TObject);
     procedure btnStartClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure chkOverlayClick(Sender: TObject);
+    procedure btnSelectOverlayClick(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
-    LastPhotoTimeStamp: DWord;
-    LastPreviewFrameTimeStamp: DWord;
     FPhotoFolder: string;
     FOnNewFrame: TOnNewFrame;
+    LastPhotoTimeStamp: DWord;
+    LastPreviewFrameTimeStamp: DWord;
+    LastFileName: string;
     CameraStopped: Boolean;
     procedure GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
     procedure MakePhoto;
@@ -88,6 +96,8 @@ begin
   FVideoBitmap := TBitmap.Create;
   FVideoImage := TVideoImage.Create;
   FVideoImage.OnNewVideoFrame := GetNewFrame;
+
+  edtOverlay.Text := '';
 end;
 
 procedure TCameraForm.FormDestroy(Sender: TObject);
@@ -129,8 +139,17 @@ begin
 
     btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
 
-    if PhotoFolder = '' then // если в момент этой инициализации окна папка
-    // ещё не указана, то значит вызов не из мультипульта, и можно папку дать лукапить.
+    imgOverlay.Visible := IniFile.ReadBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
+    chkOverlay.Checked := imgOverlay.Visible;
+    edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
+    if FileExists(edtOverlay.Text) then
+      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+
+    seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
+    cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
+
+    if PhotoFolder = '' then // если в момент этой инициализации окна
+    // папка  ещё не указана, то значит вызов не из мультипульта, и можно папку дать лукапить.
       begin
         btnFolderLookup.Visible := True;
         edtFolder.Width := edtFolder.Width - btnFolderLookup.Width - 8;
@@ -141,7 +160,7 @@ begin
 
     if PhotoFolder = '' then
       PhotoFolder := IniFile.ReadString('LastUsed', 'Folder', GetCurrentDir);
-  
+
     Left := IniFile.ReadInteger('LastUsed', 'Left', Left);
     Top := IniFile.ReadInteger('LastUsed', 'Top', Top);
     Width := IniFile.ReadInteger('LastUsed', 'Width', Width);
@@ -151,6 +170,9 @@ begin
   finally
     IniFile.Free;
   end;
+
+  if LowerCase(ParamStr(2)) = '/timelapse' then
+    btnTimeLapse.Click;
 end;
 
 procedure TCameraForm.FormHide(Sender: TObject);
@@ -161,13 +183,19 @@ begin
   try
     IniFile.WriteString('LastUsed', 'Camera', cbCamSelector.Items[cbCamSelector.ItemIndex]);
     IniFile.WriteString('LastUsed', 'Resolution', cbbResolution.Items[cbbResolution.ItemIndex]);
-  
+
     if btnFolderLookup.Visible and (PhotoFolder <> '') then
       IniFile.WriteString('LastUsed', 'Folder', PhotoFolder);
-  
+
+    IniFile.WriteInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
+    IniFile.WriteInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
+
+    IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
+    IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
+
     IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
     if WindowState = wsNormal then
-      begin    
+      begin
         IniFile.WriteInteger('LastUsed', 'Left', Left);
         IniFile.WriteInteger('LastUsed', 'Top', Top);
         IniFile.WriteInteger('LastUsed', 'Width', Width);
@@ -177,6 +205,11 @@ begin
     IniFile.Free;
   end;
   StopCamera;
+end;
+
+procedure TCameraForm.FormResize(Sender: TObject);
+begin
+  imgOverlay.BoundsRect := imgPreview.BoundsRect;
 end;
 
 procedure TCameraForm.GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
@@ -233,6 +266,22 @@ begin
       ShowMessage('Параметры открыть не удалось');
 end;
 
+procedure TCameraForm.btnSelectOverlayClick(Sender: TObject);
+begin
+  with TOpenDialog.Create(nil) do
+  begin
+    Filter := '*.png; *.gif|*.png;*.gif|*.*|*.*';
+    FileName := edtOverlay.Text;
+    if Execute then
+    begin
+      edtOverlay.Text := FileName;
+      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+      imgOverlay.Visible := True;
+      chkOverlay.Checked := True;
+    end;
+  end;
+end;
+
 procedure TCameraForm.btnStartClick(Sender: TObject);
 begin
   StartCamera;
@@ -280,7 +329,7 @@ begin
   end else begin
     TimeLapseTimer.Enabled := False;
     TimeLapseStatusTimer.Enabled := False;
-    lblLapseStatus.Caption := '';
+    lblLapseStatus.Caption := LastFileName;
     cbbUnit.Enabled := True;
     seInterval.Enabled := True;
     btnTimeLapse.Caption := rs_TimeLapseStartButton;
@@ -296,6 +345,11 @@ procedure TCameraForm.cbCamSelectorChange(Sender: TObject);
 begin
   StopCamera;
   StartCamera;
+end;
+
+procedure TCameraForm.chkOverlayClick(Sender: TObject);
+begin
+  imgOverlay.Visible := chkOverlay.Checked;
 end;
 
 procedure TCameraForm.Execute(APhotoFolder: string; AOnNewFrame: TOnNewFrame);
@@ -323,7 +377,10 @@ var
   NewFileName: string;
   StoringFile: TJPEGImage;
 begin
-  DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss', Now);
+  DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
+  while FileExists(PhotoFolder + NewFileName + '.jpg') do
+    NewFileName := NewFileName + '_';
+
   NewFileName := NewFileName + '.jpg';
   StoringFile := TJPEGImage.Create;
   try
@@ -335,6 +392,8 @@ begin
   end;
   if Assigned(OnNewFrame)  then
     OnNewFrame(PhotoFolder + NewFileName);
+  LastFileName := NewFileName;
+  lblLapseStatus.Caption := LastFileName;
 end;
 
 
@@ -359,7 +418,7 @@ var
   d, d2: Integer;
 begin
   d := AInterval;
-  if d <= 1000 then
+  if d <= 300 then
     Exit('');
 
   d2 := d mod 1000;
@@ -401,8 +460,14 @@ begin
 end;
 
 procedure TCameraForm.TimeLapseStatusTimerTimer(Sender: TObject);
+var
+  s: string;
 begin
-  lblLapseStatus.Caption := IntervalToString(TimeLapseTimer.Interval - (GetTickCount - LastPhotoTimeStamp));
+  s := IntervalToString(TimeLapseTimer.Interval - (GetTickCount - LastPhotoTimeStamp));
+  if s <> '' then
+    s := ' (ждём ' + s + ')';
+
+  lblLapseStatus.Caption := LastFileName + s;
 end;
 
 procedure TCameraForm.TimeLapseTimerTimer(Sender: TObject);
