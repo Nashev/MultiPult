@@ -375,14 +375,14 @@ end;
 procedure TCameraForm.MakePhoto;
 var
   NewFileName: string;
-  StoringFile: TJPEGImage;
+  StoringFile: TPNGImage;
 begin
   DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
-  while FileExists(PhotoFolder + NewFileName + '.jpg') do
+  while FileExists(PhotoFolder + NewFileName + '.png') do
     NewFileName := NewFileName + '_';
 
-  NewFileName := NewFileName + '.jpg';
-  StoringFile := TJPEGImage.Create;
+  NewFileName := NewFileName + '.png';
+  StoringFile := TPNGImage.Create;
   try
     StoringFile.Assign(FVideoBitmap);
     ForceDirectories(PhotoFolder);

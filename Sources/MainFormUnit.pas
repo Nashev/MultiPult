@@ -234,6 +234,14 @@ type
     actShowCameraForm: TAction;
     mmiStopRecordingOnSoundtrackFinish: TMenuItem;
     lblWorkPath: TLabel;
+    N5: TMenuItem;
+    actReplaceInMovie: TAction;
+    mmiReplaceInMovie: TMenuItem;
+    N6: TMenuItem;
+    mmiPrevRecordFrame: TMenuItem;
+    mmiNextRecordFrame: TMenuItem;
+    mmiIncCurrentStepInterval: TMenuItem;
+    mmiDecCurrentStepInterval: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -341,6 +349,12 @@ type
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure btnBackwardWhilePressedClick(Sender: TObject);
     procedure pnlToollsResize(Sender: TObject);
+    procedure actReplaceInMovieUpdate(Sender: TObject);
+    procedure actReplaceInMovieExecute(Sender: TObject);
+    procedure mmiIncCurrentStepIntervalClick(Sender: TObject);
+    procedure mmiPrevRecordFrameClick(Sender: TObject);
+    procedure mmiNextRecordFrameClick(Sender: TObject);
+    procedure mmiDecCurrentStepIntervalClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -406,6 +420,7 @@ type
     procedure ClearBookmarks;
     procedure SaveBeforeClose(const APurpose: string);
     function CalculateSoundFramesCount: Integer;
+    procedure ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -457,7 +472,7 @@ var
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
 implementation
-uses AVICompression, ControllerFormUnit, ScreenFormUnit,
+uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
   CameraFormUnit, MP3ConvertFormUnit;
 {$R *.dfm}
@@ -742,6 +757,7 @@ begin
   CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
   if OldCurrentFrame = CurrentWorkingSetFrame then // last frame
     CurrentWorkingSetFrame := nil;
+  Saved := False;
   OldCurrentFrame.Free;
 end;
 
@@ -752,6 +768,7 @@ begin
     CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index - 1
   else
     CurrentWorkingSetFrame.Index := WorkingSetFrames.Count - 1;
+  Saved := False;
   RepaintAll;
 end;
 
@@ -762,7 +779,31 @@ begin
     CurrentWorkingSetFrame.Index := CurrentWorkingSetFrame.Index + 1
   else
     CurrentWorkingSetFrame.Index := 0;
+  Saved := False;
   RepaintAll;
+end;
+
+procedure TMainForm.mmiPrevRecordFrameClick(Sender: TObject);
+begin
+  ChangeCurrentRecordPosition(CurrentRecordPosition - 1);
+end;
+
+procedure TMainForm.mmiNextRecordFrameClick(Sender: TObject);
+begin
+  ChangeCurrentRecordPosition(CurrentRecordPosition + 1);
+end;
+
+procedure TMainForm.mmiIncCurrentStepIntervalClick(Sender: TObject);
+begin
+  Inc(CurrentSpeedInterval);
+  pbWorkingSet.Repaint;
+end;
+
+procedure TMainForm.mmiDecCurrentStepIntervalClick(Sender: TObject);
+begin
+  Dec(CurrentSpeedInterval);
+  if CurrentSpeedInterval < 1  then CurrentSpeedInterval := 1;
+  pbWorkingSet.Repaint;
 end;
 
 function TMainForm.NextControlAction: TControlAction;
@@ -993,6 +1034,27 @@ begin
   DragFinish(Msg.Drop); // end drag handling, release drag source window
 end;
 
+procedure TMainForm.ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
+begin
+  if ANewRecordPosition > RecordedFrames.Count then
+    ANewRecordPosition := RecordedFrames.Count;
+  if ANewRecordPosition < 0 then
+    ANewRecordPosition := 0;
+
+  if AChangeDisplayedFrame then
+    begin
+      AdvertisementShowing := (ANewRecordPosition >= RecordedFrames.Count);
+      if not AdvertisementShowing and (ANewRecordPosition < RecordedFrames.Count) then
+        begin
+          DisplayedFrameIndex := RecordedFrames[ANewRecordPosition].FrameInfoIndex;
+        end;
+    end;
+
+  CurrentRecordPosition := ANewRecordPosition;
+  RepaintAll;
+  UpdateActions;
+end;
+
 procedure TMainForm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if ssCtrl in Shift then
@@ -1007,8 +1069,6 @@ begin
           ReplaceControlActions(caPlayForward)
         else
           ReplaceControlActions(caNone);
-      vk_Up:   begin Inc(CurrentSpeedInterval); pbWorkingSet.Repaint; end;
-      vk_Down: begin Dec(CurrentSpeedInterval); if CurrentSpeedInterval < 1  then CurrentSpeedInterval := 1; pbWorkingSet.Repaint; end;
     end
   else
     if not KeyPressBlocked then
@@ -1039,10 +1099,16 @@ begin
   if Playing then
     Exit;
 
-  if WheelDelta > 0 then
-    actStepPrev.Execute
+  if ssCtrl in Shift then
+    if WheelDelta > 0 then
+      ChangeCurrentRecordPosition(CurrentRecordPosition - 1)
+    else
+      ChangeCurrentRecordPosition(CurrentRecordPosition + 1)
   else
-    actStepNext.Execute;
+    if WheelDelta > 0 then
+      actStepPrev.Execute
+    else
+      actStepNext.Execute;
   Handled := True;
 end;
 
@@ -1124,6 +1190,7 @@ resourcestring
         repeat
           ext := AnsiLowerCase(ExtractFileExt(Rec.Name));
           if (ext = '.jpg') or
+             (ext = '.jpe') or
              (ext = '.jpeg') or
              (ext = '.bmp') or
              (ext = '.png') or
@@ -1746,10 +1813,53 @@ begin
 end;
 
 procedure TMainForm.actDuplicateFrameClick(Sender: TObject);
+var
+  OriginalFileName, NewFileName, Suffix: string;
+  SuffixIndex: Integer;
+  CurrentWorkingSetFrameIndex, NewDisplayedFrameIndex: Integer;
 begin
   Stop;
-  WorkingSetFrames.Insert(CurrentWorkingSetFrame.Index).Assign(CurrentWorkingSetFrame);
+  if not Assigned(CurrentWorkingSetFrame) then
+    Exit;
+
+  CurrentWorkingSetFrameIndex := CurrentWorkingSetFrame.Index;
+  OriginalFileName := FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].FileName;
+  if FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].Path = 'Duplicates\' then
+    begin
+      NewFileName := ChangeFileExt(OriginalFileName, '');
+      while (Length(NewFileName) > 0) and CharInSet(NewFileName[Length(NewFileName)], ['0'..'9']) do
+        SetLength(NewFileName, Length(NewFileName) - 1);
+      if (Length(NewFileName) > 1) and (NewFileName[Length(NewFileName)] = '_') then
+        begin
+          SetLength(NewFileName, Length(NewFileName) - 1);
+          OriginalFileName := NewFileName + ExtractFileExt(OriginalFileName);
+        end;
+    end;
+
+  Suffix := '';
+  SuffixIndex := 0;
+  ForceDirectories(PhotoFolder + 'Duplicates\');
+  repeat
+    NewFileName := OriginalFileName;
+    NewFileName := ChangeFileExt(ExtractFileName(NewFileName), Suffix + ExtractFileExt(NewFileName));
+    NewFileName := PhotoFolder + 'Duplicates\' + NewFileName;
+    inc(SuffixIndex);
+    Suffix := '_' + IntToStr(SuffixIndex);
+  until not FileExists(NewFileName);
+
+  CopyFile(PWideChar(FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].FullFileName), PWideChar(NewFileName), True);
+
+  NewDisplayedFrameIndex := FFrameInfoList.Add(
+    TFrameInfo.Create(
+      ExtractRelativePath(PhotoFolder, ExtractFilePath(NewFileName)),
+      ExtractFileName(NewFileName)
+    )
+  );
+  CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, NewDisplayedFrameIndex);
+  CurrentWorkingSetFrame.Index := CurrentWorkingSetFrameIndex + 1;
   pbWorkingSet.Refresh;
+
+  Saved := False;
 end;
 
 procedure TMainForm.actOpenFrameFileInDefaultProgramExecute(Sender: TObject);
@@ -2181,6 +2291,20 @@ begin
   pbDisplay.Refresh;
 end;
 
+procedure TMainForm.actReplaceInMovieExecute(Sender: TObject);
+begin
+  RecordedFrames[CurrentRecordPosition].FrameInfoIndex := CurrentWorkingSetFrame.FrameInfoIndex;
+  ChangeCurrentRecordPosition(CurrentRecordPosition + 1, False);
+  Saved := False;
+  RepaintAll;
+  ShowTimes;
+end;
+
+procedure TMainForm.actReplaceInMovieUpdate(Sender: TObject);
+begin
+  actReplaceInMovie.Enabled := not AdvertisementShowing and (CurrentRecordPosition <> -1) and (CurrentRecordPosition < RecordedFrames.Count) and Assigned(CurrentWorkingSetFrame)
+end;
+
 procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
@@ -2450,26 +2574,9 @@ begin
     end;
 end;
 
-procedure TMainForm.pbRecordMouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-var
-  NewPosition: Integer;
+procedure TMainForm.pbRecordMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  NewPosition := Y + pbRecordOffset;
-  if NewPosition > RecordedFrames.Count then
-    NewPosition := RecordedFrames.Count;
-  if NewPosition < 0 then
-    NewPosition := 0;
-
-  CurrentRecordPosition := NewPosition;
-  AdvertisementShowing := (NewPosition >= RecordedFrames.Count);
-  if not AdvertisementShowing and (NewPosition < RecordedFrames.Count) then
-    begin
-      DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
-    end;
-
-  RepaintAll;
-  UpdateActions;
+  ChangeCurrentRecordPosition(Y + pbRecordOffset);
 end;
 
 procedure TMainForm.pbRecordMouseLeave(Sender: TObject);
@@ -3019,9 +3126,18 @@ begin
         caNone:
           if Interval <= 1 then
             begin
-              if actBackwardWhilePressed.Checked or (GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0) then //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
+              //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
+              if actBackwardWhilePressed.Checked or (
+                (GetAsyncKeyState(VK_CONTROL) > 0) and
+                ((GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0))
+              )
+              then
                 CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1)
-              else if actForwardWhilePressed.Checked or (GetAsyncKeyState(Ord('D')) < 0)  or (GetAsyncKeyState(Ord('M')) < 0) then
+              else if actForwardWhilePressed.Checked or (
+                (GetAsyncKeyState(VK_CONTROL) > 0) and
+                ((GetAsyncKeyState(Ord('D')) < 0) or (GetAsyncKeyState(Ord('M')) < 0))
+              )
+              then
                 CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1)
               else
                 case NextControlAction of
@@ -3162,7 +3278,9 @@ begin
     )
   );
   CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
-  if ProjectFileName <> '' then // FFrameInfoList с диска потребует сохранения. А если имени проекта ещё нет, то эо просто все файлы папки, это не обязательно сохранять.
+  // FFrameInfoList с диска потребует сохранения.
+  // А если имени проекта ещё нет, то это просто все файлы папки, это не обязательно сохранять.
+  if ProjectFileName <> '' then
     Saved := False;
 end;
 
@@ -3371,19 +3489,21 @@ end;
 
 function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
-  if (Message.CharCode <> vk_Left)
-    and (Message.CharCode <> vk_Right)
-    and (Message.CharCode <> ord('A')) and (Message.CharCode <> ord('C'))
-    and (Message.CharCode <> ord('D')) and (Message.CharCode <> ord('M'))
-  then
-    begin
+//  if (Message.CharCode <> vk_Left)
+//    and (Message.CharCode <> vk_Right)
+//    and (GetAsyncKeyState(VK_CONTROL) > 0)
+//    and (GetAsyncKeyState(VK_MENU) > 0)
+//    and (Message.CharCode <> ord('A')) and (Message.CharCode <> ord('C'))
+//    and (Message.CharCode <> ord('D')) and (Message.CharCode <> ord('M'))
+//  then
+//    begin
       Result := inherited IsShortCut(Message);
       // Full Screen menu shortcuts (bookmarks)
       if not Result and (Menu = nil) then
         Result := MainMenu.IsShortCut(Message);
-    end
-  else
-    Result := False;
+//    end
+//  else
+//    Result := False;
 end;
 
 procedure TMainForm.ClearRecorded;
@@ -3499,4 +3619,6 @@ begin
   mmiStopRecordingOnSoundtrackFinish.Enabled := actSelectAudioFile.Checked;
 end;
 
+initialization
+  TPicture.RegisterFileFormat('jpe', sJPEGImageFile, TJPEGImage);
 end.

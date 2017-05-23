@@ -7937,6 +7937,12 @@ object MainForm: TMainForm
       OnExecute = actShowCameraFormExecute
       OnUpdate = actShowCameraFormUpdate
     end
+    object actReplaceInMovie: TAction
+      Caption = #1047#1072#1084#1077#1085#1080#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1084#1091#1083#1100#1090#1077' '#1085#1072' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088
+      ShortCut = 16416
+      OnExecute = actReplaceInMovieExecute
+      OnUpdate = actReplaceInMovieUpdate
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -8186,6 +8192,12 @@ object MainForm: TMainForm
         Caption = '-'
         Enabled = False
       end
+      object mmiReplaceInMovie: TMenuItem
+        Action = actReplaceInMovie
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
       object mmiShowCameraForm: TMenuItem
         Action = actShowCameraForm
       end
@@ -8215,6 +8227,19 @@ object MainForm: TMainForm
         Action = actPlayForward
       end
       object mmiSeparatorBookmarkManagement: TMenuItem
+        Caption = '-'
+      end
+      object mmiPrevRecordFrame: TMenuItem
+        Caption = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
+        ShortCut = 38
+        OnClick = mmiPrevRecordFrameClick
+      end
+      object mmiNextRecordFrame: TMenuItem
+        Caption = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
+        ShortCut = 40
+        OnClick = mmiNextRecordFrameClick
+      end
+      object N6: TMenuItem
         Caption = '-'
       end
       object N3: TMenuItem
@@ -8274,6 +8299,16 @@ object MainForm: TMainForm
       object mmiDoubleFramerate: TMenuItem
         Action = actDoubleFramerate
         AutoCheck = True
+      end
+      object mmiIncCurrentStepInterval: TMenuItem
+        Caption = #1059#1074#1077#1083#1080#1095#1080#1090#1100' '#1082#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1074#1090#1086#1088#1086#1074' '#1082#1072#1076#1088#1072
+        ShortCut = 16422
+        OnClick = mmiIncCurrentStepIntervalClick
+      end
+      object mmiDecCurrentStepInterval: TMenuItem
+        Caption = #1059#1084#1077#1085#1100#1096#1080#1090#1100' '#1082#1086#1083#1080#1095#1077#1089#1090#1074#1086' '#1087#1086#1074#1090#1086#1088#1086#1074' '#1082#1072#1076#1088#1072
+        ShortCut = 16424
+        OnClick = mmiDecCurrentStepIntervalClick
       end
       object mmiPreviewMode: TMenuItem
         Action = actPreviewMode

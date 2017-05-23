@@ -343,7 +343,6 @@ object CameraForm: TCameraForm
     Caption = #1042#1079#1103#1090#1100' '#1086#1076#1080#1085' '#1082#1072#1076#1088
     TabOrder = 0
     OnClick = btnMakePhotoClick
-    ExplicitTop = 364
   end
   object cbCamSelector: TComboBox
     Left = 64
@@ -354,7 +353,6 @@ object CameraForm: TCameraForm
     TabOrder = 1
     Text = #1050#1072#1084#1077#1088#1072
     OnChange = cbCamSelectorChange
-    ExplicitWidth = 348
   end
   object btnNextCam: TButton
     Left = 475
@@ -365,7 +363,6 @@ object CameraForm: TCameraForm
     Caption = #1044#1088#1091#1075#1072#1103
     TabOrder = 2
     OnClick = btnNextCamClick
-    ExplicitLeft = 460
   end
   object cbbResolution: TComboBox
     Left = 64
@@ -376,7 +373,6 @@ object CameraForm: TCameraForm
     TabOrder = 3
     Text = '640'#1093'480'
     OnChange = cbbResolutionChange
-    ExplicitWidth = 348
   end
   object btnPreferences: TButton
     Left = 433
@@ -387,7 +383,6 @@ object CameraForm: TCameraForm
     Caption = #1055#1072#1088#1072#1084#1077#1090#1088#1099
     TabOrder = 4
     OnClick = btnPreferencesClick
-    ExplicitLeft = 418
   end
   object btnTimeLapse: TButton
     Left = 154
@@ -398,7 +393,6 @@ object CameraForm: TCameraForm
     Caption = #1041#1088#1072#1090#1100' '#1082#1072#1076#1088' '#1082#1072#1078#1076#1099#1077
     TabOrder = 5
     OnClick = btnTimeLapseClick
-    ExplicitTop = 364
   end
   object seInterval: TSpinEdit
     Left = 314
@@ -410,7 +404,6 @@ object CameraForm: TCameraForm
     MinValue = 1
     TabOrder = 6
     Value = 1
-    ExplicitTop = 366
   end
   object cbbUnit: TComboBox
     Left = 382
@@ -424,7 +417,6 @@ object CameraForm: TCameraForm
     Items.Strings = (
       #1084#1089#1077#1082
       #1089#1077#1082)
-    ExplicitTop = 366
   end
   object edtFolder: TEdit
     Left = 65
@@ -450,8 +442,6 @@ object CameraForm: TCameraForm
     TabOrder = 9
     Visible = False
     OnClick = btnFolderLookupClick
-    ExplicitLeft = 487
-    ExplicitTop = 390
   end
   object btnStart: TButton
     Left = 433
@@ -462,7 +452,6 @@ object CameraForm: TCameraForm
     Caption = #1055#1091#1089#1082
     TabOrder = 10
     OnClick = btnStartClick
-    ExplicitLeft = 418
   end
   object edtOverlay: TEdit
     Left = 113
@@ -497,7 +486,6 @@ object CameraForm: TCameraForm
     Caption = #1042#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1100':'
     TabOrder = 13
     OnClick = chkOverlayClick
-    ExplicitTop = 421
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer
