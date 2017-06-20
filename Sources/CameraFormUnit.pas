@@ -44,6 +44,7 @@ type
     edtOverlay: TEdit;
     btnSelectOverlay: TButton;
     chkOverlay: TCheckBox;
+    chkMinimize: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -167,6 +168,7 @@ begin
     Height := IniFile.ReadInteger('LastUsed', 'Height', Height);
   
     WindowState := TWindowState(IniFile.ReadInteger('LastUsed', 'WindowState', Ord(WindowState)));
+    chkMinimize.Checked := IniFile.ReadBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
   end;
@@ -200,7 +202,8 @@ begin
         IniFile.WriteInteger('LastUsed', 'Top', Top);
         IniFile.WriteInteger('LastUsed', 'Width', Width);
         IniFile.WriteInteger('LastUsed', 'Height', Height);
-      end;      
+      end;
+    IniFile.WriteBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
   end;
@@ -247,6 +250,8 @@ end;
 procedure TCameraForm.btnMakePhotoClick(Sender: TObject);
 begin
   MakePhoto;
+  if chkMinimize.Checked then
+    WindowState := wsMinimized;
 end;
 
 procedure TCameraForm.btnNextCamClick(Sender: TObject);
