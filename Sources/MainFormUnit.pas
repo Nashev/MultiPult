@@ -242,6 +242,7 @@ type
     mmiNextRecordFrame: TMenuItem;
     mmiIncCurrentStepInterval: TMenuItem;
     mmiDecCurrentStepInterval: TMenuItem;
+    mmiShowNeighbourFrames: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -355,6 +356,7 @@ type
     procedure mmiPrevRecordFrameClick(Sender: TObject);
     procedure mmiNextRecordFrameClick(Sender: TObject);
     procedure mmiDecCurrentStepIntervalClick(Sender: TObject);
+    procedure mmiShowNeighbourFramesClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -421,6 +423,7 @@ type
     procedure SaveBeforeClose(const APurpose: string);
     function CalculateSoundFramesCount: Integer;
     procedure ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
+    procedure FreeAdvertisementFrame;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -683,7 +686,6 @@ resourcestring
 
 var
   TextTop: Integer;
-  Image: TGraphic;
 
   procedure DrawCentredText(ABitmap: TBitmap; AText: string);
   var
@@ -703,16 +705,14 @@ begin
   if FrameInfoCount = 0 then
     Exit;
 
-  Image := FrameInfoList[0].ImageFromDisc;
-
   AdvertisementFrameImage := TBitmap.Create;
   with AdvertisementFrameImage do
     begin
       {$IFDEF DelphiXE+}
-      SetSize(Image.Width, Image.Height);
+      SetSize(ExportSize.Width, ExportSize.Height);
       {$ELSE}
-      Width := Image.Width;
-      Height := Image.Height;
+      Width := ExportSize.Width;
+      Height := ExportSize.Height;
       {$ENDIF}
       Canvas.Font.Name := 'Arial';
       Canvas.Font.Height := Height div 20;
@@ -729,8 +729,6 @@ begin
         imgAdvertisement.Picture.Graphic
       );
     end;
-
-  FreeAndNil(Image);
 
   AdvertisementFrameImagePreview := TBitmap.Create;
   if actPreviewMode.Checked then
@@ -786,6 +784,11 @@ end;
 procedure TMainForm.mmiPrevRecordFrameClick(Sender: TObject);
 begin
   ChangeCurrentRecordPosition(CurrentRecordPosition - 1);
+end;
+
+procedure TMainForm.mmiShowNeighbourFramesClick(Sender: TObject);
+begin
+  RepaintAll;
 end;
 
 procedure TMainForm.mmiNextRecordFrameClick(Sender: TObject);
@@ -1349,8 +1352,7 @@ end;
 procedure TMainForm.actPreviewModeExecute(Sender: TObject);
 begin
   RecalculatePreview;
-  FreeAndNil(AdvertisementFrameImage);
-  FreeAndNil(AdvertisementFrameImagePreview);
+  FreeAdvertisementFrame;
   RepaintAll;
 end;
 
@@ -1517,7 +1519,7 @@ begin
             pbRecord.Invalidate;
             SetStatus(Format(rs_AVIExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
-            if PreparedFrameInfoIndex <> RecordedFrames[i].FrameInfoIndex then // skip already preparing
+            if PreparedFrameInfoIndex <> RecordedFrames[i].FrameInfoIndex then // skip preparing for already prepared
               begin
                 Image := FrameInfoList[RecordedFrames[i].FrameInfoIndex].ImageFromDisc;
                 R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
@@ -1529,10 +1531,20 @@ begin
               end;
             CheckAVIError(Compressor.WriteFrame(Bmp));
           end;
-        Bmp.Assign(AdvertisementFrameImagePreview);
+        Image := AdvertisementFrameImage;
+        R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+        Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
+        Bmp.Canvas.StretchDraw(R, Image);
         Bmp.PixelFormat := pf24bit;
+        CurrentRecordPosition := RecordedFrames.Count;
+        pbRecord.Invalidate;
+        SetStatus(Format(rs_AVIExportingCaption, [RecordedFrames.Count, RecordedFrames.Count]));
+        Application.ProcessMessages;
         for i := 1 to AdvertisementDuration div FrameRate do
+        begin
           CheckAVIError(Compressor.WriteFrame(Bmp));
+          Application.ProcessMessages;
+        end;
         Bmp.Free;
         Compressor.Close;
         SetStatus(rs_AVIExportingAudioMerge);
@@ -1547,7 +1559,7 @@ begin
           PWideChar(Application.Title),
           MB_ICONINFORMATION or MB_YESNO or MB_TASKMODAL) = idYes)
         then
-          ShellExecute(0, 'play', PWideChar(SaveToAVIDialog.FileName), nil, nil, SW_SHOWNORMAL);
+          ShellExecute(0, 'open', PWideChar(SaveToAVIDialog.FileName), nil, nil, SW_SHOWNORMAL);
       finally
         SetStatus('');
         Exporting := False;
@@ -2101,12 +2113,20 @@ begin
       RepaintAll;
       InfoMsg('Конец файла озвучки, запись остановлена'#13#10'согласно выбранному режиму.');
     end;
-//  TODO: понять, надо ли останавливать воспроизведение видео при завершении звука
-//  actPlay.Checked := False;
-//
-//  //CurrentRecordPosition := 0;
-//  Interval := 0;
-//  Playing := False;
+
+  // Останавливать воспроизведение при завершени звука надо, как минимум, потому
+  // что StopPlaying на это рассчитана.
+  //  TODO: понять, когда не надо останавливать воспроизведение видео при завершении звука
+  // (например, если звука меньше, чем записанного мульта, и надо б продолжить в тишине ?)
+  // и придумать, как это совместить.
+  if Playing then
+    begin
+      actPlay.Checked := False;
+
+      //CurrentRecordPosition := 0;
+      Interval := 0;
+      Playing := False;
+    end;
 end;
 
 procedure TMainForm.StopPlaying;
@@ -2349,11 +2369,13 @@ begin
     LoadPhoto(DisplayedFrameIndex); // на всякий случай
     // основной кадр.
     // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
-    if FrameInfoList[DisplayedFrameIndex].Loaded then
+    if FrameInfoList[DisplayedFrameIndex].Loaded and mmiShowNeighbourFrames.Checked then
       begin
         Image := FrameInfoList[DisplayedFrameIndex].Preview;
         R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
-      end;
+      end
+    else
+      R_PrevNextPreview := Rect(0,0,0,0);
 
     if FrameInfoList[DisplayedFrameIndex].Loaded or AdvertisementShowing then
       begin
@@ -2404,7 +2426,7 @@ begin
           end;
       end;
 
-    if Assigned(CurrentWorkingSetFrame) then
+    if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
       begin
         // левая миниатюра
         WorkSetFrame := FindWorkingSetFrameByOffset(-1);
@@ -3037,6 +3059,8 @@ begin
     16: ExportSize := Size(2560, 1440);
     17: ExportSize := Size(7680, 4320);
   end;
+  FreeAdvertisementFrame;
+  CreateAdvertisementFrame;
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + TrimLeft(TMenuItem(Sender).Caption);
   if FrameInfoCount > 0 then
     Saved := False;
@@ -3047,6 +3071,8 @@ begin
   Stop;
   if TExportSizeCustomRequestDialog.Execute(ExportSize) then
     mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
+  FreeAdvertisementFrame;
+  CreateAdvertisementFrame;
   if FrameInfoCount > 0 then
     Saved := False;
 end;
@@ -3068,6 +3094,8 @@ procedure TMainForm.actExportResolutionFirstFrameExecute(Sender: TObject);
 begin
   Stop;
   ExportSize := FirstFrameSize;
+  FreeAdvertisementFrame;
+  CreateAdvertisementFrame;
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + Format(rs_CustomSize, [ExportSize.cx, ExportSize.cy]);
   if FrameInfoCount > 0 then
     Saved := False;
@@ -3510,6 +3538,11 @@ procedure TMainForm.ClearRecorded;
 begin
   RecordedFrames.Clear;
   FCurrentRecordPosition := 0;
+  FreeAdvertisementFrame;
+end;
+
+procedure TMainForm.FreeAdvertisementFrame;
+begin
   FreeAndNil(AdvertisementFrameImage);
   FreeAndNil(AdvertisementFrameImagePreview);
 end;

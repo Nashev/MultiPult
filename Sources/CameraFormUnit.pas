@@ -45,6 +45,8 @@ type
     btnSelectOverlay: TButton;
     chkOverlay: TCheckBox;
     chkMinimize: TCheckBox;
+    tbOpacity: TTrackBar;
+    lblOpacity: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -62,6 +64,7 @@ type
     procedure FormResize(Sender: TObject);
     procedure chkOverlayClick(Sender: TObject);
     procedure btnSelectOverlayClick(Sender: TObject);
+    procedure tbOpacityChange(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
@@ -146,6 +149,8 @@ begin
     if FileExists(edtOverlay.Text) then
       imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
 
+    AlphaBlendValue := IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue);
+
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
 
@@ -194,6 +199,8 @@ begin
 
     IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
     IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
+
+    IniFile.WriteInteger('LastUsed', 'Opacity', AlphaBlendValue);
 
     IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
     if WindowState = wsNormal then
@@ -251,7 +258,10 @@ procedure TCameraForm.btnMakePhotoClick(Sender: TObject);
 begin
   MakePhoto;
   if chkMinimize.Checked then
-    WindowState := wsMinimized;
+    if Application.MainForm = Self then
+      WindowState := wsMinimized // самосто€тельным приложением
+    else
+      ModalResult := mrOk; //  в составе ћультиѕульта
 end;
 
 procedure TCameraForm.btnNextCamClick(Sender: TObject);
@@ -479,6 +489,11 @@ procedure TCameraForm.TimeLapseTimerTimer(Sender: TObject);
 begin
   MakePhoto;
   LastPhotoTimeStamp := GetTickCount;
+end;
+
+procedure TCameraForm.tbOpacityChange(Sender: TObject);
+begin
+  AlphaBlendValue := tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min);
 end;
 
 end.

@@ -7953,6 +7953,7 @@ object MainForm: TMainForm
       object mmiSelectPhotoFolder: TMenuItem
         Action = actSelectPhotoFolder
         Caption = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091' '#1089' '#1082#1072#1076#1088#1072#1084#1080' '#1085#1072#1095#1072#1090#1100' '#1085#1086#1074#1099#1081' '#1084#1091#1083#1100#1090'...'
+        ShortCut = 24655
       end
       object mmiNew: TMenuItem
         Action = actNew
@@ -8317,6 +8318,12 @@ object MainForm: TMainForm
       object mmiStretchImages: TMenuItem
         Action = actStretchImages
         AutoCheck = True
+      end
+      object mmiShowNeighbourFrames: TMenuItem
+        AutoCheck = True
+        Caption = #1054#1090#1086#1073#1088#1072#1078#1072#1090#1100' '#1084#1080#1085#1080#1072#1090#1102#1088#1099' '#1089#1086#1089#1077#1076#1085#1080#1093' '#1082#1072#1076#1088#1086#1074
+        Checked = True
+        OnClick = mmiShowNeighbourFramesClick
       end
       object mmiShowControllerForm: TMenuItem
         Action = actShowControllerForm
