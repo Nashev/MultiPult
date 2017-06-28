@@ -3156,13 +3156,13 @@ begin
             begin
               //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
               if actBackwardWhilePressed.Checked or (
-                (GetAsyncKeyState(VK_CONTROL) > 0) and
+                (GetAsyncKeyState(VK_CONTROL) >= 0) and
                 ((GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0))
               )
               then
                 CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1)
               else if actForwardWhilePressed.Checked or (
-                (GetAsyncKeyState(VK_CONTROL) > 0) and
+                (GetAsyncKeyState(VK_CONTROL) >= 0) and
                 ((GetAsyncKeyState(Ord('D')) < 0) or (GetAsyncKeyState(Ord('M')) < 0))
               )
               then
@@ -3517,21 +3517,29 @@ end;
 
 function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
-//  if (Message.CharCode <> vk_Left)
-//    and (Message.CharCode <> vk_Right)
-//    and (GetAsyncKeyState(VK_CONTROL) > 0)
-//    and (GetAsyncKeyState(VK_MENU) > 0)
-//    and (Message.CharCode <> ord('A')) and (Message.CharCode <> ord('C'))
-//    and (Message.CharCode <> ord('D')) and (Message.CharCode <> ord('M'))
-//  then
-//    begin
+  if not (
+    // если не клавиша, обрабатываемая другим способом, то обрабатываем по-прежнему как потенциальный ShortCut
+    // А другим способом обрабатываются клавиши движения по кадрам при не нажатых Ctrl и Alt
+        (GetAsyncKeyState(VK_CONTROL) >= 0)
+    and (GetAsyncKeyState(VK_MENU) >= 0)
+    and (
+         (Message.CharCode = vk_Left)
+      or (Message.CharCode = vk_Right)
+      or (Message.CharCode = ord('A'))
+      or (Message.CharCode = ord('C'))
+      or (Message.CharCode = ord('D'))
+      or (Message.CharCode = ord('M'))
+    )
+  )
+  then
+    begin
       Result := inherited IsShortCut(Message);
       // Full Screen menu shortcuts (bookmarks)
       if not Result and (Menu = nil) then
         Result := MainMenu.IsShortCut(Message);
-//    end
-//  else
-//    Result := False;
+    end
+  else
+    Result := False;
 end;
 
 procedure TMainForm.ClearRecorded;

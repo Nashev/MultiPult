@@ -28,7 +28,6 @@ object MainForm: TMainForm
     Width = 798
     Height = 13
     Align = alBottom
-    ExplicitWidth = 3
   end
   object pnlDisplay: TPanel
     Left = 0
@@ -38,7 +37,6 @@ object MainForm: TMainForm
     Align = alClient
     BevelOuter = bvLowered
     FullRepaint = False
-    ParentBackground = False
     TabOrder = 0
     DesignSize = (
       798
@@ -1544,8 +1542,6 @@ object MainForm: TMainForm
       OnDblClick = pbDisplayDblClick
       OnMouseDown = pbDisplayMouseDown
       OnPaint = pbDisplayPaint
-      ExplicitWidth = 474
-      ExplicitHeight = 403
     end
     object pbRecord: TPaintBox
       Left = 581
@@ -1557,9 +1553,6 @@ object MainForm: TMainForm
       OnMouseLeave = pbRecordMouseLeave
       OnMouseMove = pbRecordMouseMove
       OnPaint = pbRecordPaint
-      ExplicitLeft = 459
-      ExplicitTop = -3
-      ExplicitHeight = 398
     end
     object RecordSplitter: TSplitter
       Left = 578
@@ -1570,8 +1563,6 @@ object MainForm: TMainForm
       Beveled = True
       MinSize = 150
       ResizeStyle = rsUpdate
-      ExplicitLeft = 475
-      ExplicitHeight = 403
     end
     object pbFrameTip: TPaintBox
       Left = 188
@@ -1580,7 +1571,6 @@ object MainForm: TMainForm
       Height = 105
       Anchors = [akLeft, akBottom]
       OnPaint = pbFrameTipPaint
-      ExplicitTop = 296
     end
     object imgAdvertisement: TImage
       Left = 435
@@ -7082,8 +7072,6 @@ object MainForm: TMainForm
       OnMouseLeave = pbWorkingSetMouseLeave
       OnMouseMove = pbWorkingSetMouseMove
       OnPaint = pbWorkingSetPaint
-      ExplicitWidth = 671
-      ExplicitHeight = 24
     end
   end
   object pnlToolls: TPanel
@@ -7110,7 +7098,6 @@ object MainForm: TMainForm
       ForeColor = clHighlight
       Progress = 0
       ShowText = False
-      ExplicitLeft = 575
     end
     object pbIndicator: TPaintBox
       Left = 8
@@ -7134,7 +7121,6 @@ object MainForm: TMainForm
       Anchors = [akTop, akRight]
       AutoSize = False
       Visible = False
-      ExplicitLeft = 453
     end
     object imgLeftRightByMouseDownController: TImage
       Left = 512
@@ -7877,13 +7863,13 @@ object MainForm: TMainForm
     end
     object actMoveFrameLeft: TAction
       Caption = #1057#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1083#1077#1074#1077#1077
-      ShortCut = 74
+      ShortCut = 16458
       OnExecute = actMoveFrameLeftClick
       OnUpdate = actHaveCurrentFrame
     end
     object actMoveFrameRight: TAction
       Caption = #1057#1076#1074#1080#1085#1091#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1087#1088#1072#1074#1077#1077
-      ShortCut = 76
+      ShortCut = 16460
       OnExecute = actMoveFrameRightClick
       OnUpdate = actHaveCurrentFrame
     end
@@ -8153,11 +8139,9 @@ object MainForm: TMainForm
       end
       object mmiMoveFrameLeft: TMenuItem
         Action = actMoveFrameLeft
-        ShortCut = 16458
       end
       object mmiMoveFrameRight: TMenuItem
         Action = actMoveFrameRight
-        ShortCut = 16460
       end
       object N16: TMenuItem
         Caption = '-'
