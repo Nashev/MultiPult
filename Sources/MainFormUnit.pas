@@ -42,8 +42,9 @@ type
     FPath, FFileName: string;
   public
     Preview: TBitmap;
+    Iconic: TBitmap;
     Teleport: Integer; // TODO: move to ResultFrame (?)
-    Loaded: Boolean;
+    PreviewLoaded: Boolean;
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
@@ -243,6 +244,11 @@ type
     mmiIncCurrentStepInterval: TMenuItem;
     mmiDecCurrentStepInterval: TMenuItem;
     mmiShowNeighbourFrames: TMenuItem;
+    lvFrameset: TListView;
+    ilFrameset: TImageList;
+    pnlFramesetMode: TPanel;
+    btnFrameSetExpand: TSpeedButton;
+    btnFrameSetZoom: TSpeedButton;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -357,6 +363,10 @@ type
     procedure mmiNextRecordFrameClick(Sender: TObject);
     procedure mmiDecCurrentStepIntervalClick(Sender: TObject);
     procedure mmiShowNeighbourFramesClick(Sender: TObject);
+    procedure btnFrameSetExpandClick(Sender: TObject);
+    procedure lvFramesetDragDrop(Sender, Source: TObject; X, Y: Integer);
+    procedure lvFramesetDragOver(Sender, Source: TObject; X, Y: Integer;
+      State: TDragState; var Accept: Boolean);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -463,7 +473,7 @@ type
     property FrameInfoCount: Integer read GetFrameInfoCount;
     property FrameInfoList[Index: Integer]: TFrameInfo read GetFrameInfo;
     // Used in ScreenForm
-    procedure LoadPhoto(AFrameInfoIndex: Integer);
+    procedure LoadPhoto(AFrameInfoIndex: Integer; AWorkingSetIndex: Integer);
     procedure AddNewFrame(AFileName: string);
   end;
 
@@ -1170,11 +1180,44 @@ begin
 end;
 
 function CompareFramesFileName(Item1, Item2: Pointer): Integer;
+var
+  s1, s2: string;
+  i, PosDif: Integer;
+
+  function ExtractInt(s: PChar): Integer;
+  begin
+    Result := 0;
+    while CharInSet(s^, ['0'..'9']) do
+      begin    
+        Result := Result * 10 + (Ord(s^)-ord('0'));
+        Inc(s);
+      end;      
+  end;
+  
 begin
-  Result := CompareText(
-    TFrameInfo(Item1).RelativeFileName,
-    TFrameInfo(Item2).RelativeFileName
-  )
+  s1 := AnsiUpperCase(TFrameInfo(Item1).RelativeFileName);
+  s2 := AnsiUpperCase(TFrameInfo(Item2).RelativeFileName);
+  PosDif := 0;
+  for i := 1 to Min(Length(s1), Length(s2)) do
+    // останавливаемся на первом не одинаковом символе
+    if (s1[i] <> s2[i]) then
+    begin    
+      PosDif := i;
+      // если попали в число, откатываемся к его началу. К началу первого неодинакового числа
+      while (PosDif > 1) and CharInSet(s1[PosDif - 1], ['0'..'9']) do
+        dec(PosDif);
+      Break
+    end;
+
+  // если не нашлось различий, то PosDif = 0 остался.
+  if PosDif = 0 then
+    Exit(0)
+  // если хоть куда-то ушагали и где-то остановились, то смотрим, не числа ли оттуда начались
+  // если хоть одно не число, то сравню как строки
+  else if CharInSet(s1[PosDif], ['0'..'9']) and CharInSet(s2[PosDif], ['0'..'9']) then
+    Result := ExtractInt(@s1[PosDif]) - ExtractInt(@s2[PosDif])
+  else
+    Result := CompareText(s1, s2);
 end;
 
 procedure TMainForm.LoadPhotoFolder(ANewPhotoFolder: string);
@@ -1213,6 +1256,8 @@ resourcestring
 var
   i: Integer;
 //  i: Integer;
+  PrevFramePath: string;
+  NextBookmarkIndex: Integer;
 begin
   actNew.Execute;
   ClearBookmarks;
@@ -1229,8 +1274,19 @@ begin
   InternalLoadDirectory('');
 
   FFrameInfoList.Sort(CompareFramesFileName);
+  if FFrameInfoList.Count > 0 then
+    PrevFramePath := TFrameInfo(FFrameInfoList[0]).Path;
+  NextBookmarkIndex := 0;
   for i := 0 to FFrameInfoList.Count - 1 do
-    TRecordedFrame.Create(WorkingSetFrames, i);
+    begin
+      if (PrevFramePath <> TFrameInfo(FFrameInfoList[i]).Path) and (NextBookmarkIndex <= High(Bookmarks)) then
+        begin      
+          Bookmarks[NextBookmarkIndex] := i;
+          inc(NextBookmarkIndex);
+          PrevFramePath := TFrameInfo(FFrameInfoList[i]).Path;
+        end;        
+      TRecordedFrame.Create(WorkingSetFrames, i);
+    end;
 
   DisplayedFrameIndex := 0; // same as WorkingSetFrames[0].FFrameInfoIndex;
   Saved := True;
@@ -2041,6 +2097,8 @@ end;
 procedure TMainForm.SetDisplayedFrameIndex(Value: Integer);
 resourcestring
   rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
+var
+  WorkingSetIndex: Integer;
 begin
   if Value >= GetFrameInfoCount then
     Value := GetFrameInfoCount - 1;
@@ -2056,7 +2114,11 @@ begin
 
   if Value >= 0 then
     begin
-      LoadPhoto(Value);
+      if Assigned(CurrentWorkingSetFrame) then
+        WorkingSetIndex := CurrentWorkingSetFrame.Index
+      else
+        WorkingSetIndex := -1;
+      LoadPhoto(Value, WorkingSetIndex);
       if not Exporting then
         if Assigned(CurrentWorkingSetFrame) then
           SetCaption(FrameInfoList[Value].RelativeFileName)
@@ -2159,19 +2221,27 @@ begin
     end;
 end;
 
-procedure TMainForm.LoadPhoto(AFrameInfoIndex: Integer);
+procedure TMainForm.LoadPhoto(AFrameInfoIndex: Integer; AWorkingSetIndex: Integer);
 var
   Image: TGraphic;
   R: TRect;
   i, j, UnloadCounter: Integer;
   NearestNeighbour: Boolean;
 begin
-  if (FrameInfoCount = 0) or FrameInfoList[AFrameInfoIndex].Loaded then
+  if (FrameInfoCount = 0) then
+    Exit;
+
+  // выходим, если ничего грузить не нужно.
+  // А грузить нужно либо иконку, либо превьюшку, в зависимости от видимости представления в виде иконок
+  if not lvFrameset.Visible and FrameInfoList[AFrameInfoIndex].PreviewLoaded then
+    Exit;
+
+  if lvFrameset.Visible and (Assigned(FrameInfoList[AFrameInfoIndex].Iconic) or (AWorkingSetIndex = -1)) then
     Exit;
 
   if OutOfMemoryRaised then // unload first loaded frame info
     for i := 0 to FrameInfoCount - 1 do
-      if FrameInfoList[i].Loaded then
+      if FrameInfoList[i].PreviewLoaded then
         begin
           // skip nearest neighbours in both lists
           NearestNeighbour := False;
@@ -2192,7 +2262,7 @@ begin
           if NearestNeighbour then
             Continue;
           // unload
-          FrameInfoList[i].Loaded := False;
+          FrameInfoList[i].PreviewLoaded := False;
           FreeAndNil(FrameInfoList[i].Preview);
           Break;
         end;
@@ -2206,21 +2276,39 @@ begin
           on e: Exception do
             Image := GenerateStubFrame(e.Message);
         end;
-        Preview := TBitmap.Create;
-        if actPreviewMode.Checked then
+        if not lvFrameset.Visible then
           begin
-            R := StretchSize(Image.Width, Image.Height, 640, 480);
-            {$IFDEF DelphiXE+}
-            Preview.SetSize(640,480);
-            {$ELSE}
-            Preview.Width := 640;
-            Preview.Height := 480;
-            {$ENDIF}
-            Preview.Canvas.StretchDraw(R, Image);
+            Preview := TBitmap.Create;
+            if actPreviewMode.Checked then
+              begin
+                R := StretchSize(Image.Width, Image.Height, 640, 480);
+                {$IFDEF DelphiXE+}
+                Preview.SetSize(640,480);
+                {$ELSE}
+                Preview.Width := 640;
+                Preview.Height := 480;
+                {$ENDIF}
+                Preview.Canvas.StretchDraw(R, Image);
+              end
+            else
+              Preview.Assign(Image);
+            PreviewLoaded := True;
           end
         else
-          Preview.Assign(Image);
-        Loaded := True;
+          begin
+            Iconic := TBitmap.Create;
+
+            R := StretchSize(Image.Width, Image.Height, 64, 48);
+            {$IFDEF DelphiXE+}
+            Iconic.SetSize(64,48);
+            {$ELSE}
+            Iconic.Width := 64;
+            Iconic.Height := 48;
+            {$ENDIF}
+            Iconic.Canvas.StretchDraw(R, Image);
+
+            ilFrameset.ReplaceMasked(AWorkingSetIndex, Iconic, 0);
+          end
       finally
         FreeAndNil(Image);
       end;
@@ -2233,9 +2321,9 @@ begin
         // TODO: use WorkingSet frames order
         UnloadCounter := AFrameInfoIndex div 5;
         for i := 0 to FrameInfoCount - 1 do
-          if FrameInfoList[i].Loaded then
+          if FrameInfoList[i].PreviewLoaded then
             begin
-              FrameInfoList[i].Loaded := False;
+              FrameInfoList[i].PreviewLoaded := False;
               FreeAndNil(FrameInfoList[i].Preview);
               Dec(UnloadCounter);
               if UnloadCounter <= 0 then
@@ -2306,7 +2394,7 @@ end;
 procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
 begin
   Stop;
-  FrameInfoList[DisplayedFrameIndex].Loaded := False;
+  FrameInfoList[DisplayedFrameIndex].PreviewLoaded := False;
   FreeAndNil(FrameInfoList[DisplayedFrameIndex].Preview);
   pbDisplay.Refresh;
 end;
@@ -2366,10 +2454,10 @@ begin
       end;
 
     CreateAdvertisementFrame; // на всякий случай
-    LoadPhoto(DisplayedFrameIndex); // на всякий случай
+    LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
     // основной кадр.
     // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
-    if FrameInfoList[DisplayedFrameIndex].Loaded and mmiShowNeighbourFrames.Checked then
+    if FrameInfoList[DisplayedFrameIndex].PreviewLoaded and mmiShowNeighbourFrames.Checked then
       begin
         Image := FrameInfoList[DisplayedFrameIndex].Preview;
         R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
@@ -2377,7 +2465,7 @@ begin
     else
       R_PrevNextPreview := Rect(0,0,0,0);
 
-    if FrameInfoList[DisplayedFrameIndex].Loaded or AdvertisementShowing then
+    if FrameInfoList[DisplayedFrameIndex].PreviewLoaded or AdvertisementShowing then
       begin
         if AdvertisementShowing then
           Image := AdvertisementFrameImagePreview
@@ -2430,8 +2518,8 @@ begin
       begin
         // левая миниатюра
         WorkSetFrame := FindWorkingSetFrameByOffset(-1);
-        LoadPhoto(WorkSetFrame.FrameInfoIndex); // на всякий случай
-        if FrameInfoList[WorkSetFrame.FrameInfoIndex].Loaded then
+        LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+        if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
           begin
             Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
             R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
@@ -2453,8 +2541,8 @@ begin
           end;
         // правая миниатюра
         WorkSetFrame := FindWorkingSetFrameByOffset(+1);
-        LoadPhoto(WorkSetFrame.FrameInfoIndex); // на всякий случай
-        if FrameInfoList[WorkSetFrame.FrameInfoIndex].Loaded then
+        LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+        if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
           begin
             Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
             R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
@@ -2898,6 +2986,9 @@ var
   BookmarkRect: TRect;
   TextSize: TSize;
 begin
+  if lvFrameset.Visible then
+    Exit;
+
   y1 := 4;
   if Assigned(CurrentWorkingSetFrame) then
     CurrentWorkingFrameIndex := CurrentWorkingSetFrame.Index
@@ -2914,7 +3005,7 @@ begin
   for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
     begin
       x := WorkingFrameToWorkingSetX(WorkingSetFrames[WorkingFrameIndex]);
-      if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Loaded then
+      if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].PreviewLoaded then
         y2 := y1 + 8
       else
         y2 := y1 + 4;
@@ -3021,9 +3112,9 @@ var
   i: Integer;
 begin
   for i := 0 to FrameInfoCount - 1 do
-    if FrameInfoList[i].Loaded then
+    if FrameInfoList[i].PreviewLoaded then
       begin
-        FrameInfoList[i].Loaded := False;
+        FrameInfoList[i].PreviewLoaded := False;
         FreeAndNil(FrameInfoList[i].Preview);
         OutOfMemoryRaised := False;
       end;
@@ -3381,12 +3472,15 @@ begin
     for i := 0 to WorkingSetFrames.Count - 1 do
       begin
         FrameInfo := FrameInfoList[WorkingSetFrames[i].FrameInfoIndex];
-        if not FrameInfo.Loaded then
+        if (not lvFrameset.Visible and not FrameInfo.PreviewLoaded) or (lvFrameset.Visible and not Assigned(FrameInfo.Iconic)) then
           begin
             SetStatus(rs_PreloadStatus + FrameInfo.RelativeFileName);
-            LoadPhoto(WorkingSetFrames[i].FrameInfoIndex);
-            pbWorkingSet.Repaint;
-            ShowTimes;
+            LoadPhoto(WorkingSetFrames[i].FrameInfoIndex, i);
+            if not lvFrameset.Visible then
+              begin
+                pbWorkingSet.Repaint;
+                ShowTimes;
+              end;
             Done := False;
             Exit;
           end;
@@ -3454,6 +3548,57 @@ procedure TMainForm.btnForwardWhilePressedMouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   actForwardWhilePressed.Checked := False;
+end;
+
+procedure TMainForm.btnFrameSetExpandClick(Sender: TObject);
+var
+  i: Integer;
+  Item: TListItem;
+  FrameInfo: TFrameInfo;
+  OriginalOrders: array of TRecordedFrame;
+begin
+  if not lvFrameset.Visible then
+  begin
+    lvFrameset.Items.BeginUpdate;
+    ilFrameset.BeginUpdate;
+    try
+      lvFrameset.Clear;
+      ilFrameset.Clear;
+      for i := 0 to WorkingSetFrames.Count - 1 do
+      begin
+        FrameInfo := FrameInfoList[WorkingSetFrames[i].FrameInfoIndex];
+        Item := lvFrameset.Items.Add;
+        Item.Caption := FrameInfo.FileName;
+        Item.ImageIndex := i;
+        if Assigned(FrameInfo.Iconic) then
+          ilFrameset.Add(FrameInfo.Iconic, nil)
+        else
+          ilFrameset.Add(nil, nil);
+      end;
+      pbWorkingSet.Invalidate;
+    finally
+      lvFrameset.Items.EndUpdate;
+      ilFrameset.EndUpdate;
+      lvFrameset.Visible := True;
+      lvFrameset.BringToFront;
+    end;
+  end
+  else
+    begin
+      lvFrameset.Visible := False;
+      SetLength(OriginalOrders, WorkingSetFrames.Count);
+      for i := 0 to WorkingSetFrames.Count - 1 do
+        OriginalOrders[i] := WorkingSetFrames[i];
+      for i := WorkingSetFrames.Count - 1 downto 0 do
+      begin
+        if lvFrameset.Items[i].ImageIndex <> i then
+          begin
+            OriginalOrders[lvFrameset.Items[i].ImageIndex].Index := i;
+            Saved := False;
+          end;
+      end;
+      pbWorkingSet.Invalidate;
+    end;
 end;
 
 procedure TMainForm.btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
@@ -3658,6 +3803,45 @@ procedure TMainForm.actSelectAudioFileUpdate(Sender: TObject);
 begin
   actSelectAudioFile.Enabled := PhotoFolder <> '';
   mmiStopRecordingOnSoundtrackFinish.Enabled := actSelectAudioFile.Checked;
+end;
+
+procedure TMainForm.lvFramesetDragDrop(Sender, Source: TObject; X, Y: Integer);
+var
+  MovedItem, TargetItem: TListItem;
+  TargetIndex: Integer;
+  MovedItemIndex: Integer;
+  MovedItemCaption: string;
+  TargetPosition: TPoint;
+begin
+  MovedItem := lvFrameset.ItemFocused;
+  TargetItem := lvFrameset.GetItemAt(X, Y);
+  if Assigned(TargetItem) then
+    begin
+      TargetIndex := TargetItem.Index;
+      TargetPosition := TargetItem.Position;
+    end
+  else
+  begin
+    TargetIndex := lvFrameset.Items.Count - 1;
+    TargetPosition.x := -1;
+  end;
+  if TargetIndex <> MovedItem.Index then
+  begin
+    MovedItemIndex :=  MovedItem.ImageIndex;
+    MovedItemCaption := MovedItem.Caption;
+    lvFrameset.Items.Delete(MovedItem.Index);
+    TargetItem := lvFrameset.Items.Insert(TargetIndex);
+    TargetItem.Caption := MovedItemCaption;
+    TargetItem.ImageIndex := MovedItemIndex;
+    if TargetPosition.x <> -1 then
+      TargetItem.Position := TargetPosition;
+  end;
+end;
+
+procedure TMainForm.lvFramesetDragOver(Sender, Source: TObject; X, Y: Integer;
+  State: TDragState; var Accept: Boolean);
+begin
+  Accept := Assigned(lvFrameset.ItemFocused);
 end;
 
 initialization
