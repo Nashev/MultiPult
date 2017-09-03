@@ -1180,44 +1180,112 @@ begin
 end;
 
 function CompareFramesFileName(Item1, Item2: Pointer): Integer;
-var
-  s1, s2: string;
-  i, PosDif: Integer;
 
-  function ExtractInt(s: PChar): Integer;
+  function ExtractInt(const s: string; var PosDif: Integer): Integer;
   begin
     Result := 0;
-    while CharInSet(s^, ['0'..'9']) do
-      begin    
-        Result := Result * 10 + (Ord(s^)-ord('0'));
-        Inc(s);
-      end;      
+    while CharInSet(s[PosDif], ['0'..'9']) do
+      begin
+        Result := Result * 10 + (Ord(s[PosDif])-ord('0'));
+        Inc(PosDif);
+      end;
   end;
-  
-begin
-  s1 := AnsiUpperCase(TFrameInfo(Item1).RelativeFileName);
-  s2 := AnsiUpperCase(TFrameInfo(Item2).RelativeFileName);
-  PosDif := 0;
-  for i := 1 to Min(Length(s1), Length(s2)) do
-    // останавливаемся на первом не одинаковом символе
-    if (s1[i] <> s2[i]) then
-    begin    
-      PosDif := i;
-      // если попали в число, откатываемся к его началу. К началу первого неодинакового числа
-      while (PosDif > 1) and CharInSet(s1[PosDif - 1], ['0'..'9']) do
-        dec(PosDif);
-      Break
+
+  function CopyTillSlash(const s: string; APos: Integer): string;
+  var
+    i: Integer;
+  begin
+    i := Pos('\', s);
+    if i = 0 then
+      i := length(s);
+    Result := Copy(s, APos, i - APos);
+  end;
+
+  function CompareStringWithInt(const s1, s2: string): Integer;
+  var
+    i, PosDif, PosDif1, PosDif2: Integer;
+  begin
+    PosDif := 0;
+    i := 1;
+    while (s1[i] <> #0) and (s2[i] <> #0) do
+      begin
+        // останавливаемся на первом не одинаковом символе
+        if (s1[i] <> s2[i]) then
+          begin
+            PosDif := i;
+            // Если хоть один из отличающихся символов - цифра, значит возможно попали в число, и ситуация не однозначна
+            if CharInSet(s1[PosDif], ['0'..'9']) or CharInSet(s2[PosDif], ['0'..'9']) then
+              // Если предыдущие одинаковые символы были цифры - откатываемся к началу этого блока цифр
+              // то есть, к началу первого встреченного неодинакового числа.
+              // Раньше по тексту могли быть другие, одинаковые, числа, но они в этом сравнении роли не сыграют.
+              // Сложные случаи:
+              //   img1001.jpg > img101.jpg отличается 3-й знак числа, у первого он меньше, но меньше второе число
+              //   img0002.jpg > img001.jpg отличается 3-й знак числа, у первого он меньше, но меньше второе число
+              //   img1012.jpg > img101.jpg отличается 4-й знак числа, у второго имени на этом месте не цифра
+              //   img10a.jpg > img10b.jpg цифры не отличаются, но отличается дальнейший текст
+              //   img010a.jpg > img10b.jpg числа по значению не отличаются, но отличается дальнейший текст
+              //   img010a1.jpg > img10a02.jpg первые числа по отличаются по сути, но не по значению, а в дальнейшем тексте отличаются числа.
+              //   img010.jpg > img10.jpg числа по значению не отличаются, и не отличается дальнейший текст, но порядок задать надо бы хоть как-то, но стабильно и однозначно
+              // Из-за варианта fld010\img1.jpg > fld10\img02.jpg, где первые числа
+              // отличаются по сути, но не по значению, а в дальнейшем тексте отличаются числа,
+              // но папки уже разные, и смешивать их содержимое не надо бы,
+              // ниже сравниваем папки без имён их содержимого, отрезав его через CopyTillSlash.
+              while (PosDif > 1) and CharInSet(s1[PosDif - 1], ['0'..'9']) do
+                dec(PosDif);
+            Break;
+          end
+        else
+          Inc(i);
+      end;
+
+    // если до конца одной из строк не нашлось различий, то PosDif остался 0.
+    if PosDif = 0 then
+    begin
+      if (s1[i] = #0) and (s2[i] = #0) then // кончились обе одновременно - значит, равны
+        Exit(0)
+      else if s1[i] = #0 then // кончилась первая, вторая ещё нет, значит вторая больше
+        Exit(-1)
+      else
+        Exit(1); // кончилась вторая, значит первая больше.
     end;
 
-  // если не нашлось различий, то PosDif = 0 остался.
-  if PosDif = 0 then
-    Exit(0)
-  // если хоть куда-то ушагали и где-то остановились, то смотрим, не числа ли оттуда начались
-  // если хоть одно не число, то сравню как строки
-  else if CharInSet(s1[PosDif], ['0'..'9']) and CharInSet(s2[PosDif], ['0'..'9']) then
-    Result := ExtractInt(@s1[PosDif]) - ExtractInt(@s2[PosDif])
-  else
-    Result := CompareText(s1, s2);
+    // если хоть куда-то ушагали и где-то остановились, то смотрим, не числа ли оттуда начались
+    if CharInSet(s1[PosDif], ['0'..'9']) and CharInSet(s2[PosDif], ['0'..'9']) then
+      begin
+        PosDif1 := PosDif;
+        PosDif2 := PosDif;
+        Result := ExtractInt(s1, PosDif1) - ExtractInt(s2, PosDif2);
+        // Числа могут оказаться одинаковые, но по-разному написанные,
+        // например, с разным количеством ведущих нулей.
+        // В этом случае нужно сравнить остаток строки (до ближайшего '\', если он есть
+        //   - см. ниже пример про fld010\img1.jpg > fld10\img02.jpg!),
+        // а если там отличия не надётся, то пытаться найти более тонкое отличие в найденных числах.
+        // Можно сравнить в них количество знаков, для начала.
+        // Порядок получается такой:
+        // 1аа
+        // 01аа // число как у 1аа, конец не различается, но больше знаков в числе
+        // 1ав  // число как у 1аа и 01аа, но строка дальще - больше, чем аа
+        // 01вв // число как у всех, а строка - ещё больше, чем у всех.
+        if Result = 0 then
+          Result := CompareStringWithInt(CopyTillSlash(s1, PosDif1), CopyTillSlash(s2, PosDif2));
+        if Result = 0 then
+          Result := PosDif1 - PosDif2;
+        Assert(Result <> 0, 'Need to find more differences in "' + s1 + '" and "' + s2 + '"');
+      end
+    else
+      // если хоть одно не число, то сравню как строки, по правилам сравнения
+      // имён файлов, с учётом текущей кодовой страницы (но без региональной регистрозависимости, так как уже на входе был применён AnsUpperCase)
+      // и можно с начала строк, до отличия функция и сама доберётся быстрее,
+      // чем если тут одинаковое начало отрезать у двух строк
+      // однако, разделители папок в пути должны иметь приоритет перед любыми символами, типа пробелов, например
+      // поэтому меняю их на 1-ый символ.
+      Result := AnsiCompareFileName(StringReplace(s1, '\', #1, [rfReplaceAll]), StringReplace(s2, '\', #1, [rfReplaceAll]));
+  end;
+
+begin
+  if Item1 = Item2 then
+    Exit(0);
+  Result := CompareStringWithInt(AnsiUpperCase(TFrameInfo(Item1).RelativeFileName), AnsiUpperCase(TFrameInfo(Item2).RelativeFileName));
 end;
 
 procedure TMainForm.LoadPhotoFolder(ANewPhotoFolder: string);
