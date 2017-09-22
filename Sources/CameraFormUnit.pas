@@ -47,6 +47,7 @@ type
     chkMinimize: TCheckBox;
     tbOpacity: TTrackBar;
     lblOpacity: TLabel;
+    btnReloadOverlay: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -65,6 +66,7 @@ type
     procedure chkOverlayClick(Sender: TObject);
     procedure btnSelectOverlayClick(Sender: TObject);
     procedure tbOpacityChange(Sender: TObject);
+    procedure btnReloadOverlayClick(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
@@ -231,6 +233,11 @@ begin
   imgPreview.Picture.Bitmap.Assign(FVideoBitmap);
 
   LastPreviewFrameTimeStamp := GetTickCount;
+end;
+
+procedure TCameraForm.btnReloadOverlayClick(Sender: TObject);
+begin
+  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
 end;
 
 procedure TCameraForm.btnFolderLookupClick(Sender: TObject);

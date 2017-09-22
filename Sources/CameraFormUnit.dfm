@@ -34,7 +34,6 @@ object CameraForm: TCameraForm
     Center = True
     Proportional = True
     Stretch = True
-    ExplicitWidth = 511
   end
   object lblCamSelector: TLabel
     Left = 17
@@ -361,7 +360,6 @@ object CameraForm: TCameraForm
     TabOrder = 1
     Text = #1050#1072#1084#1077#1088#1072
     OnChange = cbCamSelectorChange
-    ExplicitWidth = 363
   end
   object btnNextCam: TButton
     Left = 563
@@ -372,7 +370,6 @@ object CameraForm: TCameraForm
     Caption = #1044#1088#1091#1075#1072#1103
     TabOrder = 2
     OnClick = btnNextCamClick
-    ExplicitLeft = 475
   end
   object cbbResolution: TComboBox
     Left = 64
@@ -383,7 +380,6 @@ object CameraForm: TCameraForm
     TabOrder = 3
     Text = '640'#1093'480'
     OnChange = cbbResolutionChange
-    ExplicitWidth = 363
   end
   object btnPreferences: TButton
     Left = 521
@@ -394,7 +390,6 @@ object CameraForm: TCameraForm
     Caption = #1055#1072#1088#1072#1084#1077#1090#1088#1099
     TabOrder = 4
     OnClick = btnPreferencesClick
-    ExplicitLeft = 433
   end
   object btnTimeLapse: TButton
     Left = 279
@@ -443,7 +438,6 @@ object CameraForm: TCameraForm
     ParentCtl3D = False
     TabOrder = 8
     Text = 'edtFolder'
-    ExplicitWidth = 462
   end
   object btnFolderLookup: TButton
     Left = 590
@@ -455,7 +449,6 @@ object CameraForm: TCameraForm
     TabOrder = 9
     Visible = False
     OnClick = btnFolderLookupClick
-    ExplicitLeft = 502
   end
   object btnStart: TButton
     Left = 521
@@ -466,12 +459,11 @@ object CameraForm: TCameraForm
     Caption = #1055#1091#1089#1082
     TabOrder = 10
     OnClick = btnStartClick
-    ExplicitLeft = 433
   end
   object edtOverlay: TEdit
     Left = 113
     Top = 451
-    Width = 471
+    Width = 448
     Height = 19
     Anchors = [akLeft, akRight, akBottom]
     BevelInner = bvNone
@@ -481,10 +473,9 @@ object CameraForm: TCameraForm
     ParentCtl3D = False
     TabOrder = 11
     Text = 'edtOverlay'
-    ExplicitWidth = 383
   end
   object btnSelectOverlay: TButton
-    Left = 590
+    Left = 567
     Top = 449
     Width = 25
     Height = 25
@@ -492,7 +483,6 @@ object CameraForm: TCameraForm
     Caption = '...'
     TabOrder = 12
     OnClick = btnSelectOverlayClick
-    ExplicitLeft = 502
   end
   object chkOverlay: TCheckBox
     Left = 14
@@ -527,7 +517,16 @@ object CameraForm: TCameraForm
     ShowSelRange = False
     TabOrder = 15
     OnChange = tbOpacityChange
-    ExplicitWidth = 403
+  end
+  object btnReloadOverlay: TButton
+    Left = 590
+    Top = 449
+    Width = 25
+    Height = 25
+    Anchors = [akRight, akBottom]
+    Caption = #8634
+    TabOrder = 16
+    OnClick = btnReloadOverlayClick
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer

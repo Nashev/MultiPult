@@ -7995,8 +7995,8 @@ object MainForm: TMainForm
     end
     object actWorkingSetManagement: TAction
       Caption = #1059#1087#1088#1072#1074#1083#1077#1085#1080#1077'...'
-      Enabled = False
       OnExecute = actWorkingSetManagementExecute
+      OnUpdate = actWorkingSetManagementUpdate
     end
     object actRefreshPreview: TAction
       Caption = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083
@@ -8024,6 +8024,15 @@ object MainForm: TMainForm
       ShortCut = 16416
       OnExecute = actReplaceInMovieExecute
       OnUpdate = actReplaceInMovieUpdate
+    end
+    object actReloadPhotoFolder: TAction
+      Caption = #1055#1077#1088#1077#1079#1072#1075#1088#1091#1079#1080#1090#1100' '#1074#1089#1077' '#1082#1072#1076#1088#1099' '#1080#1079' '#1087#1072#1087#1082#1080'...'
+      ShortCut = 24658
+      OnExecute = actReloadPhotoFolderExecute
+      OnUpdate = actReloadPhotoFolderUpdate
+    end
+    object actClearBookmarks: TAction
+      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080' '#1080' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
     end
   end
   object MainMenu: TMainMenu
@@ -8307,7 +8316,7 @@ object MainForm: TMainForm
       object mmiPlayingForward: TMenuItem
         Action = actPlayForward
       end
-      object mmiSeparatorBookmarkManagement: TMenuItem
+      object mmiSeparatorRecordNavigation: TMenuItem
         Caption = '-'
       end
       object mmiPrevRecordFrame: TMenuItem
@@ -8320,10 +8329,10 @@ object MainForm: TMainForm
         ShortCut = 40
         OnClick = mmiNextRecordFrameClick
       end
-      object N6: TMenuItem
+      object mmiSeparatorBookmarkManagement: TMenuItem
         Caption = '-'
       end
-      object N3: TMenuItem
+      object mmiBookmarks: TMenuItem
         Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1079#1072#1082#1083#1072#1076#1082#1091
         object mmiNewBookmark: TMenuItem
           Action = actNewBookmark
@@ -8333,21 +8342,25 @@ object MainForm: TMainForm
           ShortCut = 32816
         end
       end
-      object mmiSeparatorBookmarks: TMenuItem
+      object mmiGoToBookmarks: TMenuItem
         Caption = #1055#1077#1088#1077#1081#1090#1080' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
         object mmiGotoBookmark0: TMenuItem
           Action = actGotoBookmark0
         end
       end
-      object mmiN1: TMenuItem
+      object mmiTeleports: TMenuItem
         Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
         object mmiToggleTeleport0: TMenuItem
           Action = actToggleTeleport0
         end
       end
-      object N1: TMenuItem
+      object mmiSuspendTeleports: TMenuItem
         Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
         ShortCut = 16
+      end
+      object mmiClearBookmarks: TMenuItem
+        Action = actClearBookmarks
+        OnClick = mmiClearBookmarksClick
       end
     end
     object mmiMode: TMenuItem

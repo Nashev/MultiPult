@@ -39,7 +39,7 @@ const
 type
   TFrameInfo = class
   private
-    FPath, FFileName: string;
+    FRelativePath, FFileName: string;
   public
     Preview: TBitmap;
     Iconic: TBitmap;
@@ -48,10 +48,10 @@ type
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property FileName: string read FFileName;
-    property Path: string read FPath;
+    property RelativePath: string read FRelativePath;
     function FullFileName: string;
     function RelativeFileName: string;
-    constructor Create(APath, AFileName: string);
+    constructor Create(ARelativePath, AFileName: string);
     destructor Destroy; override;
   end;
 
@@ -110,14 +110,14 @@ type
     OpenPictureDialog: TOpenPictureDialog;
     mmiNext: TMenuItem;
     mmiPrev: TMenuItem;
-    mmiSeparatorBookmarkManagement: TMenuItem;
+    mmiSeparatorRecordNavigation: TMenuItem;
     mmiNewBookmark: TMenuItem;
     mmiToggleBookmark0: TMenuItem;
     mmiExport: TMenuItem;
     mmiRecord: TMenuItem;
     actGotoBookmark0: TAction;
     mmiGotoBookmark0: TMenuItem;
-    mmiSeparatorBookmarks: TMenuItem;
+    mmiGoToBookmarks: TMenuItem;
     MultimediaTimer: TMultimediaTimer;
     actPlayForward: TAction;
     mmiPlayingForward: TMenuItem;
@@ -148,7 +148,7 @@ type
     mmiBackwardWhilePressed: TMenuItem;
     SaveToAVIDialog: TSaveDialog;
     RecordSplitter: TSplitter;
-    mmiN1: TMenuItem;
+    mmiTeleports: TMenuItem;
     actToggleTeleport0: TAction;
     mmiToggleTeleport0: TMenuItem;
     mmiMode: TMenuItem;
@@ -195,7 +195,7 @@ type
     mmiExportResolutionFirstFrame: TMenuItem;
     actExportResolutionCustom: TAction;
     actExportResolutionFirstFrame: TAction;
-    N1: TMenuItem;
+    mmiSuspendTeleports: TMenuItem;
     mmiExportSeparator: TMenuItem;
     mmiSelectAudioFile: TMenuItem;
     actSelectAudioFile: TAction;
@@ -204,7 +204,7 @@ type
     lblAudioFileName: TLabel;
     N2: TMenuItem;
     mmiUseMicrophone: TMenuItem;
-    N3: TMenuItem;
+    mmiBookmarks: TMenuItem;
     N4: TMenuItem;
     mmiWorkingSetManagement: TMenuItem;
     mmiHideFrame: TMenuItem;
@@ -238,7 +238,7 @@ type
     N5: TMenuItem;
     actReplaceInMovie: TAction;
     mmiReplaceInMovie: TMenuItem;
-    N6: TMenuItem;
+    mmiSeparatorBookmarkManagement: TMenuItem;
     mmiPrevRecordFrame: TMenuItem;
     mmiNextRecordFrame: TMenuItem;
     mmiIncCurrentStepInterval: TMenuItem;
@@ -249,6 +249,9 @@ type
     pnlFramesetMode: TPanel;
     btnFrameSetExpand: TSpeedButton;
     btnFrameSetZoom: TSpeedButton;
+    actReloadPhotoFolder: TAction;
+    actClearBookmarks: TAction;
+    mmiClearBookmarks: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -367,6 +370,10 @@ type
     procedure lvFramesetDragDrop(Sender, Source: TObject; X, Y: Integer);
     procedure lvFramesetDragOver(Sender, Source: TObject; X, Y: Integer;
       State: TDragState; var Accept: Boolean);
+    procedure actReloadPhotoFolderExecute(Sender: TObject);
+    procedure actReloadPhotoFolderUpdate(Sender: TObject);
+    procedure mmiClearBookmarksClick(Sender: TObject);
+    procedure actWorkingSetManagementUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -434,6 +441,8 @@ type
     function CalculateSoundFramesCount: Integer;
     procedure ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
     procedure FreeAdvertisementFrame;
+    procedure LoadPhotoFolder;
+    procedure ClearTeleports;
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -447,7 +456,7 @@ type
     function WorkingFrameToWorkingSetX(AWorkingSetFrame: TRecordedFrame): Integer;
     function WorkingSetXToWorkingFrame(X: Integer): TRecordedFrame;
 //    Drawing: Boolean;
-    procedure LoadPhotoFolder(ANewPhotoFolder: string);
+    procedure OpenNewPhotoFolder(ANewPhotoFolder: string);
     procedure RecalculatePreview;
     procedure CreateAdvertisementFrame;
     procedure ShowTimes;
@@ -582,7 +591,7 @@ begin
     , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
     {$ENDIF}
   ) then
-    LoadPhotoFolder(NewPhotoFolder + '\');
+    OpenNewPhotoFolder(NewPhotoFolder + '\');
 end;
 
 procedure TMainForm.actShowCameraFormExecute(Sender: TObject);
@@ -684,6 +693,14 @@ var
 begin
   for i := Low(Bookmarks) to High(Bookmarks) do
     Bookmarks[i] := -1;
+end;
+
+procedure TMainForm.ClearTeleports;
+var
+  i: Integer;
+begin
+  for i := 0 to FrameInfoCount - 1 do
+    FrameInfoList[i].Teleport := -1;
 end;
 
 procedure TMainForm.CreateAdvertisementFrame;
@@ -990,7 +1007,7 @@ begin
 //  DoubleBuffered := True;
   if ParamCount >= 1 then
     if DirectoryExists(ParamStr(1)) then
-      LoadPhotoFolder(ParamStr(1))
+      OpenNewPhotoFolder(ParamStr(1))
     else
       OpenMovie(ParamStr(1));
 
@@ -1034,7 +1051,7 @@ begin
       if DirectoryExists(FileName) then
         begin
           SaveBeforeClose(rs_SaveBeforeChooseFolderRequest);
-          LoadPhotoFolder(string(FileName) + '\')
+          OpenNewPhotoFolder(string(FileName) + '\')
         end
       else if LowerCase(ExtractFileExt(FileName)) = '.mp' then
         begin
@@ -1288,10 +1305,21 @@ begin
   Result := CompareStringWithInt(AnsiUpperCase(TFrameInfo(Item1).RelativeFileName), AnsiUpperCase(TFrameInfo(Item2).RelativeFileName));
 end;
 
-procedure TMainForm.LoadPhotoFolder(ANewPhotoFolder: string);
+procedure TMainForm.LoadPhotoFolder;
 
 resourcestring
   rs_ScaningStatus = 'Чтение папки: ';
+
+  function FrameLoaded(const ARelativePath, AFileName: string): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := False;
+    for i := 0 to FrameInfoCount - 1 do
+      with FrameInfoList[i] do
+        if (RelativePath = ARelativePath) and (FileName = AFileName) then
+          Exit(True);
+  end;
 
   procedure InternalLoadDirectory(ARelativePath: string);
   var
@@ -1313,7 +1341,8 @@ resourcestring
              (ext = '.emf')
           then
             begin
-              FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, Rec.Name));
+              if not FrameLoaded(ARelativePath, Rec.Name) then // это для перезагрузки папки актуально
+                FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, Rec.Name));
             end;
           if ((Rec.Attr and faDirectory) <> 0) and (Rec.Name <> '.') and (Rec.Name <> '..') then
             InternalLoadDirectory(ARelativePath + Rec.Name + '\');
@@ -1321,11 +1350,36 @@ resourcestring
         {$IFDEF FPC}FindCloseUTF8{$ELSE}FindClose{$ENDIF}(Rec);
       end;
   end;
-var
-  i: Integer;
-//  i: Integer;
-  PrevFramePath: string;
-  NextBookmarkIndex: Integer;
+
+  procedure FillWorkingSet;
+  var
+    PrevFramePath: string;
+    NextBookmarkIndex: Integer;
+    i: Integer;
+  begin
+    if FFrameInfoList.Count > 0 then
+      PrevFramePath := TFrameInfo(FFrameInfoList[0]).RelativePath;
+    NextBookmarkIndex := 0;
+    for i := 0 to FFrameInfoList.Count - 1 do
+    begin
+      if (PrevFramePath <> TFrameInfo(FFrameInfoList[i]).RelativePath) and (NextBookmarkIndex <= High(Bookmarks)) then
+      begin
+        Bookmarks[NextBookmarkIndex] := i;
+        inc(NextBookmarkIndex);
+        PrevFramePath := TFrameInfo(FFrameInfoList[i]).RelativePath;
+      end;
+      TRecordedFrame.Create(WorkingSetFrames, i);
+    end;
+  end;
+
+begin
+  WorkingSetFrames.Clear;
+  InternalLoadDirectory('');
+  FFrameInfoList.Sort(CompareFramesFileName);
+  FillWorkingSet;
+end;
+
+procedure TMainForm.OpenNewPhotoFolder(ANewPhotoFolder: string);
 begin
   actNew.Execute;
   ClearBookmarks;
@@ -1338,29 +1392,38 @@ begin
   SetCaption('');
 
   UnloadFrames;
-
-  InternalLoadDirectory('');
-
-  FFrameInfoList.Sort(CompareFramesFileName);
-  if FFrameInfoList.Count > 0 then
-    PrevFramePath := TFrameInfo(FFrameInfoList[0]).Path;
-  NextBookmarkIndex := 0;
-  for i := 0 to FFrameInfoList.Count - 1 do
-    begin
-      if (PrevFramePath <> TFrameInfo(FFrameInfoList[i]).Path) and (NextBookmarkIndex <= High(Bookmarks)) then
-        begin      
-          Bookmarks[NextBookmarkIndex] := i;
-          inc(NextBookmarkIndex);
-          PrevFramePath := TFrameInfo(FFrameInfoList[i]).Path;
-        end;        
-      TRecordedFrame.Create(WorkingSetFrames, i);
-    end;
+  LoadPhotoFolder;
 
   DisplayedFrameIndex := 0; // same as WorkingSetFrames[0].FFrameInfoIndex;
   Saved := True;
   CaptureFirstFrameSizes;
 
   UpdateActions;
+end;
+
+procedure TMainForm.actReloadPhotoFolderExecute(Sender: TObject);
+resourcestring
+  rs_RelopadPhotoFolder =
+    'При перезагрузке кадры будут упорядочены по именам файлов,'+#13#10+
+    'а закладки будут поставлены на первые кадрах дочерних папок.'+#13#10+
+    'Перезагрузить?';
+begin
+  Stop;
+  case MessageBox(
+    0,
+    PChar(rs_RelopadPhotoFolder),
+    PChar(Application.Title),
+    MB_ICONWARNING or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+  of
+    IDCANCEL: Abort;
+  end;
+  ClearBookmarks;
+  LoadPhotoFolder;
+end;
+
+procedure TMainForm.actReloadPhotoFolderUpdate(Sender: TObject);
+begin
+  actReloadPhotoFolder.Enabled := PhotoFolder <> '';
 end;
 
 procedure TMainForm.actAboutExecute(Sender: TObject);
@@ -1386,6 +1449,12 @@ end;
 procedure TMainForm.mmiBackwardWhilePressedClick(Sender: TObject);
 begin
  //
+end;
+
+procedure TMainForm.mmiClearBookmarksClick(Sender: TObject);
+begin
+  ClearBookmarks;
+  ClearTeleports;
 end;
 
 procedure TMainForm.mmiNewBookmarkClick(Sender: TObject);
@@ -1960,7 +2029,7 @@ begin
 
   CurrentWorkingSetFrameIndex := CurrentWorkingSetFrame.Index;
   OriginalFileName := FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].FileName;
-  if FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].Path = 'Duplicates\' then
+  if FrameInfoList[CurrentWorkingSetFrame.FrameInfoIndex].RelativePath = 'Duplicates\' then
     begin
       NewFileName := ChangeFileExt(OriginalFileName, '');
       while (Length(NewFileName) > 0) and CharInSet(NewFileName[Length(NewFileName)], ['0'..'9']) do
@@ -3387,7 +3456,13 @@ end;
 
 procedure TMainForm.actWorkingSetManagementExecute(Sender: TObject);
 begin
-  WorkingSetManagementForm.Execute;
+  btnFrameSetExpandClick(nil);
+  actWorkingSetManagement.Checked := lvFrameset.Visible;
+end;
+
+procedure TMainForm.actWorkingSetManagementUpdate(Sender: TObject);
+begin
+  actWorkingSetManagement.Enabled := PhotoFolder <> '';
 end;
 
 procedure TMainForm.actStepNextExecute(Sender: TObject);
@@ -3770,9 +3845,9 @@ end;
 
 { TFrame }
 
-constructor TFrameInfo.Create(APath, AFileName: string);
+constructor TFrameInfo.Create(ARelativePath, AFileName: string);
 begin
-  FPath := APath;
+  FRelativePath := ARelativePath;
   FFileName := AFileName;
   Teleport := -1;
 end;
@@ -3785,7 +3860,7 @@ end;
 
 function TFrameInfo.RelativeFileName: string;
 begin
-  Result := Path + FileName;
+  Result := RelativePath + FileName;
 end;
 
 function TFrameInfo.FullFileName: string;
