@@ -428,7 +428,7 @@ object CameraForm: TCameraForm
   object edtFolder: TEdit
     Left = 65
     Top = 424
-    Width = 550
+    Width = 519
     Height = 19
     Anchors = [akLeft, akRight, akBottom]
     BevelInner = bvNone
@@ -438,6 +438,7 @@ object CameraForm: TCameraForm
     ParentCtl3D = False
     TabOrder = 8
     Text = 'edtFolder'
+    OnDblClick = btnFolderLookupClick
   end
   object btnFolderLookup: TButton
     Left = 590
@@ -473,6 +474,7 @@ object CameraForm: TCameraForm
     ParentCtl3D = False
     TabOrder = 11
     Text = 'edtOverlay'
+    OnDblClick = btnSelectOverlayClick
   end
   object btnSelectOverlay: TButton
     Left = 567

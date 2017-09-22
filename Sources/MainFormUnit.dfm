@@ -7186,7 +7186,7 @@ object MainForm: TMainForm
       34)
     object LevelGauge: TGauge
       Left = 686
-      Top = 7
+      Top = 5
       Width = 105
       Height = 22
       Hint = #1048#1085#1076#1080#1082#1072#1090#1086#1088' '#1084#1080#1082#1088#1086#1092#1086#1085#1072
@@ -7210,7 +7210,7 @@ object MainForm: TMainForm
     end
     object lblAudioFileName: TLabel
       Left = 578
-      Top = 12
+      Top = 10
       Width = 207
       Height = 13
       Alignment = taRightJustify
@@ -7649,7 +7649,7 @@ object MainForm: TMainForm
     object tlbNavigation: TToolBar
       AlignWithMargins = True
       Left = 303
-      Top = 0
+      Top = 1
       Width = 208
       Height = 30
       Align = alNone
@@ -7854,6 +7854,7 @@ object MainForm: TMainForm
       Hint = #1055#1077#1088#1077#1081#1090#1080' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
       ShortCut = 48
       OnExecute = actGotoBookmark0Execute
+      OnUpdate = actNavigate_Update
     end
     object actPlay: TAction
       Caption = #1055#1088#1086#1075#1088#1072#1090#1100' '#1079#1072#1087#1080#1089#1072#1085#1085#1086#1077
@@ -7889,6 +7890,7 @@ object MainForm: TMainForm
       Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091' 0'
       ShortCut = 8240
       OnExecute = actToggleTeleport0Execute
+      OnUpdate = actNavigate_Update
     end
     object actPreviewMode: TAction
       AutoCheck = True
@@ -8033,6 +8035,20 @@ object MainForm: TMainForm
     end
     object actClearBookmarks: TAction
       Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080' '#1080' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
+      OnExecute = actClearBookmarksClick
+      OnUpdate = actNavigate_Update
+    end
+    object actNextRecordFrame: TAction
+      Caption = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
+      ShortCut = 40
+      OnExecute = actNextRecordFrameClick
+      OnUpdate = actHaveRecordedFrame
+    end
+    object actPrevRecordFrame: TAction
+      Caption = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
+      ShortCut = 38
+      OnExecute = actPrevRecordFrameClick
+      OnUpdate = actHaveRecordedFrame
     end
   end
   object MainMenu: TMainMenu
@@ -8262,6 +8278,9 @@ object MainForm: TMainForm
         Action = actRefreshPreview
         Caption = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1082#1072#1076#1088#1072
       end
+      object mmiReloadPhotoFolder: TMenuItem
+        Action = actReloadPhotoFolder
+      end
       object N15: TMenuItem
         Caption = '-'
         Enabled = False
@@ -8320,14 +8339,10 @@ object MainForm: TMainForm
         Caption = '-'
       end
       object mmiPrevRecordFrame: TMenuItem
-        Caption = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
-        ShortCut = 38
-        OnClick = mmiPrevRecordFrameClick
+        Action = actPrevRecordFrame
       end
       object mmiNextRecordFrame: TMenuItem
-        Caption = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1080
-        ShortCut = 40
-        OnClick = mmiNextRecordFrameClick
+        Action = actNextRecordFrame
       end
       object mmiSeparatorBookmarkManagement: TMenuItem
         Caption = '-'
@@ -8360,7 +8375,6 @@ object MainForm: TMainForm
       end
       object mmiClearBookmarks: TMenuItem
         Action = actClearBookmarks
-        OnClick = mmiClearBookmarksClick
       end
     end
     object mmiMode: TMenuItem

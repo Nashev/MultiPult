@@ -252,6 +252,9 @@ type
     actReloadPhotoFolder: TAction;
     actClearBookmarks: TAction;
     mmiClearBookmarks: TMenuItem;
+    mmiReloadPhotoFolder: TMenuItem;
+    actNextRecordFrame: TAction;
+    actPrevRecordFrame: TAction;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -362,8 +365,8 @@ type
     procedure actReplaceInMovieUpdate(Sender: TObject);
     procedure actReplaceInMovieExecute(Sender: TObject);
     procedure mmiIncCurrentStepIntervalClick(Sender: TObject);
-    procedure mmiPrevRecordFrameClick(Sender: TObject);
-    procedure mmiNextRecordFrameClick(Sender: TObject);
+    procedure actPrevRecordFrameClick(Sender: TObject);
+    procedure actNextRecordFrameClick(Sender: TObject);
     procedure mmiDecCurrentStepIntervalClick(Sender: TObject);
     procedure mmiShowNeighbourFramesClick(Sender: TObject);
     procedure btnFrameSetExpandClick(Sender: TObject);
@@ -372,8 +375,9 @@ type
       State: TDragState; var Accept: Boolean);
     procedure actReloadPhotoFolderExecute(Sender: TObject);
     procedure actReloadPhotoFolderUpdate(Sender: TObject);
-    procedure mmiClearBookmarksClick(Sender: TObject);
+    procedure actClearBookmarksClick(Sender: TObject);
     procedure actWorkingSetManagementUpdate(Sender: TObject);
+    procedure actHaveRecordedFrame(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -808,7 +812,7 @@ begin
   RepaintAll;
 end;
 
-procedure TMainForm.mmiPrevRecordFrameClick(Sender: TObject);
+procedure TMainForm.actPrevRecordFrameClick(Sender: TObject);
 begin
   ChangeCurrentRecordPosition(CurrentRecordPosition - 1);
 end;
@@ -818,7 +822,7 @@ begin
   RepaintAll;
 end;
 
-procedure TMainForm.mmiNextRecordFrameClick(Sender: TObject);
+procedure TMainForm.actNextRecordFrameClick(Sender: TObject);
 begin
   ChangeCurrentRecordPosition(CurrentRecordPosition + 1);
 end;
@@ -1451,7 +1455,7 @@ begin
  //
 end;
 
-procedure TMainForm.mmiClearBookmarksClick(Sender: TObject);
+procedure TMainForm.actClearBookmarksClick(Sender: TObject);
 begin
   ClearBookmarks;
   ClearTeleports;
@@ -2015,6 +2019,11 @@ end;
 procedure TMainForm.actHaveDisplayedFrame(Sender: TObject);
 begin
   TAction(Sender).Enabled := DisplayedFrameIndex <> -1;
+end;
+
+procedure TMainForm.actHaveRecordedFrame(Sender: TObject);
+begin
+  TAction(Sender).Enabled := RecordedFrames.Count > 0;
 end;
 
 procedure TMainForm.actDuplicateFrameClick(Sender: TObject);
@@ -3742,6 +3751,7 @@ begin
       end;
       pbWorkingSet.Invalidate;
     end;
+  actWorkingSetManagement.Checked := lvFrameset.Visible;
 end;
 
 procedure TMainForm.btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
