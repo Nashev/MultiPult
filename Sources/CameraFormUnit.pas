@@ -16,13 +16,13 @@ uses
   Winapi.Windows, Winapi.Messages, VCL.FileCtrl, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, IniFiles, JPEG,
   VFrames, VSample, Direct3D9, DirectDraw, DirectShow9, DirectSound, DXTypes,
-  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer, Vcl.Imaging.pngimage;
+  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer, Vcl.Imaging.pngimage, System.SyncObjs;
 
 type
-  TOnNewFrame = procedure(AFileName: string) of object;
+  TNewFrameEvent = procedure(AFileName: string) of object;
+  TOpacityChangedEvent = procedure(AOpacity: byte) of object;
 
   TCameraForm = class(TForm)
-    imgPreview: TImage;
     btnMakePhoto: TButton;
     cbCamSelector: TComboBox;
     btnNextCam: TButton;
@@ -40,7 +40,6 @@ type
     edtFolder: TEdit;
     btnFolderLookup: TButton;
     btnStart: TButton;
-    imgOverlay: TImage;
     edtOverlay: TEdit;
     btnSelectOverlay: TButton;
     chkOverlay: TCheckBox;
@@ -52,7 +51,6 @@ type
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
-    procedure FormShow(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure cbCamSelectorChange(Sender: TObject);
     procedure cbbResolutionChange(Sender: TObject);
@@ -65,28 +63,46 @@ type
     procedure FormResize(Sender: TObject);
     procedure chkOverlayClick(Sender: TObject);
     procedure btnSelectOverlayClick(Sender: TObject);
-    procedure tbOpacityChange(Sender: TObject);
     procedure btnReloadOverlayClick(Sender: TObject);
+    procedure ToggleVisibility(Sender: TObject);
+    procedure tbOpacityChange(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
+    VideoBitmapCriticalSection: TCriticalSection;
     FPhotoFolder: string;
-    FOnNewFrame: TOnNewFrame;
+    FOnNewFrame: TNewFrameEvent;
     LastPhotoTimeStamp: DWord;
     LastPreviewFrameTimeStamp: DWord;
     LastFileName: string;
-    CameraStopped: Boolean;
+    FActive: Boolean;
+    FimgCamPreview: TImage;
+    FimgOverlay: TImage;
+    FCanChangePhotoFolder: Boolean;
+    FOnOpacityChanged: TOpacityChangedEvent;
+    FOnActiveChanged: TNotifyEvent;
     procedure GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
-    procedure MakePhoto;
     function IntervalToString(AInterval: Integer): string;
     procedure SetPhotoFolder(const Value: string);
     procedure LookupPhotoFolder;
+    procedure SetActive(const Value: Boolean);
     procedure StartCamera;
     procedure StopCamera;
+    procedure SetImgCamPreview(const Value: TImage);
+    procedure SetImgOverlay(const Value: TImage);
+    procedure DoActiveChanged;
+
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
-    property OnNewFrame: TOnNewFrame read FOnNewFrame write FOnNewFrame;
-    procedure Execute(APhotoFolder: string; AOnNewFrame: TOnNewFrame);
+    property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
+    property OnOpacityChanged: TOpacityChangedEvent read FOnOpacityChanged write FOnOpacityChanged;
+    property OnActiveChanged: TNotifyEvent read FOnActiveChanged write FOnActiveChanged;
+    property imgCamPreview: TImage read FimgCamPreview write SetImgCamPreview;
+    property imgOverlay: TImage read FimgOverlay write SetImgOverlay;
+    property Active: Boolean read FActive write SetActive;
+    procedure DisablePhotoFolderLookup;
+    procedure MakePhoto;
   end;
 
 var
@@ -96,28 +112,24 @@ implementation
 
 {$R *.dfm}
 
-// Executa ao iniciar o programa.
+procedure TCameraForm.ToggleVisibility(Sender: TObject);
+begin
+  Visible := not Visible; // используется в program WebcamMultFrameCapture;
+end;
+
 procedure TCameraForm.FormCreate(Sender: TObject);
-begin
-  FVideoBitmap := TBitmap.Create;
-  FVideoImage := TVideoImage.Create;
-  FVideoImage.OnNewVideoFrame := GetNewFrame;
-
-  edtOverlay.Text := '';
-end;
-
-procedure TCameraForm.FormDestroy(Sender: TObject);
-begin
-  FVideoImage.Free;
-  FVideoBitmap.Free;
-end;
-
-procedure TCameraForm.FormShow(Sender: TObject);
 var
   LastUsedCam: string;
   LastUsedResolution: Integer;
   IniFile: TIniFile;
 begin
+  FVideoBitmap := TBitmap.Create;
+  VideoBitmapCriticalSection := TCriticalSection.Create;
+  FVideoImage := TVideoImage.Create;
+  FVideoImage.OnNewVideoFrame := GetNewFrame;
+
+  edtOverlay.Text := '';
+
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
     LastUsedCam := IniFile.ReadString('LastUsed', 'Camera', '');
@@ -134,34 +146,28 @@ begin
       if cbCamSelector.ItemIndex = -1 then
         cbCamSelector.ItemIndex := 0;
       FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
-      cbbResolution.Items.Clear;
-      FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
+      try
+        cbbResolution.Items.Clear;
+        FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
+      finally
+        FVideoImage.VideoStop;
+      end;
       LastUsedResolution := cbbResolution.Items.IndexOf(IniFile.ReadString('LastUsed', 'Resolution', ''));
       if LastUsedResolution < 0 then
         LastUsedResolution := 0;
       cbbResolution.ItemIndex := LastUsedResolution;
-      FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
+//       FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
     end;
 
     btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
 
-    imgOverlay.Visible := IniFile.ReadBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
-    chkOverlay.Checked := imgOverlay.Visible;
+    chkOverlay.Checked := IniFile.ReadBool('LastUsed', 'ShowOverlay', chkOverlay.Checked);
     edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
-    if FileExists(edtOverlay.Text) then
-      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
 
-    AlphaBlendValue := IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue);
+    tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
 
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
-
-    if PhotoFolder = '' then // если в момент этой инициализации окна
-    // папка  ещё не указана, то значит вызов не из мультипульта, и можно папку дать лукапить.
-      begin
-        btnFolderLookup.Visible := True;
-        edtFolder.Width := edtFolder.Width - btnFolderLookup.Width - 8;
-      end;
 
     if PhotoFolder = '' then
       PhotoFolder := ParamStr(1);
@@ -171,10 +177,10 @@ begin
 
     Left := IniFile.ReadInteger('LastUsed', 'Left', Left);
     Top := IniFile.ReadInteger('LastUsed', 'Top', Top);
-    Width := IniFile.ReadInteger('LastUsed', 'Width', Width);
-    Height := IniFile.ReadInteger('LastUsed', 'Height', Height);
-  
-    WindowState := TWindowState(IniFile.ReadInteger('LastUsed', 'WindowState', Ord(WindowState)));
+//    Width := IniFile.ReadInteger('LastUsed', 'Width', Width);
+//    Height := IniFile.ReadInteger('LastUsed', 'Height', Height);
+//
+//    WindowState := TWindowState(IniFile.ReadInteger('LastUsed', 'WindowState', Ord(WindowState)));
     chkMinimize.Checked := IniFile.ReadBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
@@ -182,6 +188,26 @@ begin
 
   if LowerCase(ParamStr(2)) = '/timelapse' then
     btnTimeLapse.Click;
+end;
+
+procedure TCameraForm.FormDestroy(Sender: TObject);
+begin
+  // наивные попытки выключить таймер. Но этот всё равно срабатывает в параллельном потоке и иногда падает
+  TimeLapseTimer.Enabled := False;
+  TimeLapseStatusTimer.Enabled := False;
+  TimeLapseTimer.OnTimer := nil;
+  TimeLapseStatusTimer.OnTimer := nil;
+  Application.ProcessMessages;
+  Sleep(300);
+  // StopCamera;
+
+  VideoBitmapCriticalSection.Enter;
+  try
+    FreeAndNil(FVideoImage);
+    FreeAndNil(FVideoBitmap);
+  finally
+    VideoBitmapCriticalSection.Free;
+  end;
 end;
 
 procedure TCameraForm.FormHide(Sender: TObject);
@@ -202,35 +228,58 @@ begin
     IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
     IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
 
-    IniFile.WriteInteger('LastUsed', 'Opacity', AlphaBlendValue);
+    IniFile.WriteInteger('LastUsed', 'Opacity', tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
 
-    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
-    if WindowState = wsNormal then
-      begin
+//    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
+//    if WindowState = wsNormal then
+//      begin
         IniFile.WriteInteger('LastUsed', 'Left', Left);
         IniFile.WriteInteger('LastUsed', 'Top', Top);
-        IniFile.WriteInteger('LastUsed', 'Width', Width);
-        IniFile.WriteInteger('LastUsed', 'Height', Height);
-      end;
+//        IniFile.WriteInteger('LastUsed', 'Width', Width);
+//        IniFile.WriteInteger('LastUsed', 'Height', Height);
+//      end;
     IniFile.WriteBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
   end;
-  StopCamera;
+  // StopCamera;
+end;
+
+procedure TCameraForm.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = ' ' then  // пробел
+    btnMakePhotoClick(nil);
 end;
 
 procedure TCameraForm.FormResize(Sender: TObject);
 begin
-  imgOverlay.BoundsRect := imgPreview.BoundsRect;
+  imgOverlay.BoundsRect := imgCamPreview.BoundsRect;
 end;
 
 procedure TCameraForm.GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
 begin
-  if CameraStopped or ((GetTickCount - LastPreviewFrameTimeStamp) < 100) then
+  if not Active or ((GetTickCount - LastPreviewFrameTimeStamp) < 100) then
     Exit;
 
-  FVideoImage.GetBitmap(FVideoBitmap);
-  imgPreview.Picture.Bitmap.Assign(FVideoBitmap);
+  VideoBitmapCriticalSection.Enter;
+  try
+    FVideoImage.GetBitmap(FVideoBitmap);
+    if not (imgCamPreview.Picture.Graphic is TPngImage) then
+      imgCamPreview.Picture.Graphic := TPngImage.Create;
+
+    imgCamPreview.Picture.Graphic.Assign(FVideoBitmap);
+  finally
+    VideoBitmapCriticalSection.Leave;
+  end;
+  if not Assigned(OnOpacityChanged) and (tbOpacity.Position <> tbOpacity.Min) then
+    begin
+      TPngImage(imgCamPreview.Picture.Graphic).CreateAlpha;
+      FillMemory(
+        TPngImage(imgCamPreview.Picture.Graphic).AlphaScanline[0],
+        Integer(imgCamPreview.Picture.Graphic.Width) * Integer(imgCamPreview.Picture.Graphic.Height),
+        tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
+    end;
+  imgCamPreview.Repaint;
 
   LastPreviewFrameTimeStamp := GetTickCount;
 end;
@@ -265,10 +314,10 @@ procedure TCameraForm.btnMakePhotoClick(Sender: TObject);
 begin
   MakePhoto;
   if chkMinimize.Checked then
-    if Application.MainForm = Self then
-      WindowState := wsMinimized // самостоятельным приложением
+    if FCanChangePhotoFolder then
+      Application.MainForm.WindowState := wsMinimized // самостоятельным приложением
     else
-      ModalResult := mrOk; //  в составе МультиПульта
+      Active := False; //  в составе МультиПульта
 end;
 
 procedure TCameraForm.btnNextCamClick(Sender: TObject);
@@ -279,6 +328,7 @@ begin
     cbCamSelector.ItemIndex := 0;
   StopCamera;
   StartCamera;
+  DoActiveChanged;
 end;
 
 procedure TCameraForm.btnPreferencesClick(Sender: TObject);
@@ -307,6 +357,7 @@ end;
 procedure TCameraForm.btnStartClick(Sender: TObject);
 begin
   StartCamera;
+  DoActiveChanged;
 end;
 
 procedure TCameraForm.StartCamera;
@@ -324,7 +375,7 @@ begin
         NewIndex := 0;
       cbbResolution.ItemIndex := NewIndex;
       FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
-      CameraStopped := False;
+      FActive := True;
     end;
 end;
 
@@ -367,31 +418,31 @@ procedure TCameraForm.cbCamSelectorChange(Sender: TObject);
 begin
   StopCamera;
   StartCamera;
+  DoActiveChanged;
 end;
 
 procedure TCameraForm.chkOverlayClick(Sender: TObject);
 begin
-  imgOverlay.Visible := chkOverlay.Checked;
-end;
-
-procedure TCameraForm.Execute(APhotoFolder: string; AOnNewFrame: TOnNewFrame);
-begin
-  PhotoFolder := APhotoFolder;
-  OnNewFrame := AOnNewFrame;
-  ShowModal;
+  if Assigned(imgOverlay) then
+    imgOverlay.Visible := chkOverlay.Checked;
 end;
 
 procedure TCameraForm.StopCamera;
 resourcestring
-  rsPressStart = 'Если камера не включается, '#13#10'нажмите кнопку Пуск в этом окне';
+  rsPressStart = 'Если камера не включается, '#13#10'нажмите кнопку Пуск в окне управления камерой';
 begin
-  CameraStopped := True;
-  FVideoImage.VideoStop;
-  imgPreview.Picture.Bitmap.SetSize(imgPreview.Width, imgPreview.Height);
-  imgPreview.Picture.Bitmap.Canvas.Brush.Color := clBlack;
-  imgPreview.Picture.Bitmap.Canvas.FillRect(Rect(0, 0, imgPreview.Picture.Bitmap.Width, imgPreview.Picture.Bitmap.Height));
-  imgPreview.Picture.Bitmap.Canvas.Font.Color := clWhite;
-  imgPreview.Picture.Bitmap.Canvas.TextRect(Rect(4, 4, imgPreview.Picture.Bitmap.Width, imgPreview.Picture.Bitmap.Height), 4, 4, rsPressStart);
+  FActive := False;
+  VideoBitmapCriticalSection.Enter;
+  try
+    FVideoImage.VideoStop;
+  finally
+    VideoBitmapCriticalSection.Leave;
+  end;
+  imgCamPreview.Picture.Bitmap.SetSize(imgCamPreview.Width, imgCamPreview.Height);
+  imgCamPreview.Picture.Bitmap.Canvas.Brush.Color := clBlack;
+  imgCamPreview.Picture.Bitmap.Canvas.FillRect(Rect(0, 0, imgCamPreview.Picture.Bitmap.Width, imgCamPreview.Picture.Bitmap.Height));
+  imgCamPreview.Picture.Bitmap.Canvas.Font.Color := clWhite;
+  imgCamPreview.Picture.Bitmap.Canvas.TextRect(Rect(4, 4, imgCamPreview.Picture.Bitmap.Width, imgCamPreview.Picture.Bitmap.Height), 4, 4, rsPressStart);
 end;
 
 procedure TCameraForm.MakePhoto;
@@ -406,7 +457,12 @@ begin
   NewFileName := NewFileName + '.png';
   StoringFile := TPNGImage.Create;
   try
-    StoringFile.Assign(FVideoBitmap);
+    VideoBitmapCriticalSection.Enter;
+    try
+      StoringFile.Assign(FVideoBitmap);
+    finally
+      VideoBitmapCriticalSection.Leave;
+    end;
     ForceDirectories(PhotoFolder);
     StoringFile.SaveToFile(PhotoFolder + NewFileName);
   finally
@@ -418,16 +474,57 @@ begin
   lblLapseStatus.Caption := LastFileName;
 end;
 
+procedure TCameraForm.DoActiveChanged;
+begin
+  if Assigned(OnActiveChanged) then
+    OnActiveChanged(Self);
+end;
+
+
+procedure TCameraForm.SetActive(const Value: Boolean);
+begin
+  if FActive = Value then
+    Exit;
+
+  if Value then
+    StartCamera
+  else
+    StopCamera;
+  DoActiveChanged;
+end;
+
+procedure TCameraForm.DisablePhotoFolderLookup;
+resourcestring
+  rsAndDeactivateCamera = 'И выключить камеру';
+begin
+  FCanChangePhotoFolder := False;
+  btnFolderLookup.Visible := False;
+  edtFolder.Width := edtFolder.Width - btnFolderLookup.Width - 8;
+  chkMinimize.Caption := rsAndDeactivateCamera;
+end;
+
+procedure TCameraForm.SetImgCamPreview(const Value: TImage);
+begin
+  FimgCamPreview := Value;
+end;
+
+procedure TCameraForm.SetImgOverlay(const Value: TImage);
+begin
+  FimgOverlay := Value;
+  if Assigned(FimgOverlay) and FileExists(edtOverlay.Text) then
+    begin
+      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+      imgOverlay.Visible := chkOverlay.Checked;
+    end;
+end;
 
 procedure TCameraForm.SetPhotoFolder(const Value: string);
 begin
   FPhotoFolder := Value;
   if Value <> '' then
     if not DirectoryExists(FPhotoFolder) then
-      if FileExists(PhotoFolder) then
-        LookupPhotoFolder
-      else
-        ForceDirectories(PhotoFolder);
+      if FileExists(FPhotoFolder) then
+        LookupPhotoFolder;
 
   if (FPhotoFolder <> '') and (FPhotoFolder[Length(FPhotoFolder)] <> '\') then
     FPhotoFolder := FPhotoFolder + '\';
@@ -485,7 +582,9 @@ procedure TCameraForm.TimeLapseStatusTimerTimer(Sender: TObject);
 var
   s: string;
 begin
-  s := IntervalToString(TimeLapseTimer.Interval - (GetTickCount - LastPhotoTimeStamp));
+  s := '';
+  if (GetTickCount > LastPhotoTimeStamp) and (TimeLapseTimer.Interval > (GetTickCount - LastPhotoTimeStamp))then
+    s := IntervalToString(TimeLapseTimer.Interval - (GetTickCount - LastPhotoTimeStamp));
   if s <> '' then
     s := ' (ждём ' + s + ')';
 
@@ -494,13 +593,17 @@ end;
 
 procedure TCameraForm.TimeLapseTimerTimer(Sender: TObject);
 begin
-  MakePhoto;
-  LastPhotoTimeStamp := GetTickCount;
+  if Active and not FVideoBitmap.Empty and not Application.Terminated and TimeLapseTimer.Enabled then
+    begin
+      MakePhoto;
+      LastPhotoTimeStamp := GetTickCount;
+    end;
 end;
 
 procedure TCameraForm.tbOpacityChange(Sender: TObject);
 begin
-  AlphaBlendValue := tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min);
+  if Assigned(OnOpacityChanged) then
+    OnOpacityChanged(tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
 end;
 
 end.

@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  System.ImageList, Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
+  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
 
 const
   ControlActionStackDeep = 10;
@@ -219,7 +219,6 @@ type
     N15: TMenuItem;
     N16: TMenuItem;
     N17: TMenuItem;
-    mmiShowCameraForm: TMenuItem;
     N19: TMenuItem;
     actMoveFrameLeft: TAction;
     actMoveFrameRight: TAction;
@@ -232,7 +231,6 @@ type
     actOpenHelp: TBrowseURL;
     mmiRefreshPreview: TMenuItem;
     mmiOpenHelp: TMenuItem;
-    actShowCameraForm: TAction;
     mmiStopRecordingOnSoundtrackFinish: TMenuItem;
     lblWorkPath: TLabel;
     N5: TMenuItem;
@@ -255,6 +253,12 @@ type
     mmiReloadPhotoFolder: TMenuItem;
     actNextRecordFrame: TAction;
     actPrevRecordFrame: TAction;
+    imgCamPreview: TImage;
+    mmiFramesFromCameraMode: TMenuItem;
+    actFramesFromCameraMode: TAction;
+    imgOverlay: TImage;
+    actShowCameraControl: TAction;
+    mmiShowCameraControl: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -332,7 +336,7 @@ type
     procedure actScreenWindowExecute(Sender: TObject);
     procedure pbDisplayDblClick(Sender: TObject);
     procedure mmiNewBookmarkClick(Sender: TObject);
-    procedure pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
+    procedure pbDisplayMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure imgLeftRightByMouseDownControllerMouseDown(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -355,8 +359,7 @@ type
     procedure actRefreshPreviewExecute(Sender: TObject);
     procedure actHaveDisplayedFrame(Sender: TObject);
     procedure ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
-    procedure actShowCameraFormExecute(Sender: TObject);
-    procedure actShowCameraFormUpdate(Sender: TObject);
+    procedure actFramesFromCameraModeUpdate(Sender: TObject);
     procedure actSelectAudioFileUpdate(Sender: TObject);
     procedure FormMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
@@ -378,6 +381,10 @@ type
     procedure actClearBookmarksClick(Sender: TObject);
     procedure actWorkingSetManagementUpdate(Sender: TObject);
     procedure actHaveRecordedFrame(Sender: TObject);
+    procedure actFramesFromCameraModeExecute(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure actShowCameraControlExecute(Sender: TObject);
+    procedure actShowCameraControlUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -408,7 +415,6 @@ type
       );
   private
     Bookmarks: array [0..19] of Integer; // TODO: move to ResultFrameList (?)
-    Saved: Boolean;
      // RecordedAudioCopy - рисуемая копия звука. По мере записи мульта пополняется из AudioRecorder
      // копиями очередных порций записываемого им себе звука.
      // При открытии старой записи инициализируется копией загруженного в WaveStorage звука.
@@ -431,6 +437,11 @@ type
     FirstFrameSize: TSize;
     FExternalAudioFileName: string;
     FDisplayedFrameIndex: Integer;
+    FPhotoFolder: string;
+    FSaved: Boolean;
+    procedure SetSaved(const Value: Boolean);
+    procedure CheckStopCamera;
+    property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
     procedure SetCurrentWorkingSetFrame(const Value: TRecordedFrame);
@@ -447,6 +458,8 @@ type
     procedure FreeAdvertisementFrame;
     procedure LoadPhotoFolder;
     procedure ClearTeleports;
+    procedure SetPhotoFolder(const Value: string);
+    procedure CameraFormActiveChanged(Sender: TObject);
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
     function TeleportEnabled: Boolean;
@@ -469,7 +482,6 @@ type
     procedure DestroyWindowHandle; override;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
   public
-    PhotoFolder: string;
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
     AdvertisementDuration: Integer;
@@ -478,6 +490,7 @@ type
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     procedure SetCaption(const Value: TCaption);
     procedure SetStatus(const Value: string);
+    property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property DisplayedFrameIndex: Integer read FDisplayedFrameIndex write SetDisplayedFrameIndex;
     property CurrentWorkingSetFrame: TRecordedFrame read FCurrentWorkingSetFrame write SetCurrentWorkingSetFrame;
     function FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
@@ -495,7 +508,6 @@ var
 
 var
   FrameRate: byte = 25;
-function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
@@ -507,26 +519,6 @@ function Size(AX, AY: Integer): TSize;
 begin
   Result.cx := AX;
   Result.cy := AY;
-end;
-
-function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
-begin
-  Result.Left   := 0;
-  Result.Top    := 0;
-  Result.Right  := MulDiv(AWidth, ABoundsHeight, AHeight);
-  Result.Bottom := MulDiv(AHeight, ABoundsWidth, AWidth);
-  if Result.Right > ABoundsWidth then
-    begin
-      Result.Right := ABoundsWidth;
-      Result.Top := (ABoundsHeight - Result.Bottom) div 2;
-      Result.Bottom := Result.Bottom + Result.Top;
-    end;
-  if Result.Bottom > ABoundsHeight then
-    begin
-      Result.Bottom := ABoundsHeight;
-      Result.Left := (ABoundsWidth - Result.Right) div 2;
-      Result.Right := Result.Right + Result.Left;
-    end;
 end;
 
 procedure TMainForm.actSelectAudioFileExecute(Sender: TObject);
@@ -598,17 +590,21 @@ begin
     OpenNewPhotoFolder(NewPhotoFolder + '\');
 end;
 
-procedure TMainForm.actShowCameraFormExecute(Sender: TObject);
-resourcestring
-  CamFolder = 'FromCam\';
+procedure TMainForm.actFramesFromCameraModeUpdate(Sender: TObject);
 begin
-  Stop;
-  CameraForm.Execute(PhotoFolder + CamFolder, AddNewFrame);
+  actFramesFromCameraMode.Enabled := PhotoFolder <> '';
+  actFramesFromCameraMode.Checked := CameraForm.Active;
 end;
 
-procedure TMainForm.actShowCameraFormUpdate(Sender: TObject);
+procedure TMainForm.actShowCameraControlExecute(Sender: TObject);
 begin
-  actShowCameraForm.Enabled := PhotoFolder <> '';
+  CameraForm.Visible := not CameraForm.Visible;
+end;
+
+procedure TMainForm.actShowCameraControlUpdate(Sender: TObject);
+begin
+  actShowCameraControl.Checked := CameraForm.Visible;
+  actShowCameraControl.Enabled := (PhotoFolder <> '');
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -731,9 +727,6 @@ var
 
 begin
   if Assigned(AdvertisementFrameImage) then
-    Exit;
-
-  if FrameInfoCount = 0 then
     Exit;
 
   AdvertisementFrameImage := TBitmap.Create;
@@ -1014,9 +1007,10 @@ begin
       OpenNewPhotoFolder(ParamStr(1))
     else
       OpenMovie(ParamStr(1));
-
+  imgCamPreview.Picture.Graphic.Width := 1;
   // инициализируем разрешение при экспорте по умолчанию.
   mmiExportResolutionVGA.Click;
+  Saved := True;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -1146,6 +1140,19 @@ begin
   Handled := True;
 end;
 
+procedure TMainForm.FormShow(Sender: TObject);
+begin
+  CameraForm.OnNewFrame := AddNewFrame;
+  CameraForm.OnActiveChanged := CameraFormActiveChanged;
+  CameraForm.imgCamPreview := imgCamPreview;
+  CameraForm.imgOverlay := imgOverlay;
+  CameraForm.DisablePhotoFolderLookup;
+
+  ScreenForm.OnKeyDown := FormKeyDown;
+  ScreenForm.OnKeyUp := FormKeyUp;
+  ScreenForm.OnDblClick := actFullScreenModeExecute;
+end;
+
 function TMainForm.GetFrameInfo(Index: Integer): TFrameInfo;
 begin
   Result := TFrameInfo(FFrameInfoList[Index]);
@@ -1192,11 +1199,11 @@ begin
   ClearRecorded;
   ClearSound;
 
+  WorkingSetFrames.Clear;
+  FFrameInfoList.Clear;
   DisplayedFrameIndex := -1;
   FCurrentWorkingSetFrame := nil;
   FFrameTipRecordedFrame := nil;
-  WorkingSetFrames.Clear;
-  FFrameInfoList.Clear;
   OutOfMemoryRaised := False;
 end;
 
@@ -1381,6 +1388,7 @@ begin
   InternalLoadDirectory('');
   FFrameInfoList.Sort(CompareFramesFileName);
   FillWorkingSet;
+  ShowTimes;
 end;
 
 procedure TMainForm.OpenNewPhotoFolder(ANewPhotoFolder: string);
@@ -1403,6 +1411,7 @@ begin
   CaptureFirstFrameSizes;
 
   UpdateActions;
+  RepaintAll;
 end;
 
 procedure TMainForm.actReloadPhotoFolderExecute(Sender: TObject);
@@ -1670,6 +1679,7 @@ resourcestring
 
 begin
   Stop;
+  CheckStopCamera;
   Dir := GetCurrentDir;
   OldCurrentWorkingFrame := CurrentWorkingSetFrame;
   if SaveToAVIDialog.Execute then
@@ -1771,10 +1781,31 @@ begin
   UpdatePlayActions;
 end;
 
+procedure TMainForm.actFramesFromCameraModeExecute(Sender: TObject);
+begin
+  CameraForm.Active := not CameraForm.Active;
+end;
+
+procedure TMainForm.CameraFormActiveChanged(Sender: TObject);
+resourcestring
+  rsStartRecording = 'Запись';
+  rsMakeCameraFrame = 'Записать кадр с камеры в папку мульта';
+  rsSpaceKey = ' (клавиша Пробел)';
+begin
+  Stop;
+  if CameraForm.Active then
+    actRecord.Caption := rsMakeCameraFrame
+  else
+    actRecord.Caption := rsStartRecording;
+  btnRecord.Caption := actRecord.Caption + rsSpaceKey;
+
+  imgCamPreview.Visible := CameraForm.Active;
+end;
+
 procedure TMainForm.actFullScreenModeExecute(Sender: TObject);
 begin
   if ScreenForm.Visible then
-    ScreenForm.UpdateFullScreen
+    ScreenForm.FullScreen := actFullScreenMode.Checked
   else
     if actFullScreenMode.Checked then
       begin
@@ -1995,7 +2026,7 @@ begin
     InitMicrophoneUsage(True);
 
   Saved := True;
-  pbRecord.Invalidate;
+  RepaintAll;
   UpdateActions;
 end;
 
@@ -2174,6 +2205,20 @@ begin
   pbFrameTip.Visible := (FFrameTipRecordedFrame <> nil);
 end;
 
+procedure TMainForm.SetPhotoFolder(const Value: string);
+resourcestring
+  CamFolder = 'FromCam\';
+begin
+  FPhotoFolder := Value;
+  if Assigned(CameraForm) then
+    CameraForm.PhotoFolder := PhotoFolder + CamFolder;
+end;
+
+procedure TMainForm.SetSaved(const Value: Boolean);
+begin
+  FSaved := Value;
+end;
+
 procedure TMainForm.SetStatus(const Value: string);
 begin
   StatusBar.SimpleText := Value;
@@ -2194,6 +2239,9 @@ var
   s: string;
   SoundFramesCount: Integer;
 begin
+  if Exporting then
+    Exit;
+
   SoundFramesCount := 0; // hint
   if FExternalAudioFileName <> '' then
     begin
@@ -2225,8 +2273,11 @@ begin
       else
         s := s + ', по достижении конца озвучки запись будет продолжена в тишине.';
     end
-  else if FrameInfoCount <> 0 then
-    s := s + ' Озвучка будет записываться вместе с кадрами.';
+  else if PhotoFolder <> '' then
+    if Recording then
+      s := s + ' Озвучка записывается вместе с кадрами.'
+    else
+      s := s + ' Озвучка будет записываться вместе с кадрами.';
 
   SetStatus(s);
 end;
@@ -2509,6 +2560,7 @@ end;
 
 procedure TMainForm.actExitExecute(Sender: TObject);
 begin
+  CheckStopCamera;
   Stop;
   Close;
 end;
@@ -2516,25 +2568,30 @@ end;
 procedure TMainForm.actRecordExecute(Sender: TObject);
 begin
   Saved := False;
-  if FExternalAudioFileName <> '' then
+  if CameraForm.Active then
+    CameraForm.MakePhoto
+  else
     begin
-      if not Recording then
+      if FExternalAudioFileName <> '' then
         begin
-          CurrentRecordPosition := RecordedFrames.Count; // заодно пинаем позиционирование звука
-          // Запуск самой записи и последующая остановка - через обработчики
-          // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
-          // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
-          RecordingMustBeChanged := True;
-          StockAudioPlayer.Active := True;
+          if not Recording then
+            begin
+              CurrentRecordPosition := RecordedFrames.Count; // заодно пинаем позиционирование звука
+              // Запуск самой записи и последующая остановка - через обработчики
+              // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
+              // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
+              RecordingMustBeChanged := True;
+              StockAudioPlayer.Active := True;
+            end
+          else
+            StopRecording;
         end
       else
-        StopRecording;
-    end
-  else
-    // если звук с микрофона - то запись кадров начнётся в
-    // AudioRecorderActivate
-    // а закончится - в AudioRecorderDeactivate
-    AudioRecorder.Active := not Recording
+        // если звук с микрофона - то запись кадров начнётся в
+        // AudioRecorderActivate
+        // а закончится - в AudioRecorderDeactivate
+        AudioRecorder.Active := not Recording
+    end;
 end;
 
 procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
@@ -2559,14 +2616,19 @@ begin
   actReplaceInMovie.Enabled := not AdvertisementShowing and (CurrentRecordPosition <> -1) and (CurrentRecordPosition < RecordedFrames.Count) and Assigned(CurrentWorkingSetFrame)
 end;
 
-procedure TMainForm.pbDisplayMouseDown(Sender: TObject; Button: TMouseButton;
+procedure TMainForm.pbDisplayMouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  if FrameInfoCount = 0 then
-    if (ssRight in Shift) or ((ssLeft in Shift) and (ssShift in Shift)) then // открытие вешаем не только на шифт+левую кнопку мыши, но и просто на правую кнопку мыши.
+  if PhotoFolder = '' then
+  begin
+    if (Button = mbRight) or ((Button = mbLeft) and (ssShift in Shift)) then // открытие вешаем не только на шифт+левую кнопку мыши, но и просто на правую кнопку мыши.
       actOpen.Execute
-    else if (ssLeft in Shift) then
+    else if (Button = mbLeft) then
       actSelectPhotoFolder.Execute;
+  end
+  else
+    if CameraForm.Active then
+      CameraForm.Visible := not CameraForm.Visible;
 end;
 
 procedure TMainForm.pbDisplayDblClick(Sender: TObject);
@@ -2583,135 +2645,143 @@ var
   R_MainScreen: TRect;
   R_PrevNextPreview: TRect;
   Offset: Integer;
-  Image: TBitmap;
+  Image: TGraphic;
   WorkSetFrame: TRecordedFrame;
 begin
+  Image := nil;
   try
     pbDisplay.Canvas.Brush.Color := clBlack;
     pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
     pbDisplay.Canvas.Brush.Color := clBtnFace;
 
-    if (FrameInfoCount = 0) or (DisplayedFrameIndex = -1) then
+    if PhotoFolder = '' then
       begin
         R_MainScreen.Left := (pbDisplay.Width  - imgBackgroundSource.Picture.Width ) div 2;
         R_MainScreen.Top  := (pbDisplay.Height - imgBackgroundSource.Picture.Height) div 2;
         pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, imgBackgroundSource.Picture.Graphic);
         Exit;
-      end;
-
-    CreateAdvertisementFrame; // на всякий случай
-    LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
-    // основной кадр.
-    // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
-    if FrameInfoList[DisplayedFrameIndex].PreviewLoaded and mmiShowNeighbourFrames.Checked then
-      begin
-        Image := FrameInfoList[DisplayedFrameIndex].Preview;
-        R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
       end
     else
-      R_PrevNextPreview := Rect(0,0,0,0);
-
-    if FrameInfoList[DisplayedFrameIndex].PreviewLoaded or AdvertisementShowing then
       begin
-        if AdvertisementShowing then
-          Image := AdvertisementFrameImagePreview
+        CreateAdvertisementFrame; // на всякий случай
+        LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
+        // основной кадр.
+        // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
+
+        if not AdvertisementShowing and
+          (DisplayedFrameIndex >= 0) and
+          FrameInfoList[DisplayedFrameIndex].PreviewLoaded
+        then
+          Image := FrameInfoList[DisplayedFrameIndex].Preview
         else
-          Image := FrameInfoList[DisplayedFrameIndex].Preview;
-        if (not AdvertisementShowing and actStretchImages.Checked) or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
-          begin
-            R_MainScreen := StretchSize(Image.Width, Image.Height, pbDisplay.Width - MainScreenBorder * 2, pbDisplay.Height - MainScreenBorder * 2);
-            R_MainScreen.Left   := R_MainScreen.Left   + MainScreenBorder;
-            R_MainScreen.Top    := R_MainScreen.Top    + MainScreenBorder;
-            R_MainScreen.Right  := R_MainScreen.Right  + MainScreenBorder;
-            R_MainScreen.Bottom := R_MainScreen.Bottom + MainScreenBorder;
+          Image := AdvertisementFrameImagePreview;
 
-            Offset := Min(pbDisplay.Height - MainScreenBorder * 2 - R_MainScreen.Bottom, (R_PrevNextPreview.Bottom - R_PrevNextPreview.Top - MainScreenBorder) div 2);
-
-            R_MainScreen.Top    := R_MainScreen.Top    + Offset + MainScreenBorder;
-            R_MainScreen.Bottom := R_MainScreen.Bottom + Offset + MainScreenBorder;
-
-            with R_MainScreen do
-              pbDisplay.Canvas.RoundRect(
-                Left   - MainScreenBorder,
-                Top    - MainScreenBorder,
-                Right  + MainScreenBorder,
-                Bottom + MainScreenBorder,
-                MainScreenBorder,
-                MainScreenBorder
-              );
-            pbDisplay.Canvas.StretchDraw(R_MainScreen, Image);
-          end
+        if mmiShowNeighbourFrames.Checked and Assigned(Image) then
+          R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize)
         else
+          R_PrevNextPreview := Rect(0,0,0,0);
+
+        if Assigned(Image) then
           begin
-            R_MainScreen.Left := (pbDisplay.Width  - Image.Width ) div 2;
-            R_MainScreen.Top  := (pbDisplay.Height - Image.Height) div 2;
-            R_MainScreen.Right := R_MainScreen.Left + Image.Width;
-            R_MainScreen.Bottom := R_MainScreen.Top + Image.Height;
-            with R_MainScreen do
-              pbDisplay.Canvas.RoundRect(
-                Left   - MainScreenBorder,
-                Top    - MainScreenBorder,
-                Right  + MainScreenBorder,
-                Bottom + MainScreenBorder,
-                MainScreenBorder,
-                MainScreenBorder
-              );
-            pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, Image);
+            if (not AdvertisementShowing and actStretchImages.Checked) or (Image.Width > (pbDisplay.Width - MainScreenBorder * 2)) or (Image.Height > (pbDisplay.Height - MainScreenBorder * 2)) then
+              begin
+                R_MainScreen := StretchSize(Image.Width, Image.Height, pbDisplay.Width - MainScreenBorder * 2, pbDisplay.Height - MainScreenBorder * 2);
+                R_MainScreen.Left   := R_MainScreen.Left   + MainScreenBorder;
+                R_MainScreen.Top    := R_MainScreen.Top    + MainScreenBorder;
+                R_MainScreen.Right  := R_MainScreen.Right  + MainScreenBorder;
+                R_MainScreen.Bottom := R_MainScreen.Bottom + MainScreenBorder;
+
+                Offset := Min(pbDisplay.Height - MainScreenBorder * 2 - R_MainScreen.Bottom, (R_PrevNextPreview.Bottom - R_PrevNextPreview.Top - MainScreenBorder) div 2);
+
+                R_MainScreen.Top    := R_MainScreen.Top    + Offset + MainScreenBorder;
+                R_MainScreen.Bottom := R_MainScreen.Bottom + Offset + MainScreenBorder;
+
+                with R_MainScreen do
+                  pbDisplay.Canvas.RoundRect(
+                    Left   - MainScreenBorder,
+                    Top    - MainScreenBorder,
+                    Right  + MainScreenBorder,
+                    Bottom + MainScreenBorder,
+                    MainScreenBorder,
+                    MainScreenBorder
+                  );
+                pbDisplay.Canvas.StretchDraw(R_MainScreen, Image);
+              end
+            else
+              begin
+                R_MainScreen.Left := (pbDisplay.Width  - Image.Width ) div 2;
+                R_MainScreen.Top  := (pbDisplay.Height - Image.Height) div 2;
+                R_MainScreen.Right := R_MainScreen.Left + Image.Width;
+                R_MainScreen.Bottom := R_MainScreen.Top + Image.Height;
+                with R_MainScreen do
+                  pbDisplay.Canvas.RoundRect(
+                    Left   - MainScreenBorder,
+                    Top    - MainScreenBorder,
+                    Right  + MainScreenBorder,
+                    Bottom + MainScreenBorder,
+                    MainScreenBorder,
+                    MainScreenBorder
+                  );
+                pbDisplay.Canvas.Draw(R_MainScreen.Left, R_MainScreen.Top, Image);
+              end;
+          end;
+        imgCamPreview.BoundsRect := R_MainScreen;
+        imgOverlay.BoundsRect := R_MainScreen;
+
+        if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
+          begin
+            // левая миниатюра
+            WorkSetFrame := FindWorkingSetFrameByOffset(-1);
+            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+            if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
+              begin
+                Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
+                R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+                R_PrevNextPreview.Top    := 0;
+                R_PrevNextPreview.Left   := R_PrevNextPreview.Left   + PrevNextPreviewBorder;
+                R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+                R_PrevNextPreview.Right  := R_PrevNextPreview.Right  + PrevNextPreviewBorder;
+                R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+                with R_PrevNextPreview do
+                  pbDisplay.Canvas.RoundRect(
+                    Left   - PrevNextPreviewBorder,
+                    Top    - PrevNextPreviewBorder,
+                    Right  + PrevNextPreviewBorder,
+                    Bottom + PrevNextPreviewBorder,
+                    PrevNextPreviewBorder,
+                    PrevNextPreviewBorder
+                  );
+                pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
+              end;
+            // правая миниатюра
+            WorkSetFrame := FindWorkingSetFrameByOffset(+1);
+            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+            if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
+              begin
+                Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
+                R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
+                R_PrevNextPreview.Left := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Left;
+                R_PrevNextPreview.Right := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Right;
+                R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
+                R_PrevNextPreview.Top := 0;
+                R_PrevNextPreview.Left   := R_PrevNextPreview.Left   - PrevNextPreviewBorder;
+                R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
+                R_PrevNextPreview.Right  := R_PrevNextPreview.Right  - PrevNextPreviewBorder;
+                R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
+                with R_PrevNextPreview do
+                  pbDisplay.Canvas.RoundRect(
+                    Left   - PrevNextPreviewBorder,
+                    Top    - PrevNextPreviewBorder,
+                    Right  + PrevNextPreviewBorder,
+                    Bottom + PrevNextPreviewBorder,
+                    PrevNextPreviewBorder,
+                    PrevNextPreviewBorder
+                  );
+                pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
+              end;
           end;
       end;
-
-    if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
-      begin
-        // левая миниатюра
-        WorkSetFrame := FindWorkingSetFrameByOffset(-1);
-        LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
-        if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
-          begin
-            Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
-            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
-            R_PrevNextPreview.Top    := 0;
-            R_PrevNextPreview.Left   := R_PrevNextPreview.Left   + PrevNextPreviewBorder;
-            R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
-            R_PrevNextPreview.Right  := R_PrevNextPreview.Right  + PrevNextPreviewBorder;
-            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
-            with R_PrevNextPreview do
-              pbDisplay.Canvas.RoundRect(
-                Left   - PrevNextPreviewBorder,
-                Top    - PrevNextPreviewBorder,
-                Right  + PrevNextPreviewBorder,
-                Bottom + PrevNextPreviewBorder,
-                PrevNextPreviewBorder,
-                PrevNextPreviewBorder
-              );
-            pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
-          end;
-        // правая миниатюра
-        WorkSetFrame := FindWorkingSetFrameByOffset(+1);
-        LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
-        if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
-          begin
-            Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
-            R_PrevNextPreview := StretchSize(Image.Width, Image.Height, PrevNextPreviewMaxSize, PrevNextPreviewMaxSize);
-            R_PrevNextPreview.Left := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Left;
-            R_PrevNextPreview.Right := pbDisplay.Width - PrevNextPreviewMaxSize + R_PrevNextPreview.Right;
-            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom - R_PrevNextPreview.Top;
-            R_PrevNextPreview.Top := 0;
-            R_PrevNextPreview.Left   := R_PrevNextPreview.Left   - PrevNextPreviewBorder;
-            R_PrevNextPreview.Top    := R_PrevNextPreview.Top    + PrevNextPreviewBorder;
-            R_PrevNextPreview.Right  := R_PrevNextPreview.Right  - PrevNextPreviewBorder;
-            R_PrevNextPreview.Bottom := R_PrevNextPreview.Bottom + PrevNextPreviewBorder;
-            with R_PrevNextPreview do
-              pbDisplay.Canvas.RoundRect(
-                Left   - PrevNextPreviewBorder,
-                Top    - PrevNextPreviewBorder,
-                Right  + PrevNextPreviewBorder,
-                Bottom + PrevNextPreviewBorder,
-                PrevNextPreviewBorder,
-                PrevNextPreviewBorder
-              );
-            pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
-          end;
-      end;
+    ScreenForm.Image := Image;
   except
     ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
   end;
@@ -2767,7 +2837,7 @@ var
 
 procedure TMainForm.pbIndicatorPaint(Sender: TObject);
 resourcestring
-  rs_Framerate = '- по %d, при %d кадров в секунду';
+  rs_Framerate = '- по %d, при %d кадрах в секунду';
 var
 //  X: TPoint;
   a: Double;
@@ -3489,6 +3559,7 @@ end;
 procedure TMainForm.actStretchImagesExecute(Sender: TObject);
 begin
   pbDisplay.Invalidate;
+  ScreenForm.StretchImages := actStretchImages.Checked;
 end;
 
 procedure TMainForm.actPlayForwardExecute(Sender: TObject);
@@ -3514,6 +3585,7 @@ end;
 
 procedure TMainForm.actPlayExecute(Sender: TObject);
 begin
+  CheckStopCamera;
   if Recording then
     begin
       actRecord.Execute;
@@ -3541,14 +3613,24 @@ begin
 end;
 
 procedure TMainForm.AddNewFrame(AFileName: string);
+var
+  NewFrameInfoIndex: Integer;
+  NewRecordedFrame: TRecordedFrame;
 begin
-  DisplayedFrameIndex := FFrameInfoList.Add(
+  NewFrameInfoIndex := FFrameInfoList.Add(
     TFrameInfo.Create(
       ExtractRelativePath(PhotoFolder, ExtractFilePath(AFileName)),
       ExtractFileName(AFileName)
     )
   );
-  CurrentWorkingSetFrame := TRecordedFrame.Create(WorkingSetFrames, DisplayedFrameIndex);
+
+  if Assigned(CurrentWorkingSetFrame) then
+    NewRecordedFrame := TRecordedFrame(WorkingSetFrames.Insert(CurrentWorkingSetFrame.Index + 1))
+  else
+    NewRecordedFrame := TRecordedFrame(WorkingSetFrames.Add);
+  NewRecordedFrame.FrameInfoIndex := NewFrameInfoIndex;
+  CurrentWorkingSetFrame := NewRecordedFrame;
+
   // FFrameInfoList с диска потребует сохранения.
   // А если имени проекта ещё нет, то это просто все файлы папки, это не обязательно сохранять.
   if ProjectFileName <> '' then
@@ -3561,6 +3643,12 @@ begin
     StopRecording;
   if Playing then
     StopPlaying;
+end;
+
+procedure TMainForm.CheckStopCamera;
+begin
+  if Assigned(CameraForm) and CameraForm.Active then
+    CameraForm.Active := False;
 end;
 
 function TMainForm.FrameIndexToTimeStamp(AFrameIndex: Integer): string;
@@ -3709,6 +3797,8 @@ var
   FrameInfo: TFrameInfo;
   OriginalOrders: array of TRecordedFrame;
 begin
+  CheckStopCamera;
+  Stop;
   if not lvFrameset.Visible then
   begin
     lvFrameset.Items.BeginUpdate;

@@ -4,45 +4,79 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs;
+  Dialogs, Vcl.Imaging.pngimage, Vcl.ExtCtrls;
 
 type
   TScreenForm = class(TForm)
+    imgOverlay: TImage;
+    imgCamPreview: TImage;
     procedure FormPaint(Sender: TObject);
-    procedure FormDblClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
-    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure FormDblClick(Sender: TObject);
+    procedure imgOverlayClick(Sender: TObject);
+    procedure imgOverlayDblClick(Sender: TObject);
+    procedure DoCloseScreenForm(Sender: TObject; var Action: TCloseAction);
   private
     PreviousBounds: TRect;
+    FFullScreen: Boolean;
+    FStretchImages: Boolean;
+    FImage: TGraphic;
+    procedure SetFullScreen(const Value: Boolean);
+    procedure UpdateFullScreen;
+    procedure SetStretchImages(const Value: Boolean);
+    procedure SetImage(const Value: TGraphic);
   protected
     procedure NCHitTest(var Message: TWMNCHitTest); message WM_NCHITTEST;
     procedure NCLButtonDblClk(var Message: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
+    procedure NCLButtonDown(var Message: TWMNCLButtonDown); message WM_NCLButtonDown;
     procedure EraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
   public
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
-    procedure UpdateFullScreen;
+    property FullScreen: Boolean read FFullScreen write SetFullScreen;
+    property StretchImages: Boolean read FStretchImages write SetStretchImages;
+    property Image: TGraphic read FImage write SetImage;
+    procedure AdjustOpacity(AOpacity: byte);
   end;
 
 var
   ScreenForm: TScreenForm;
 
-implementation
+function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
-uses MainFormUnit;
+implementation
 
 {$R *.dfm}
 
+function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
+begin
+  Result.Left   := 0;
+  Result.Top    := 0;
+  Result.Right  := MulDiv(AWidth, ABoundsHeight, AHeight);
+  Result.Bottom := MulDiv(AHeight, ABoundsWidth, AWidth);
+  if Result.Right > ABoundsWidth then
+    begin
+      Result.Right := ABoundsWidth;
+      Result.Top := (ABoundsHeight - Result.Bottom) div 2;
+      Result.Bottom := Result.Bottom + Result.Top;
+    end;
+  if Result.Bottom > ABoundsHeight then
+    begin
+      Result.Bottom := ABoundsHeight;
+      Result.Left := (ABoundsWidth - Result.Right) div 2;
+      Result.Right := Result.Right + Result.Left;
+    end;
+end;
+
 { TScreenForm }
+
+procedure TScreenForm.AdjustOpacity(AOpacity: byte);
+begin
+  AlphaBlendValue := AOpacity;
+end;
 
 procedure TScreenForm.EraseBkgnd(var Message: TWMEraseBkgnd);
 begin
   Message.Result := Integer(True);
-end;
-
-procedure TScreenForm.FormDblClick(Sender: TObject);
-begin
-  MainForm.actFullScreenMode.Execute;
 end;
 
 procedure TScreenForm.NCLButtonDblClk(var Message: TWMNCLButtonDblClk);
@@ -50,21 +84,31 @@ begin
   DblClick;
 end;
 
-procedure TScreenForm.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TScreenForm.NCLButtonDown(var Message: TWMNCLButtonDown);
 begin
-  MainForm.FormKeyDown(Sender, Key, Shift);
+  Click;
+  inherited;
 end;
 
-procedure TScreenForm.FormKeyUp(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TScreenForm.SetFullScreen(const Value: Boolean);
 begin
-  MainForm.FormKeyUp(Sender, Key, Shift);
+  FFullScreen := Value;
+  UpdateFullScreen;
+end;
+
+procedure TScreenForm.SetImage(const Value: TGraphic);
+begin
+  FImage := Value;
+end;
+
+procedure TScreenForm.SetStretchImages(const Value: Boolean);
+begin
+  FStretchImages := Value;
 end;
 
 procedure TScreenForm.UpdateFullScreen;
 begin
-  if MainForm.actFullScreenMode.Checked then
+  if FFullScreen then
     begin
       PreviousBounds := BoundsRect;
       WindowState := wsMaximized;
@@ -79,66 +123,63 @@ begin
     end;
 end;
 
+procedure TScreenForm.DoCloseScreenForm(Sender: TObject; var Action: TCloseAction);
+begin
+  Close;
+  Action := caFree;
+end;
+
+procedure TScreenForm.FormDblClick(Sender: TObject);
+begin
+  FullScreen := not FullScreen;
+end;
+
 procedure TScreenForm.FormPaint(Sender: TObject);
 const
   ScreenBorder = 1;
 var
   R: TRect;
-  Image: TBitmap;
   ScreenSize: TPoint;
 begin
-  with MainForm do
-    begin
-      LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
-      R := Rect(0,0,0,0);
-      if MainForm.actFullScreenMode.Checked then
-        ScreenSize := Point(Self.ClientWidth, Self.ClientHeight)
-      else
-        ScreenSize := Point(Self.ClientWidth - ScreenBorder * 2, Self.ClientHeight - ScreenBorder * 2);
+  R := Rect(0,0,0,0);
+  if FullScreen then
+    ScreenSize := Point(Self.ClientWidth, Self.ClientHeight)
+  else
+    ScreenSize := Point(Self.ClientWidth - ScreenBorder * 2, Self.ClientHeight - ScreenBorder * 2);
 
-      if FrameInfoCount > 0 then
-        try
-          if AdvertisementShowing then
-            Image := AdvertisementFrameImagePreview
-          else
-            if FrameInfoList[DisplayedFrameIndex].PreviewLoaded then
-              Image := FrameInfoList[DisplayedFrameIndex].Preview
-            else
-              Image := nil;
-          if Image <> nil then
-            begin
-              if actStretchImages.Checked or (Image.Width > ScreenSize.X) or (Image.Height > ScreenSize.Y) then
-                begin
-                  R := StretchSize(Image.Width, Image.Height, ScreenSize.X, ScreenSize.Y);
-                  R.Left   := R.Left   + ScreenBorder;
-                  R.Top    := R.Top    + ScreenBorder;
-                  R.Right  := R.Right  + ScreenBorder;
-                  R.Bottom := R.Bottom + ScreenBorder;
-                  Self.Canvas.StretchDraw(R, Image);
-                end
-              else
-                begin
-                  R.Left := (ScreenSize.X - Image.Width ) div 2 + ScreenBorder;
-                  R.Top  := (ScreenSize.Y - Image.Height) div 2 + ScreenBorder;
-                  R.Right := R.Left + Image.Width;
-                  R.Bottom := R.Top + Image.Height;
-                  Self.Canvas.Draw(R.Left, R.Top, Image);
-                end;
-            end;
-          Self.Canvas.Brush.Color := clBlack;
-          Self.Canvas.FillRect(Rect(0,       0,        R.Left,           Self.ClientHeight));
-          Self.Canvas.FillRect(Rect(R.Right, 0,        Self.ClientWidth, Self.ClientHeight));
-          Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, R.Top            ));
-          Self.Canvas.FillRect(Rect(0,       R.Bottom, Self.ClientWidth, Self.ClientHeight));
-        except
-          ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
+  if Assigned(Image) then
+    try
+      if StretchImages or (Image.Width > ScreenSize.X) or (Image.Height > ScreenSize.Y) then
+        begin
+          R := StretchSize(Image.Width, Image.Height, ScreenSize.X, ScreenSize.Y);
+          R.Left   := R.Left   + ScreenBorder;
+          R.Top    := R.Top    + ScreenBorder;
+          R.Right  := R.Right  + ScreenBorder;
+          R.Bottom := R.Bottom + ScreenBorder;
+          Self.Canvas.StretchDraw(R, Image);
         end
       else
         begin
-          Self.Canvas.Brush.Color := clBlack;
-          Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, Self.ClientHeight));
+          R.Left := (ScreenSize.X - Image.Width ) div 2 + ScreenBorder;
+          R.Top  := (ScreenSize.Y - Image.Height) div 2 + ScreenBorder;
+          R.Right := R.Left + Image.Width;
+          R.Bottom := R.Top + Image.Height;
+          Self.Canvas.Draw(R.Left, R.Top, Image);
         end;
+
+      Self.Canvas.Brush.Color := clBlack;
+      Self.Canvas.FillRect(Rect(0,       0,        R.Left,           Self.ClientHeight));
+      Self.Canvas.FillRect(Rect(R.Right, 0,        Self.ClientWidth, Self.ClientHeight));
+      Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, R.Top            ));
+      Self.Canvas.FillRect(Rect(0,       R.Bottom, Self.ClientWidth, Self.ClientHeight));
+    except
+      ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
     end
+  else
+    begin
+      Self.Canvas.Brush.Color := clBlack;
+      Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, Self.ClientHeight));
+    end;
 end;
 
 procedure TScreenForm.FormResize(Sender: TObject);
@@ -146,9 +187,22 @@ begin
   Invalidate;
 end;
 
+procedure TScreenForm.imgOverlayClick(Sender: TObject);
+begin
+  Click;
+end;
+
+procedure TScreenForm.imgOverlayDblClick(Sender: TObject);
+begin
+  DblClick;
+end;
+
 function TScreenForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
-  Result := MainForm.IsShortCut(Message);
+  if Application.MainForm <> Self then
+    Result := Application.MainForm.IsShortCut(Message)
+  else
+    Result := inherited IsShortCut(Message);
 end;
 
 procedure TScreenForm.NCHitTest(var Message: TWMNCHitTest);
@@ -156,7 +210,7 @@ var
   P: TPoint;
 begin
   inherited;
-  if not MainForm.actFullScreenMode.Checked and (Message.Result = HTCLIENT) then
+  if not FullScreen and (Message.Result = HTCLIENT) then
     begin
       Message.Result := HTCAPTION;
 

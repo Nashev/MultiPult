@@ -38,13 +38,13 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <ImageDebugInfo>true</ImageDebugInfo>
-        <Icon_MainIcon>MultiPult_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>WebcamMultFrameCapture_Icon.ico</Icon_MainIcon>
         <SanitizedProjectName>WebcamMultFrameCapture</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.50.0;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2017;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=МультиПульт;ProductVersion=0.9</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.51.0;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2017;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=МультиПульт;ProductVersion=0.9</VerInfo_Keys>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Release>50</VerInfo_Release>
+        <VerInfo_Release>51</VerInfo_Release>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_Inlining>off</DCC_Inlining>
@@ -90,6 +90,10 @@
         <DCCReference Include="Webcam_Capture_V2\Common\DirectX\DirectSound.pas"/>
         <DCCReference Include="CameraFormUnit.pas">
             <Form>CameraForm</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="ScreenFormUnit.pas">
+            <Form>ScreenForm</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Release">
