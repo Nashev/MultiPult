@@ -659,7 +659,7 @@ procedure TVideoImage.UnpackFrame(Size: integer; pData: pointer);
 var
   {f       : file;}
   Unknown : boolean;
-  FourCCSt: string[4];
+  FourCCSt: array [1..4] of AnsiChar;
 begin
   IF pData = nil
     then exit;
@@ -712,13 +712,13 @@ begin
     IF Unknown then
       begin
         IF fFourCC = 0
-          then FourCCSt := 'RGB'
+          then FourCCSt := 'RGB '
           else begin
             FourCCSt := '    ';
             move(fFourCC, FourCCSt[1], 4);
           end;
         FBitmap.Canvas.TextOut(0,  0, 'Unknown compression');
-        FBitmap.Canvas.TextOut(0, FBitmap.Canvas.TextHeight('X'), 'DataSize: '+INtToStr(Size)+'  FourCC: '+FourCCSt);
+        FBitmap.Canvas.TextOut(0, FBitmap.Canvas.TextHeight('X'), 'DataSize: '+INtToStr(Size)+'  FourCC: '+string(FourCCSt));
       end;
 
     fImageUnpacked := true;

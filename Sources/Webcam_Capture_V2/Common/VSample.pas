@@ -1392,7 +1392,7 @@ BEGIN
   IF g_psCurrent < PS_Paused then
     exit;
   FOR i := 0 TO Length(FormatArr)-1 DO
-    VidSize.Add(IntToStr(FormatArr[i].Width)+'*'+IntToStr(FormatArr[i].Height) + '  (' + FormatArr[i].FourCC+')');
+    VidSize.Add(IntToStr(FormatArr[i].Width)+'*'+IntToStr(FormatArr[i].Height) + '  (' + string(FormatArr[i].FourCC)+')');
 END;
 
 

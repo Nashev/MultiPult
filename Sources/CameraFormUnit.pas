@@ -265,7 +265,7 @@ begin
   try
     FVideoImage.GetBitmap(FVideoBitmap);
     if not (imgCamPreview.Picture.Graphic is TPngImage) then
-      imgCamPreview.Picture.Graphic := TPngImage.Create;
+      imgCamPreview.Picture.Graphic := TPngImage.CreateBlank(COLOR_RGB, 8, 1, 1);
 
     imgCamPreview.Picture.Graphic.Assign(FVideoBitmap);
   finally
@@ -412,6 +412,9 @@ end;
 procedure TCameraForm.cbbResolutionChange(Sender: TObject);
 begin
   FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
+  StopCamera;
+  StartCamera;
+  DoActiveChanged;
 end;
 
 procedure TCameraForm.cbCamSelectorChange(Sender: TObject);
@@ -430,6 +433,8 @@ end;
 procedure TCameraForm.StopCamera;
 resourcestring
   rsPressStart = 'Если камера не включается, '#13#10'нажмите кнопку Пуск в окне управления камерой';
+var
+  StubImage: TPngImage;
 begin
   FActive := False;
   VideoBitmapCriticalSection.Enter;
@@ -438,11 +443,14 @@ begin
   finally
     VideoBitmapCriticalSection.Leave;
   end;
-  imgCamPreview.Picture.Bitmap.SetSize(imgCamPreview.Width, imgCamPreview.Height);
-  imgCamPreview.Picture.Bitmap.Canvas.Brush.Color := clBlack;
-  imgCamPreview.Picture.Bitmap.Canvas.FillRect(Rect(0, 0, imgCamPreview.Picture.Bitmap.Width, imgCamPreview.Picture.Bitmap.Height));
-  imgCamPreview.Picture.Bitmap.Canvas.Font.Color := clWhite;
-  imgCamPreview.Picture.Bitmap.Canvas.TextRect(Rect(4, 4, imgCamPreview.Picture.Bitmap.Width, imgCamPreview.Picture.Bitmap.Height), 4, 4, rsPressStart);
+  Assert(imgCamPreview.Picture.Graphic is TPngImage, '{1F9B8A82-C994-4546-ADA4-2DD3E1CCA0EF}');
+  StubImage := TPngImage(imgCamPreview.Picture.Graphic);
+
+  StubImage.SetSize(imgCamPreview.Width, imgCamPreview.Height);
+  StubImage.Canvas.Brush.Color := clBlack;
+  StubImage.Canvas.FillRect(Rect(0, 0, StubImage.Width, StubImage.Height));
+  StubImage.Canvas.Font.Color := clWhite;
+  StubImage.Canvas.TextRect(Rect(4, 4, StubImage.Width, StubImage.Height), 4, 4, rsPressStart);
 end;
 
 procedure TCameraForm.MakePhoto;
