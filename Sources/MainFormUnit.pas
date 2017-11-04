@@ -91,12 +91,14 @@ type
     MainMenu: TMainMenu;
     actOpen: TAction;
     actNew: TAction;
+    actSave: TAction;
     actSaveAs: TAction;
     actSelectPhotoFolder: TAction;
     mmiSelectPhotoFolder: TMenuItem;
     mmiFiles: TMenuItem;
     mmiNew: TMenuItem;
     mmiOpen: TMenuItem;
+    mmiSave: TMenuItem;
     mmiSaveAs: TMenuItem;
     mmiNavigation: TMenuItem;
     actStepPrev: TAction;
@@ -385,6 +387,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure actShowCameraControlExecute(Sender: TObject);
     procedure actShowCameraControlUpdate(Sender: TObject);
+    procedure actSaveUpdate(Sender: TObject);
+    procedure actSaveExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -395,6 +399,7 @@ type
     procedure ClearSound;
     function FrameIndexToTimeStamp(AFrameIndex: Integer): string;
     procedure Stop;
+    procedure SaveWorkingSet(ANewProjectFileName: string = '');
   private
     VersionNameString: string; // '0.9.34' - задаЄтс€ в ProjectOptions
     VersionCopyrightString: string; // '2017' - тоже в ProjectOptions
@@ -441,6 +446,7 @@ type
     FSaved: Boolean;
     procedure SetSaved(const Value: Boolean);
     procedure CheckStopCamera;
+    function OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -449,7 +455,7 @@ type
     procedure StopRecording;
     procedure StopPlaying;
     procedure SetDisplayedFrameIndex(Value: Integer);
-    procedure InitMicrophoneUsage(AKeepOpenedWave: Boolean);
+    procedure SwitchToMicrophoneUsage(AKeepOpenedWave: Boolean);
     procedure RepaintAll;
     procedure ClearBookmarks;
     procedure SaveBeforeClose(const APurpose: string);
@@ -488,7 +494,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
-    procedure SetCaption(const Value: TCaption);
+    procedure UpdateCaption;
     procedure SetStatus(const Value: string);
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property DisplayedFrameIndex: Integer read FDisplayedFrameIndex write SetDisplayedFrameIndex;
@@ -512,7 +518,7 @@ var
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
-  CameraFormUnit, MP3ConvertFormUnit;
+  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -562,7 +568,7 @@ begin
       IDCANCEL: Abort;
       IDYES:
         begin
-          actSaveAs.Execute;
+          actSave.Execute;
           if not Saved then
             Abort;
         end;
@@ -1401,7 +1407,7 @@ begin
 
   lblWorkPath.Caption := PhotoFolder;
 
-  SetCaption('');
+  UpdateCaption;
 
   UnloadFrames;
   LoadPhotoFolder;
@@ -1500,10 +1506,10 @@ end;
 procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
 begin
   actNew.Execute;
-  InitMicrophoneUsage(False);
+  SwitchToMicrophoneUsage(False);
 end;
 
-procedure TMainForm.InitMicrophoneUsage(AKeepOpenedWave: Boolean);
+procedure TMainForm.SwitchToMicrophoneUsage(AKeepOpenedWave: Boolean);
 begin
   FExternalAudioFileName := '';
   actSelectAudioFile.Checked := False;
@@ -1849,7 +1855,7 @@ begin
   if FExternalAudioFileName = '' then
     ClearSound;
   ProjectFileName := '';
-  SetCaption('');
+  UpdateCaption;
   Saved := True;
   AdvertisementShowing := False;
   RepaintAll;
@@ -1921,7 +1927,8 @@ begin
   ClearBookmarks;
   PhotoFolder := ExtractFilePath(AFileName);
   lblWorkPath.Caption := PhotoFolder;
-  ProjectFileName := ExtractFileName(AFileName);
+  ProjectFileName := ChangeFileExt(ExtractFileName(AFileName), '');
+  UpdateCaption;
 
   with TStringList.Create do
     try
@@ -1935,9 +1942,7 @@ begin
         begin
           WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
           if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
-            begin
-              OpenAudio(PhotoFolder + WaveFileName);
-            end;
+            OpenAudio(PhotoFolder + WaveFileName); // см. ниже условие про SwitchToMicrophoneUsage
           inc(i);
           s := Strings[i];
         end;
@@ -2022,8 +2027,10 @@ begin
     DisplayedFrameIndex := WorkingSetFrames[0].FrameInfoIndex;
   CaptureFirstFrameSizes;
 
-  if (WaveFileName = ExtractFileName(AFileName) + '.wav') and (CalculateSoundFramesCount = RecordedFrames.Count) then // TODO: сделать более надЄжный и €вный признак
-    InitMicrophoneUsage(True);
+  if (WaveFileName = ExtractFileName(AFileName) + '.wav') and
+     (CalculateSoundFramesCount = RecordedFrames.Count)
+  then // TODO: сделать более надЄжный и €вный признак
+    SwitchToMicrophoneUsage(True);
 
   Saved := True;
   RepaintAll;
@@ -2113,37 +2120,39 @@ begin
   SafeShellExecute(HWND(nil), 'edit', FrameInfoList[DisplayedFrameIndex].FullFileName, '', '', SW_SHOW);
 end;
 
-procedure TMainForm.actSaveAsExecute(Sender: TObject);
+function TMainForm.OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
+resourcestring
+  rs_DoYouWantReplaceMovie = '¬ папке "%s"'#13#10'уже есть мульт с именем "%s".'#13#10'«аменить?';
+begin
+  if FileExists(PhotoFolder + ANewMovieName + '.mp') then
+    Result := (
+    MessageBox(
+      0,
+      PChar(Format(rs_DoYouWantReplaceMovie, [PhotoFolder, ANewMovieName])),
+      PChar(Application.Title),
+      MB_ICONQUESTION or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+    = IDYES)
+  else
+    Result := True;
+
+  if Result then
+    SaveWorkingSet(ANewMovieName);
+end;
+
+procedure TMainForm.SaveWorkingSet(ANewProjectFileName: string = '');
 var
   i: Integer;
-  NewPath: string;
   AudioName: string;
 begin
-  Stop;
-  dlgSaveMovie.InitialDir := PhotoFolder;
-  if not dlgSaveMovie.Execute then
-    Abort;
-
-  NewPath := ExtractFilePath(dlgSaveMovie.FileName);
-  ProjectFileName := ExtractFileName(dlgSaveMovie.FileName);
-  SetCaption('');
-  if UpperCase(NewPath) <> UpperCase(PhotoFolder) then
-    // TODO: не уведомл€ть, а исправл€ть относительные пути по возможности
-    InfoMsg(
-      '¬нимание!'#13#10+
-      'ѕути к файлам кадров в файле проекта будут всЄ равно сохранены относительно '#13#10+
-      '  "' + PhotoFolder + '", '#13#10+
-      'а не относительно '#13#10+
-      '  "' + NewPath + '".'#13#10+
-      'ѕри загрузке проекта придЄтс€ восстанавливать структуру каталогов с изображени€ми относительно файла проекта.'
-    );
+  ProjectFileName := ANewProjectFileName;
+  UpdateCaption;
   if FExternalAudioFileName <> '' then
     AudioName := ExtractFileName(FExternalAudioFileName)
   else
-    AudioName := ExtractFileName(dlgSaveMovie.FileName) + '.wav';
+    AudioName := ProjectFileName + '.wav';
   // если внешний файл под другим именем уже хранитс€ в папке проекта, не будем его перезаписывать.
-  if ExpandFileName(NewPath + AudioName) <> ExpandFileName(FExternalAudioFileName) then
-    WaveStorage.Wave.SaveToFile(NewPath + AudioName);
+  if ExpandFileName(PhotoFolder + AudioName) <> ExpandFileName(FExternalAudioFileName) then
+    WaveStorage.Wave.SaveToFile(PhotoFolder + AudioName);
   with TStringList.Create do
     try
       Add('Wave = ' + AudioName);
@@ -2166,16 +2175,38 @@ begin
       Add(FrameSectionStart);
       for i := 0 to RecordedFrames.Count - 1 do
         Add(IntToStr(RecordedFrames[i].FrameInfoIndex));
-      SaveToFile(dlgSaveMovie.FileName);
+      SaveToFile(PhotoFolder + ProjectFileName + '.mp');
       Saved := True;
     finally
       Free;
     end;
 end;
 
+procedure TMainForm.actSaveAsExecute(Sender: TObject);
+resourcestring
+  rs_SaveAs = '—охранение мульта под новым имемем';
+begin
+  Stop;
+  if not TMovieNameDialog.Execute(PhotoFolder, ProjectFileName, rs_SaveAs, OnSaveAsCloseQuery) then
+    Abort;
+end;
+
 procedure TMainForm.actSaveAsUpdate(Sender: TObject);
 begin
   actSaveAs.Enabled := not Exporting and (WorkingSetFrames.Count > 0);// and not Saved;
+end;
+
+procedure TMainForm.actSaveExecute(Sender: TObject);
+begin
+  if ProjectFileName <> '' then
+    SaveWorkingSet
+  else
+   actSaveAs.Execute;
+end;
+
+procedure TMainForm.actSaveUpdate(Sender: TObject);
+begin
+  actSave.Enabled := not Exporting and (WorkingSetFrames.Count > 0) and ((ProjectFileName = '') or not Saved);
 end;
 
 procedure TMainForm.actScreenWindowExecute(Sender: TObject);
@@ -2186,9 +2217,20 @@ begin
   ScreenForm.Visible := actScreenWindow.Checked;
 end;
 
-procedure TMainForm.SetCaption(const Value: TCaption);
+procedure TMainForm.UpdateCaption;
+resourcestring
+  rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
+var
+  s: string;
 begin
-  Caption := ProjectFileName + ' Ч ' + Value + ' Ч ' + Application.Title;
+  s := '';
+  if not Exporting then
+    if FDisplayedFrameIndex >= 0 then
+      if Assigned(CurrentWorkingSetFrame) then
+        s := ' Ч ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName
+      else
+        s := ' Ч ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName + rs_FrameNotInWorkingSet;
+  Caption := ProjectFileName + s + ' Ч ' + Application.Title;
 end;
 
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
@@ -2292,8 +2334,6 @@ begin
 end;
 
 procedure TMainForm.SetDisplayedFrameIndex(Value: Integer);
-resourcestring
-  rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
 var
   WorkingSetIndex: Integer;
 begin
@@ -2316,11 +2356,7 @@ begin
       else
         WorkingSetIndex := -1;
       LoadPhoto(Value, WorkingSetIndex);
-      if not Exporting then
-        if Assigned(CurrentWorkingSetFrame) then
-          SetCaption(FrameInfoList[Value].RelativeFileName)
-        else
-          SetCaption(FrameInfoList[Value].RelativeFileName + rs_FrameNotInWorkingSet);
+      UpdateCaption;
     end;
 
   RepaintAll;

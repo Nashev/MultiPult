@@ -33,7 +33,9 @@ uses
   CameraFormUnit in 'CameraFormUnit.pas' {CameraForm},
   ExportSizeCustomRequestDialogUnit in 'ExportSizeCustomRequestDialogUnit.pas' {ExportSizeCustomRequestDialog},
   WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm},
-  MP3ConvertFormUnit in 'MP3ConvertFormUnit.pas' {MP3ConvertForm};
+  MP3ConvertFormUnit in 'MP3ConvertFormUnit.pas' {MP3ConvertForm},
+  MovieNameDialogUnit in 'MovieNameDialogUnit.pas' {MovieNameDialog},
+  UtilsUnit in 'UtilsUnit.pas';
 
 {$R *.res}
 
