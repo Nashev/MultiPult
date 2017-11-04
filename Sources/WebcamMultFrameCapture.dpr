@@ -30,6 +30,7 @@ begin
   CameraForm.imgOverlay := ScreenForm.imgOverlay;
   CameraForm.imgCamPreview := ScreenForm.imgCamPreview;
   CameraForm.OnOpacityChanged := ScreenForm.AdjustOpacity;
+  CameraForm.OnCloseQuery := ScreenForm.DoCloseQueryScreenForm;
   CameraForm.OnClose := ScreenForm.DoCloseScreenForm;
   CameraForm.Active := True;
 

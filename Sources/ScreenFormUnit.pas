@@ -16,6 +16,7 @@ type
     procedure imgOverlayClick(Sender: TObject);
     procedure imgOverlayDblClick(Sender: TObject);
     procedure DoCloseScreenForm(Sender: TObject; var Action: TCloseAction);
+    procedure DoCloseQueryScreenForm(Sender: TObject; var CanClose: Boolean);
   private
     PreviousBounds: TRect;
     FFullScreen: Boolean;
@@ -121,6 +122,19 @@ begin
 //      BoundsRect := PreviousBounds;
       // FormStyle := fsNormal;
     end;
+end;
+
+procedure TScreenForm.DoCloseQueryScreenForm(Sender: TObject;
+  var CanClose: Boolean);
+resourcestring
+  rs_DoYouWantCloseGrabber = 'Закрыть программу?';
+begin
+  CanClose := MessageBox(
+    0,
+    PChar(rs_DoYouWantCloseGrabber),
+    PChar(Application.Title),
+    MB_ICONQUESTION or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
+   = IDOK
 end;
 
 procedure TScreenForm.DoCloseScreenForm(Sender: TObject; var Action: TCloseAction);
