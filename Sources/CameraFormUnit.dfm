@@ -43,7 +43,7 @@ object CameraForm: TCameraForm
   object lblLapseStatus: TLabel
     Left = 17
     Top = 101
-    Width = 647
+    Width = 3
     Height = 13
     Caption = ' '
   end
@@ -110,17 +110,8 @@ object CameraForm: TCameraForm
     TabOrder = 4
     OnClick = btnPreferencesClick
   end
-  object btnTimeLapse: TButton
-    Left = 248
-    Top = 67
-    Width = 148
-    Height = 25
-    Caption = #1041#1088#1072#1090#1100' '#1082#1072#1076#1088' '#1082#1072#1078#1076#1099#1077
-    TabOrder = 5
-    OnClick = btnTimeLapseClick
-  end
   object seInterval: TSpinEdit
-    Left = 402
+    Left = 435
     Top = 69
     Width = 62
     Height = 22
@@ -130,7 +121,7 @@ object CameraForm: TCameraForm
     Value = 1
   end
   object cbbUnit: TComboBox
-    Left = 470
+    Left = 503
     Top = 69
     Width = 59
     Height = 21
@@ -213,9 +204,9 @@ object CameraForm: TCameraForm
   object chkMinimize: TCheckBox
     Left = 118
     Top = 71
-    Width = 124
+    Width = 139
     Height = 17
-    Caption = #1048' '#1089#1082#1088#1099#1090#1100' '#1101#1090#1086' '#1086#1082#1085#1086
+    Caption = #1048' '#1089#1074#1077#1088#1085#1091#1090#1100' '#1087#1088#1086#1075#1088#1072#1084#1084#1091
     TabOrder = 16
   end
   object tbOpacity: TTrackBar
@@ -242,6 +233,15 @@ object CameraForm: TCameraForm
     Caption = #8634
     TabOrder = 15
     OnClick = btnReloadOverlayClick
+  end
+  object btnTimeLapse: TButton
+    Left = 281
+    Top = 67
+    Width = 148
+    Height = 25
+    Caption = #1041#1088#1072#1090#1100' '#1082#1072#1076#1088' '#1082#1072#1078#1076#1099#1077
+    TabOrder = 5
+    OnClick = btnTimeLapseClick
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer

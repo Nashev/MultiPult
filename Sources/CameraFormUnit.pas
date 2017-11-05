@@ -123,6 +123,7 @@ var
   LastUsedResolution: Integer;
   IniFile: TIniFile;
 begin
+  FCanChangePhotoFolder := True;
   FVideoBitmap := TBitmap.Create;
   VideoBitmapCriticalSection := TCriticalSection.Create;
   FVideoImage := TVideoImage.Create;
