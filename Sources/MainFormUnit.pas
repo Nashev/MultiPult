@@ -1796,14 +1796,20 @@ procedure TMainForm.CameraFormActiveChanged(Sender: TObject);
 resourcestring
   rsStartRecording = 'Запись';
   rsMakeCameraFrame = 'Записать кадр с камеры в папку мульта';
-  rsSpaceKey = ' (клавиша Пробел)';
 begin
   Stop;
   if CameraForm.Active then
-    actRecord.Caption := rsMakeCameraFrame
+  begin
+    actRecord.Caption := rsMakeCameraFrame;
+    actRecord.ImageIndex := 9;
+  end
   else
+  begin
     actRecord.Caption := rsStartRecording;
-  btnRecord.Caption := actRecord.Caption + rsSpaceKey;
+    actRecord.ImageIndex := 6;
+  end;
+
+  btnRecord.Hint := actRecord.Caption;
 
   imgCamPreview.Visible := CameraForm.Active;
 end;
