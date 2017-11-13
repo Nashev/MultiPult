@@ -35,7 +35,8 @@ uses
   WorkingSetManagementFormUnit in 'WorkingSetManagementFormUnit.pas' {WorkingSetManagementForm},
   MP3ConvertFormUnit in 'MP3ConvertFormUnit.pas' {MP3ConvertForm},
   MovieNameDialogUnit in 'MovieNameDialogUnit.pas' {MovieNameDialog},
-  UtilsUnit in 'UtilsUnit.pas';
+  UtilsUnit in 'UtilsUnit.pas',
+  DirMon in 'DirMon.pas';
 
 {$R *.res}
 

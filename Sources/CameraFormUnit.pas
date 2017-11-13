@@ -16,7 +16,7 @@ uses
   Winapi.Windows, Winapi.Messages, VCL.FileCtrl, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, IniFiles, JPEG,
   VFrames, VSample, Direct3D9, DirectDraw, DirectShow9, DirectSound, DXTypes,
-  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer, Vcl.Imaging.pngimage, System.SyncObjs;
+  Vcl.ComCtrls, Vcl.Samples.Spin, WaveTimer, Vcl.Imaging.pngimage, System.SyncObjs, DirMon;
 
 type
   TNewFrameEvent = procedure(AFileName: string) of object;
@@ -82,6 +82,7 @@ type
     FCanChangePhotoFolder: Boolean;
     FOnOpacityChanged: TOpacityChangedEvent;
     FOnActiveChanged: TNotifyEvent;
+    FOverlayDirMonitor: TDirMonitor;
     procedure GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
     function IntervalToString(AInterval: Integer): string;
     procedure SetPhotoFolder(const Value: string);
@@ -92,7 +93,7 @@ type
     procedure SetImgCamPreview(const Value: TImage);
     procedure SetImgOverlay(const Value: TImage);
     procedure DoActiveChanged;
-
+    procedure OverlayDirChangedHandler(Sender: TObject);
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -164,6 +165,7 @@ begin
 
     chkOverlay.Checked := IniFile.ReadBool('LastUsed', 'ShowOverlay', chkOverlay.Checked);
     edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
+    chkOverlayClick(nil);
 
     tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
 
@@ -351,6 +353,7 @@ begin
       imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
       imgOverlay.Visible := True;
       chkOverlay.Checked := True;
+      chkOverlayClick(nil);
     end;
   end;
 end;
@@ -428,7 +431,35 @@ end;
 procedure TCameraForm.chkOverlayClick(Sender: TObject);
 begin
   if Assigned(imgOverlay) then
-    imgOverlay.Visible := chkOverlay.Checked;
+    begin
+      imgOverlay.Visible := chkOverlay.Checked;
+      if Assigned(FOverlayDirMonitor) then
+        begin
+          FOverlayDirMonitor.FreeOnTerminate := True;
+          FOverlayDirMonitor.Terminate;
+          FOverlayDirMonitor := nil;
+        end;
+      if chkOverlay.Checked and DirectoryExists(ExtractFilePath(edtOverlay.Text)) then
+        begin
+          FOverlayDirMonitor := TDirMonitor.Create(ExtractFilePath(edtOverlay.Text), OverlayDirChangedHandler, nil);
+          FOverlayDirMonitor.Start;
+        end;
+    end;
+end;
+
+procedure TCameraForm.OverlayDirChangedHandler(Sender: TObject);
+var
+  i: Integer;
+begin
+  if Assigned(FOverlayDirMonitor) then
+    for i := 0 to FOverlayDirMonitor.Notifications.Count - 1 do
+      if (FOverlayDirMonitor.Path + FOverlayDirMonitor.Notifications[i] = edtOverlay.Text) then
+        if ([dmaAdded, dmaNewName, dmaModified] * FOverlayDirMonitor.Notifications.Actions[i] <> []) then
+          try
+            imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+          except
+            ;
+          end;
 end;
 
 procedure TCameraForm.StopCamera;
@@ -524,6 +555,7 @@ begin
     begin
       imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
       imgOverlay.Visible := chkOverlay.Checked;
+      chkOverlayClick(nil);
     end;
 end;
 

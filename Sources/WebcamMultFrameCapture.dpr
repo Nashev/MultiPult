@@ -13,7 +13,8 @@ uses
   DirectShow9 in 'Webcam_Capture_V2\Common\DirectX\DirectShow9.pas',
   DirectSound in 'Webcam_Capture_V2\Common\DirectX\DirectSound.pas',
   CameraFormUnit in 'CameraFormUnit.pas' {CameraForm},
-  ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm};
+  ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm},
+  DirMon in 'DirMon.pas';
 
 {$R *.res}
 

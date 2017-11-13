@@ -2260,6 +2260,7 @@ begin
   FPhotoFolder := Value;
   if Assigned(CameraForm) then
     CameraForm.PhotoFolder := PhotoFolder + CamFolder;
+  // TODO: PhotoFolderMonitor := TDirMonitor.Create(FPhotoFolder, PhotoFolderChanged, nil)
 end;
 
 procedure TMainForm.SetSaved(const Value: Boolean);

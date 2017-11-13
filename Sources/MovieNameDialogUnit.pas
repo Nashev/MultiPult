@@ -53,6 +53,7 @@ uses
 
 class function TMovieNameDialog.Execute(const APhotoFolder, AMovieName, ACaption: string; ACloseQueryHandler: TMovieNameDialogCloseQueryEvent): Boolean;
 begin
+  Result := True;
   with Self.Create(nil) do
     try
       edtPhotoFolder.Text := APhotoFolder;
@@ -77,7 +78,6 @@ end;
 procedure TMovieNameDialog.InitMovieList;
 var
   Rec: TSearchRec;
-  ext: string;
 begin
   if {$IFDEF FPC}FindFirstUTF8{$ELSE}FindFirst{$ENDIF}(edtPhotoFolder.Text + '*.mp', faAnyFile - faDirectory, Rec) = 0 then
     begin
