@@ -83,6 +83,7 @@ type
     FOnOpacityChanged: TOpacityChangedEvent;
     FOnActiveChanged: TNotifyEvent;
     FOverlayDirMonitor: TDirMonitor;
+    FFileCommanderDirMonitor: TDirMonitor;
     procedure GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
     function IntervalToString(AInterval: Integer): string;
     procedure SetPhotoFolder(const Value: string);
@@ -94,6 +95,9 @@ type
     procedure SetImgOverlay(const Value: TImage);
     procedure DoActiveChanged;
     procedure OverlayDirChangedHandler(Sender: TObject);
+    procedure StartFileCommander;
+    procedure StopFileCommander;
+    procedure FileCommanderDirChangedHandler(Sender: TObject);
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -103,7 +107,7 @@ type
     property imgOverlay: TImage read FimgOverlay write SetImgOverlay;
     property Active: Boolean read FActive write SetActive;
     procedure DisablePhotoFolderLookup;
-    procedure MakePhoto;
+    procedure MakePhoto(const AFileName: string = '');
   end;
 
 var
@@ -203,6 +207,7 @@ begin
   Application.ProcessMessages;
   Sleep(300);
   // StopCamera;
+  StopFileCommander;
 
   VideoBitmapCriticalSection.Enter;
   try
@@ -380,7 +385,44 @@ begin
       cbbResolution.ItemIndex := NewIndex;
       FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
       FActive := True;
+      StartFileCommander;
     end;
+end;
+
+procedure TCameraForm.StartFileCommander;
+begin
+  StopFileCommander;
+  if Active then
+    begin
+      FFileCommanderDirMonitor := TDirMonitor.Create(PhotoFolder, FileCommanderDirChangedHandler, nil);
+      FFileCommanderDirMonitor.Start;
+    end;
+end;
+
+procedure TCameraForm.StopFileCommander;
+begin
+  if Assigned(FFileCommanderDirMonitor) then
+    begin
+      FFileCommanderDirMonitor.FreeOnTerminate := True;
+      FFileCommanderDirMonitor.Terminate;
+      FFileCommanderDirMonitor := nil;
+    end;
+end;
+
+procedure TCameraForm.FileCommanderDirChangedHandler(Sender: TObject);
+var
+  i: Integer;
+begin
+  if Assigned(FFileCommanderDirMonitor) then
+    for i := 0 to FFileCommanderDirMonitor.Notifications.Count - 1 do
+      if (LowerCase(FFileCommanderDirMonitor.Notifications[i]) = 'grab') then
+        if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) then
+          try
+            MakePhoto('Grabbed');
+            DeleteFile(PhotoFolder + 'grab');
+          except
+            ;
+          end;
 end;
 
 procedure TCameraForm.btnTimeLapseClick(Sender: TObject);
@@ -483,16 +525,22 @@ begin
   StubImage.Canvas.FillRect(Rect(0, 0, StubImage.Width, StubImage.Height));
   StubImage.Canvas.Font.Color := clWhite;
   StubImage.Canvas.TextRect(Rect(4, 4, StubImage.Width, StubImage.Height), 4, 4, rsPressStart);
+  StopFileCommander;
 end;
 
-procedure TCameraForm.MakePhoto;
+procedure TCameraForm.MakePhoto(const AFileName: string = '');
 var
   NewFileName: string;
   StoringFile: TPNGImage;
 begin
-  DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
-  while FileExists(PhotoFolder + NewFileName + '.png') do
-    NewFileName := NewFileName + '_';
+  if AFileName = '' then
+    begin
+      DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
+      while FileExists(PhotoFolder + NewFileName + '.png') do
+        NewFileName := NewFileName + '_';
+    end
+  else
+    NewFileName := AFileName;
 
   NewFileName := NewFileName + '.png';
   StoringFile := TPNGImage.Create;
@@ -569,6 +617,8 @@ begin
 
   if (FPhotoFolder <> '') and (FPhotoFolder[Length(FPhotoFolder)] <> '\') then
     FPhotoFolder := FPhotoFolder + '\';
+
+  StartFileCommander;
 
   edtFolder.Text := Value;
 end;

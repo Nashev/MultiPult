@@ -207,8 +207,8 @@ begin
               FILE_ACTION_ADDED    : Action := dmaAdded;
               FILE_ACTION_REMOVED  : Action := dmaRemoved;
               FILE_ACTION_MODIFIED : Action := dmaModified;
-              FILE_ACTION_RENAMED_OLD_NAME : Action := dmaNewName;
-              FILE_ACTION_RENAMED_NEW_NAME : Action := dmaOldName;
+              FILE_ACTION_RENAMED_OLD_NAME : Action := dmaOldName;
+              FILE_ACTION_RENAMED_NEW_NAME : Action := dmaNewName;
             else
               Action := dmaUnknown;
             end;
