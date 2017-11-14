@@ -15,6 +15,11 @@
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
         <Cfg_1>true</Cfg_1>
         <CfgParent>Base</CfgParent>
@@ -33,7 +38,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <ImageDebugInfo>true</ImageDebugInfo>
-        <Icon_MainIcon>MultiPult_Icon.ico</Icon_MainIcon>
         <SanitizedProjectName>MultiPult</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
@@ -59,6 +63,9 @@
         <DCC_K>false</DCC_K>
         <DCC_E>false</DCC_E>
         <DCC_F>false</DCC_F>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <Icon_MainIcon>MultiPult_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
