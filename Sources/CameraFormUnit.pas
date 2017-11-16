@@ -107,7 +107,7 @@ type
     property imgOverlay: TImage read FimgOverlay write SetImgOverlay;
     property Active: Boolean read FActive write SetActive;
     procedure DisablePhotoFolderLookup;
-    procedure MakePhoto(const AFileName: string = '');
+    function MakePhoto(const AFileName: string = ''): string;
   end;
 
 var
@@ -412,14 +412,17 @@ end;
 procedure TCameraForm.FileCommanderDirChangedHandler(Sender: TObject);
 var
   i: Integer;
+  SavedFileName: string;
 begin
   if Assigned(FFileCommanderDirMonitor) then
     for i := 0 to FFileCommanderDirMonitor.Notifications.Count - 1 do
       if (LowerCase(FFileCommanderDirMonitor.Notifications[i]) = 'grab') then
         if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) then
           try
-            MakePhoto('Grabbed');
-            DeleteFile(PhotoFolder + 'grab');
+            DeleteFile(PhotoFolder + 'grab'); // забрали исполнять
+
+            SavedFileName := MakePhoto('Grabbed_tmp'); // создаём файл и "постепенно" наполняем содержимым
+            RenameFile(PhotoFolder + SavedFileName, PhotoFolder + 'Grabbed' + ExtractFileExt(SavedFileName)); // делаем, чтоб файл с нужным именем появлялся уже наполненным.
           except
             ;
           end;
@@ -528,21 +531,20 @@ begin
   StopFileCommander;
 end;
 
-procedure TCameraForm.MakePhoto(const AFileName: string = '');
+function TCameraForm.MakePhoto(const AFileName: string = ''): string;
 var
-  NewFileName: string;
   StoringFile: TPNGImage;
 begin
   if AFileName = '' then
     begin
-      DateTimeToString(NewFileName, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
-      while FileExists(PhotoFolder + NewFileName + '.png') do
-        NewFileName := NewFileName + '_';
+      DateTimeToString(Result, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
+      while FileExists(PhotoFolder + Result + '.png') do
+        Result := Result + '_';
     end
   else
-    NewFileName := AFileName;
+    Result := AFileName;
 
-  NewFileName := NewFileName + '.png';
+  Result := Result + '.png';
   StoringFile := TPNGImage.Create;
   try
     VideoBitmapCriticalSection.Enter;
@@ -552,13 +554,13 @@ begin
       VideoBitmapCriticalSection.Leave;
     end;
     ForceDirectories(PhotoFolder);
-    StoringFile.SaveToFile(PhotoFolder + NewFileName);
+    StoringFile.SaveToFile(PhotoFolder + Result);
   finally
     StoringFile.Free;
   end;
   if Assigned(OnNewFrame)  then
-    OnNewFrame(PhotoFolder + NewFileName);
-  LastFileName := NewFileName;
+    OnNewFrame(PhotoFolder + Result);
+  LastFileName := Result;
   lblLapseStatus.Caption := LastFileName;
 end;
 
