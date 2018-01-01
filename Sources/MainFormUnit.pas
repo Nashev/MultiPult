@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
+  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 const
   ControlActionStackDeep = 10;
@@ -390,9 +390,11 @@ type
     procedure actShowCameraControlUpdate(Sender: TObject);
     procedure actSaveUpdate(Sender: TObject);
     procedure actSaveExecute(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
+    SettingsChanged: Boolean;
     function NextControlAction: TControlAction;
     procedure PopControlAction;
     procedure PushControlAction(Value: TControlAction);
@@ -449,6 +451,8 @@ type
     procedure CheckStopCamera;
     function OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
     function FindFrameInfo(const ARelativePath, AFileName: string): Integer;
+    procedure LoadSettings;
+    procedure SaveSettings;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -489,6 +493,7 @@ type
     procedure CreateWindowHandle(const Params: TCreateParams); override;
     procedure DestroyWindowHandle; override;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
+    procedure WMMove(var Msg: TWMMove); message WM_MOVE;
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
@@ -520,7 +525,7 @@ var
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
-  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit;
+  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -1070,6 +1075,12 @@ begin
   DragFinish(Msg.Drop); // end drag handling, release drag source window
 end;
 
+procedure TMainForm.WMMove(var Msg: TWMMove);
+begin
+  inherited;
+  SettingsChanged := True;
+end;
+
 procedure TMainForm.ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
 begin
   if ANewRecordPosition > RecordedFrames.Count then
@@ -1148,6 +1159,11 @@ begin
   Handled := True;
 end;
 
+procedure TMainForm.FormResize(Sender: TObject);
+begin
+  SettingsChanged := True;
+end;
+
 procedure TMainForm.FormShow(Sender: TObject);
 begin
   CameraForm.OnNewFrame := AddNewFrame;
@@ -1159,6 +1175,8 @@ begin
   ScreenForm.OnKeyDown := FormKeyDown;
   ScreenForm.OnKeyUp := FormKeyUp;
   ScreenForm.OnDblClick := actFullScreenModeExecute;
+
+  LoadSettings;
 end;
 
 function TMainForm.GetFrameInfo(Index: Integer): TFrameInfo;
@@ -1820,7 +1838,11 @@ end;
 procedure TMainForm.actFullScreenModeExecute(Sender: TObject);
 begin
   if ScreenForm.Visible then
+  begin
+    if (Sender <> actFullScreenMode) then
+      actFullScreenMode.Checked := not actFullScreenMode.Checked;
     ScreenForm.FullScreen := actFullScreenMode.Checked
+  end
   else
     if actFullScreenMode.Checked then
       begin
@@ -3750,6 +3772,10 @@ var
   FrameInfo: TFrameInfo;
 begin
   Done := True;
+
+  if SettingsChanged then
+    SaveSettings;
+
   if not OutOfMemoryRaised then
     for i := 0 to WorkingSetFrames.Count - 1 do
       begin
@@ -4134,6 +4160,48 @@ procedure TMainForm.lvFramesetDragOver(Sender, Source: TObject; X, Y: Integer;
   State: TDragState; var Accept: Boolean);
 begin
   Accept := Assigned(lvFrameset.ItemFocused);
+end;
+
+procedure TMainForm.SaveSettings;
+var
+  IniFile: TIniFile;
+begin
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
+  try
+    if (WindowState = wsNormal) and not actFullScreenMode.Checked then // развёрнутый размер не интересен для сохранения
+    begin
+      IniFile.WriteInteger('LastUsed', 'MainWindowLeft', Left);
+      IniFile.WriteInteger('LastUsed', 'MainWindowTop', Top);
+      IniFile.WriteInteger('LastUsed', 'MainWindowWidth', Width);
+      IniFile.WriteInteger('LastUsed', 'MainWindowHeight', Height);
+    end;
+    IniFile.WriteBool('LastUsed', 'MainWindowMaximized', WindowState = wsMaximized);
+    IniFile.WriteInteger('LastUsed', 'RightPaneSize', RecordSplitter.Parent.ClientWidth - RecordSplitter.Left);
+  finally
+    IniFile.Free;
+  end;
+  SettingsChanged := False;
+end;
+
+procedure TMainForm.LoadSettings;
+var
+  IniFile: TIniFile;
+  LastUsedCam: string;
+  LastUsedResolution: Integer;
+begin
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
+  try
+    Left := IniFile.ReadInteger('LastUsed', 'MainWindowLeft', Left);
+    Top := IniFile.ReadInteger('LastUsed', 'MainWindowTop', Top);
+    Width := IniFile.ReadInteger('LastUsed', 'MainWindowWidth', Width);
+    Height := IniFile.ReadInteger('LastUsed', 'MainWindowHeight', Height);
+    if IniFile.ReadBool('LastUsed', 'MainWindowMaximized', False) then
+      WindowState := wsMaximized;
+    RecordSplitter.Left  := RecordSplitter.Parent.ClientWidth - IniFile.ReadInteger('LastUsed', 'RightPaneSize', RecordSplitter.Parent.ClientWidth - RecordSplitter.Left);
+  finally
+    IniFile.Free;
+  end;
+  SettingsChanged := False;
 end;
 
 initialization

@@ -25,14 +25,14 @@ begin
   Application.CreateForm(TCameraForm, CameraForm);
 
   ScreenForm.imgCamPreview.Show;
-  ScreenForm.OnClick := CameraForm.ToggleVisibility;
+  ScreenForm.OnControlButtonClick := CameraForm.ToggleVisibility;
   ScreenForm.OnKeyPress := CameraForm.FormKeyPress;
 
   CameraForm.imgOverlay := ScreenForm.imgOverlay;
   CameraForm.imgCamPreview := ScreenForm.imgCamPreview;
   CameraForm.OnOpacityChanged := ScreenForm.AdjustOpacity;
-  CameraForm.OnCloseQuery := ScreenForm.DoCloseQueryScreenForm;
-  CameraForm.OnClose := ScreenForm.DoCloseScreenForm;
+  //CameraForm.OnCloseQuery := ScreenForm.DoCloseQueryScreenForm;
+  //CameraForm.OnClose := ScreenForm.DoCloseScreenForm;
   CameraForm.Active := True;
 
   ScreenForm.Caption :=  CameraForm.Caption;

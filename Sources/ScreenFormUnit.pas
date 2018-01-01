@@ -4,39 +4,59 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Vcl.Imaging.pngimage, Vcl.ExtCtrls;
+  Dialogs, Vcl.Imaging.pngimage, Vcl.ExtCtrls, Vcl.AppEvnts, Vcl.StdCtrls,
+  Vcl.Buttons;
 
 type
   TScreenForm = class(TForm)
     imgOverlay: TImage;
     imgCamPreview: TImage;
+    ApplicationEvents: TApplicationEvents;
+    tmrHideControl: TTimer;
+    btnControlPanel: TBitBtn;
+    btnExit: TBitBtn;
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormDblClick(Sender: TObject);
-    procedure imgOverlayClick(Sender: TObject);
-    procedure imgOverlayDblClick(Sender: TObject);
+    procedure imgClick(Sender: TObject);
+    procedure imgDblClick(Sender: TObject);
     procedure DoCloseScreenForm(Sender: TObject; var Action: TCloseAction);
     procedure DoCloseQueryScreenForm(Sender: TObject; var CanClose: Boolean);
+    procedure ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
+    procedure FormShow(Sender: TObject);
+    procedure tmrHideControlTimer(Sender: TObject);
+    procedure imgMouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure btnExitClick(Sender: TObject);
   private
     PreviousBounds: TRect;
     FFullScreen: Boolean;
     FStretchImages: Boolean;
     FImage: TGraphic;
+    SettingsChanged: Boolean;
+    SettingsLoaded: Boolean;
+    LastMousePos: TPoint;
     procedure SetFullScreen(const Value: Boolean);
     procedure UpdateFullScreen;
     procedure SetStretchImages(const Value: Boolean);
     procedure SetImage(const Value: TGraphic);
+    procedure LoadSettings;
+    procedure SaveSettings;
+    procedure SetOnControlButtonClick(const Value: TNotifyEvent);
+    procedure ShowControlPanelButton;
   protected
     procedure NCHitTest(var Message: TWMNCHitTest); message WM_NCHITTEST;
     procedure NCLButtonDblClk(var Message: TWMNCLButtonDblClk); message WM_NCLBUTTONDBLCLK;
-    procedure NCLButtonDown(var Message: TWMNCLButtonDown); message WM_NCLButtonDown;
     procedure EraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
+    procedure WMMove(var Msg: TWMMove); message WM_MOVE;
+    procedure WMNCMouseMove(var Msg: TWMNCMouseMove); message WM_NCMOUSEMOVE;
   public
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
     property FullScreen: Boolean read FFullScreen write SetFullScreen;
     property StretchImages: Boolean read FStretchImages write SetStretchImages;
     property Image: TGraphic read FImage write SetImage;
     procedure AdjustOpacity(AOpacity: byte);
+    property OnControlButtonClick: TNotifyEvent write SetOnControlButtonClick;
   end;
 
 var
@@ -45,6 +65,9 @@ var
 function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRect;
 
 implementation
+
+uses
+  IniFiles;
 
 {$R *.dfm}
 
@@ -75,6 +98,18 @@ begin
   AlphaBlendValue := AOpacity;
 end;
 
+procedure TScreenForm.ShowControlPanelButton;
+begin
+  if Assigned(btnControlPanel.OnClick) and (LastMousePos <> Mouse.CursorPos) then
+  begin
+    btnControlPanel.Show;
+    btnExit.Show;
+    LastMousePos := Mouse.CursorPos;
+    tmrHideControl.Enabled := False;
+    tmrHideControl.Enabled := True;
+  end;
+end;
+
 procedure TScreenForm.EraseBkgnd(var Message: TWMEraseBkgnd);
 begin
   Message.Result := Integer(True);
@@ -85,15 +120,10 @@ begin
   DblClick;
 end;
 
-procedure TScreenForm.NCLButtonDown(var Message: TWMNCLButtonDown);
-begin
-  Click;
-  inherited;
-end;
-
 procedure TScreenForm.SetFullScreen(const Value: Boolean);
 begin
   FFullScreen := Value;
+  SettingsChanged := True;
   UpdateFullScreen;
 end;
 
@@ -102,9 +132,21 @@ begin
   FImage := Value;
 end;
 
+procedure TScreenForm.SetOnControlButtonClick(const Value: TNotifyEvent);
+begin
+  btnControlPanel.OnClick := Value;
+end;
+
 procedure TScreenForm.SetStretchImages(const Value: Boolean);
 begin
   FStretchImages := Value;
+end;
+
+procedure TScreenForm.tmrHideControlTimer(Sender: TObject);
+begin
+  btnControlPanel.Hide;
+  btnExit.Hide;
+  tmrHideControl.Enabled := False;
 end;
 
 procedure TScreenForm.UpdateFullScreen;
@@ -122,6 +164,29 @@ begin
 //      BoundsRect := PreviousBounds;
       // FormStyle := fsNormal;
     end;
+end;
+
+procedure TScreenForm.WMMove(var Msg: TWMMove);
+begin
+  inherited;
+  SettingsChanged := True;
+end;
+
+procedure TScreenForm.WMNCMouseMove(var Msg: TWMNCMouseMove);
+begin
+  inherited;
+  ShowControlPanelButton;
+end;
+
+procedure TScreenForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
+begin
+  if SettingsChanged then
+    SaveSettings;
+end;
+
+procedure TScreenForm.btnExitClick(Sender: TObject);
+begin
+  Application.Terminate;
 end;
 
 procedure TScreenForm.DoCloseQueryScreenForm(Sender: TObject;
@@ -199,16 +264,28 @@ end;
 procedure TScreenForm.FormResize(Sender: TObject);
 begin
   Invalidate;
+  SettingsChanged := True;
 end;
 
-procedure TScreenForm.imgOverlayClick(Sender: TObject);
+procedure TScreenForm.FormShow(Sender: TObject);
+begin
+  LoadSettings;
+end;
+
+procedure TScreenForm.imgClick(Sender: TObject);
 begin
   Click;
 end;
 
-procedure TScreenForm.imgOverlayDblClick(Sender: TObject);
+procedure TScreenForm.imgDblClick(Sender: TObject);
 begin
   DblClick;
+end;
+
+procedure TScreenForm.imgMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  ShowControlPanelButton;
 end;
 
 function TScreenForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
@@ -257,6 +334,50 @@ begin
     end
   else
     Message.Result := HTCLIENT;
+end;
+
+procedure TScreenForm.SaveSettings;
+var
+  IniFile: TIniFile;
+begin
+  if not SettingsLoaded then
+    Exit;
+
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
+  try
+    if (WindowState = wsNormal) and not FullScreen then // развёрнутый размер не интересен для сохранения
+    begin
+      IniFile.WriteInteger('LastUsed', 'ScreenWindowLeft', Left);
+      IniFile.WriteInteger('LastUsed', 'ScreenWindowTop', Top);
+      IniFile.WriteInteger('LastUsed', 'ScreenWindowWidth', Width);
+      IniFile.WriteInteger('LastUsed', 'ScreenWindowHeight', Height);
+    end;
+    IniFile.WriteBool('LastUsed', 'ScreenWindowMaximized', FullScreen);
+  finally
+    IniFile.Free;
+  end;
+  SettingsChanged := False;
+end;
+
+procedure TScreenForm.LoadSettings;
+var
+  IniFile: TIniFile;
+  LastUsedCam: string;
+  LastUsedResolution: Integer;
+begin
+  IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
+  try
+    Left := IniFile.ReadInteger('LastUsed', 'ScreenWindowLeft', Left);
+    Top := IniFile.ReadInteger('LastUsed', 'ScreenWindowTop', Top);
+    Width := IniFile.ReadInteger('LastUsed', 'ScreenWindowWidth', Width);
+    Height := IniFile.ReadInteger('LastUsed', 'ScreenWindowHeight', Height);
+    FullScreen := IniFile.ReadBool('LastUsed', 'ScreenWindowMaximized', False);
+  finally
+    IniFile.Free;
+  end;
+  Application.ProcessMessages;
+  SettingsLoaded := True;
+  SettingsChanged := False;
 end;
 
 end.

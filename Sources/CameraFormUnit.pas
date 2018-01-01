@@ -98,6 +98,8 @@ type
     procedure StartFileCommander;
     procedure StopFileCommander;
     procedure FileCommanderDirChangedHandler(Sender: TObject);
+    procedure LoadSettings;
+    procedure SaveSettings;
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -123,10 +125,6 @@ begin
 end;
 
 procedure TCameraForm.FormCreate(Sender: TObject);
-var
-  LastUsedCam: string;
-  LastUsedResolution: Integer;
-  IniFile: TIniFile;
 begin
   FCanChangePhotoFolder := True;
   FVideoBitmap := TBitmap.Create;
@@ -135,17 +133,26 @@ begin
   FVideoImage.OnNewVideoFrame := GetNewFrame;
 
   edtOverlay.Text := '';
+  LoadSettings;
 
+  if LowerCase(ParamStr(2)) = '/timelapse' then
+    btnTimeLapse.Click;
+end;
+
+procedure TCameraForm.LoadSettings;
+var
+  IniFile: TIniFile;
+  LastUsedCam: string;
+  LastUsedResolution: Integer;
+begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
     LastUsedCam := IniFile.ReadString('LastUsed', 'Camera', '');
     if LastUsedCam = '' then
       if cbCamSelector.ItemIndex <> -1 then
         LastUsedCam := cbCamSelector.Items[cbCamSelector.ItemIndex];
-
     cbCamSelector.Items.Clear;
     FVideoImage.GetListOfDevices(cbCamSelector.Items);
-
     if cbCamSelector.Items.Count > 0 then
     begin
       cbCamSelector.ItemIndex := cbCamSelector.Items.IndexOf(LastUsedCam);
@@ -158,43 +165,32 @@ begin
       finally
         FVideoImage.VideoStop;
       end;
-      LastUsedResolution := cbbResolution.Items.IndexOf(IniFile.ReadString('LastUsed', 'Resolution', ''));
+      LastUsedResolution := cbbResolution.Items.IndexOf(IniFile.ReadString('LastUsed', 'CamResolution', ''));
       if LastUsedResolution < 0 then
         LastUsedResolution := 0;
       cbbResolution.ItemIndex := LastUsedResolution;
-//       FVideoImage.SetResolutionByIndex(cbbResolution.ItemIndex);
     end;
-
     btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
-
     chkOverlay.Checked := IniFile.ReadBool('LastUsed', 'ShowOverlay', chkOverlay.Checked);
     edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
     chkOverlayClick(nil);
-
     tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
-
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
-
     if PhotoFolder = '' then
       PhotoFolder := ParamStr(1);
-
     if PhotoFolder = '' then
       PhotoFolder := IniFile.ReadString('LastUsed', 'Folder', GetCurrentDir);
-
-    Left := IniFile.ReadInteger('LastUsed', 'Left', Left);
-    Top := IniFile.ReadInteger('LastUsed', 'Top', Top);
-//    Width := IniFile.ReadInteger('LastUsed', 'Width', Width);
-//    Height := IniFile.ReadInteger('LastUsed', 'Height', Height);
-//
-//    WindowState := TWindowState(IniFile.ReadInteger('LastUsed', 'WindowState', Ord(WindowState)));
+    Left := IniFile.ReadInteger('LastUsed', 'CamSettingsLeft', Left);
+    Top := IniFile.ReadInteger('LastUsed', 'CamSettingsTop', Top);
+    //    Width := IniFile.ReadInteger('LastUsed', 'CamSettingsWidth', Width);
+    //    Height := IniFile.ReadInteger('LastUsed', 'CamSettingsHeight', Height);
+    //
+    //    WindowState := TWindowState(IniFile.ReadInteger('LastUsed', 'WindowState', Ord(WindowState)));
     chkMinimize.Checked := IniFile.ReadBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
   end;
-
-  if LowerCase(ParamStr(2)) = '/timelapse' then
-    btnTimeLapse.Click;
 end;
 
 procedure TCameraForm.FormDestroy(Sender: TObject);
@@ -218,38 +214,38 @@ begin
   end;
 end;
 
-procedure TCameraForm.FormHide(Sender: TObject);
+procedure TCameraForm.SaveSettings;
 var
   IniFile: TIniFile;
 begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
     IniFile.WriteString('LastUsed', 'Camera', cbCamSelector.Items[cbCamSelector.ItemIndex]);
-    IniFile.WriteString('LastUsed', 'Resolution', cbbResolution.Items[cbbResolution.ItemIndex]);
-
+    IniFile.WriteString('LastUsed', 'CamResolution', cbbResolution.Items[cbbResolution.ItemIndex]);
     if btnFolderLookup.Visible and (PhotoFolder <> '') then
       IniFile.WriteString('LastUsed', 'Folder', PhotoFolder);
-
     IniFile.WriteInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     IniFile.WriteInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
-
     IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
     IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
-
     IniFile.WriteInteger('LastUsed', 'Opacity', tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
-
-//    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
-//    if WindowState = wsNormal then
-//      begin
-        IniFile.WriteInteger('LastUsed', 'Left', Left);
-        IniFile.WriteInteger('LastUsed', 'Top', Top);
-//        IniFile.WriteInteger('LastUsed', 'Width', Width);
-//        IniFile.WriteInteger('LastUsed', 'Height', Height);
-//      end;
+    //    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
+    //    if WindowState = wsNormal then
+    //      begin
+    IniFile.WriteInteger('LastUsed', 'CamSettingsLeft', Left);
+    IniFile.WriteInteger('LastUsed', 'CamSettingsTop', Top);
+    //        IniFile.WriteInteger('LastUsed', 'CamSettingsWidth', Width);
+    //        IniFile.WriteInteger('LastUsed', 'CamSettingsHeight', Height);
+    //      end;
     IniFile.WriteBool('LastUsed', 'MinimizeAfterFrame', chkMinimize.Checked);
   finally
     IniFile.Free;
   end;
+end;
+
+procedure TCameraForm.FormHide(Sender: TObject);
+begin
+  SaveSettings;
   // StopCamera;
 end;
 
