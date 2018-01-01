@@ -448,7 +448,7 @@ type
     procedure SetSaved(const Value: Boolean);
     procedure CheckStopCamera;
     function OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
-    function FindFrameInfo(const ARelativePath, AFileName: string): Boolean;
+    function FindFrameInfo(const ARelativePath, AFileName: string): Integer;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -1324,15 +1324,15 @@ begin
   Result := CompareStringWithInt(AnsiUpperCase(TFrameInfo(Item1).RelativeFileName), AnsiUpperCase(TFrameInfo(Item2).RelativeFileName));
 end;
 
-function TMainForm.FindFrameInfo(const ARelativePath, AFileName: string): Boolean;
+function TMainForm.FindFrameInfo(const ARelativePath, AFileName: string): Integer;
 var
   i: Integer;
 begin
-  Result := False;
+  Result := -1;
   for i := 0 to FrameInfoCount - 1 do
     with FrameInfoList[i] do
       if (RelativePath = ARelativePath) and (FileName = AFileName) then
-        Exit(True);
+        Exit(i);
 end;
 
 
