@@ -53,6 +53,7 @@ type
     function RelativeFileName: string;
     constructor Create(ARelativePath, AFileName: string);
     destructor Destroy; override;
+    procedure Unload;
   end;
 
   TRecordedFrameList = class;
@@ -447,6 +448,7 @@ type
     procedure SetSaved(const Value: Boolean);
     procedure CheckStopCamera;
     function OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
+    function FindFrameInfo(const ARelativePath, AFileName: string): Boolean;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -1322,21 +1324,22 @@ begin
   Result := CompareStringWithInt(AnsiUpperCase(TFrameInfo(Item1).RelativeFileName), AnsiUpperCase(TFrameInfo(Item2).RelativeFileName));
 end;
 
+function TMainForm.FindFrameInfo(const ARelativePath, AFileName: string): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to FrameInfoCount - 1 do
+    with FrameInfoList[i] do
+      if (RelativePath = ARelativePath) and (FileName = AFileName) then
+        Exit(True);
+end;
+
+
 procedure TMainForm.LoadPhotoFolder;
 
 resourcestring
   rs_ScaningStatus = 'Чтение папки: ';
-
-  function FrameLoaded(const ARelativePath, AFileName: string): Boolean;
-  var
-    i: Integer;
-  begin
-    Result := False;
-    for i := 0 to FrameInfoCount - 1 do
-      with FrameInfoList[i] do
-        if (RelativePath = ARelativePath) and (FileName = AFileName) then
-          Exit(True);
-  end;
 
   procedure InternalLoadDirectory(ARelativePath: string);
   var
@@ -1358,7 +1361,7 @@ resourcestring
              (ext = '.emf')
           then
             begin
-              if not FrameLoaded(ARelativePath, Rec.Name) then // это для перезагрузки папки актуально
+              if FindFrameInfo(ARelativePath, Rec.Name) = -1 then // это для перезагрузки папки актуально
                 FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, Rec.Name));
             end;
           if ((Rec.Attr and faDirectory) <> 0) and (Rec.Name <> '.') and (Rec.Name <> '..') then
@@ -2502,8 +2505,7 @@ begin
           if NearestNeighbour then
             Continue;
           // unload
-          FrameInfoList[i].PreviewLoaded := False;
-          FreeAndNil(FrameInfoList[i].Preview);
+          FrameInfoList[i].Unload;
           Break;
         end;
 
@@ -2563,8 +2565,7 @@ begin
         for i := 0 to FrameInfoCount - 1 do
           if FrameInfoList[i].PreviewLoaded then
             begin
-              FrameInfoList[i].PreviewLoaded := False;
-              FreeAndNil(FrameInfoList[i].Preview);
+              FrameInfoList[i].Unload;
               Dec(UnloadCounter);
               if UnloadCounter <= 0 then
                 Break;
@@ -2640,8 +2641,7 @@ end;
 procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
 begin
   Stop;
-  FrameInfoList[DisplayedFrameIndex].PreviewLoaded := False;
-  FreeAndNil(FrameInfoList[DisplayedFrameIndex].Preview);
+  FrameInfoList[DisplayedFrameIndex].Unload;
   pbDisplay.Refresh;
 end;
 
@@ -3373,8 +3373,7 @@ begin
   for i := 0 to FrameInfoCount - 1 do
     if FrameInfoList[i].PreviewLoaded then
       begin
-        FrameInfoList[i].PreviewLoaded := False;
-        FreeAndNil(FrameInfoList[i].Preview);
+        FrameInfoList[i].Unload;
         OutOfMemoryRaised := False;
       end;
 end;
@@ -3997,13 +3996,20 @@ end;
 
 destructor TFrameInfo.Destroy;
 begin
-  FreeAndNil(Preview);
-  inherited;
+  Unload;
+  inherited Destroy;
 end;
 
 function TFrameInfo.RelativeFileName: string;
 begin
   Result := RelativePath + FileName;
+end;
+
+procedure TFrameInfo.Unload;
+begin
+  PreviewLoaded := False;
+  FreeAndNil(Preview);
+  FreeAndNil(Iconic);
 end;
 
 function TFrameInfo.FullFileName: string;
