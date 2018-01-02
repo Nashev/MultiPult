@@ -5,17 +5,12 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ComCtrls, ACS_Classes, ACS_WinMedia, ACS_smpeg, StdCtrls,
-  ACS_Wave, Vcl.ExtCtrls;
+  ACS_Wave, Vcl.ExtCtrls, ProgressFormUnit;
 
 type
-  TMP3ConvertForm = class(TForm)
+  TMP3ConvertForm = class(TProgressForm)
     MP3In1: TMP3In;
-    ProgressBar1: TProgressBar;
     WaveOut1: TWaveOut;
-    lblStstus: TLabel;
-    lblMP3: TLabel;
-    lblWav: TLabel;
-    btnCancel: TButton;
     procedure WaveOut1Done(Sender: TComponent);
     procedure WaveOut1Progress(Sender: TComponent);
     procedure FormShow(Sender: TObject);
@@ -38,16 +33,18 @@ procedure TMP3ConvertForm.btnCancelClick(Sender: TObject);
 begin
   WaveOut1.Abort;
   DeleteFile(WaveOut1.FileName);
+//  ModalResult := mrCancel;
 end;
 
 class function TMP3ConvertForm.Execute(AMP3FileName, AWavFileName: string): Boolean;
+resourcestring
+   rs_MP3toWAVconvert = 'Конвертация выбранного MP3 в WAV в папку с фотографиями:';
 begin
-  with Create(Application) do
+  with Create(rs_MP3toWAVconvert, AMP3FileName, AWavFileName, nil) do
     try
       MP3In1.FileName := AMP3FileName;
-      lblMP3.Caption := AMP3FileName;
       WaveOut1.FileName := AWavFileName;
-      lblWav.Caption := AWavFileName;
+      btnCancel.Hide; // TODO: resolve deadlock
       Result := ShowModal = mrOk;
     finally
       Free;
