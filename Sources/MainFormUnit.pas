@@ -406,8 +406,6 @@ type
     procedure SaveWorkingSet(ANewProjectFileName: string = '');
     function CheckBeforeOpenAudio: Boolean;
   private
-    VersionNameString: string; // '0.9.34' - задаётся в ProjectOptions
-    VersionCopyrightString: string; // '2017' - тоже в ProjectOptions
     ProjectFileName: string;
     FFrameInfoList: TObjectList;
     FWorkingSetFrames: TRecordedFrameList;
