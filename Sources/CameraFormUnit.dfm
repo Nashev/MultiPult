@@ -16,6 +16,7 @@ object CameraForm: TCameraForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  ShowHint = True
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
@@ -152,6 +153,7 @@ object CameraForm: TCameraForm
     Top = 117
     Width = 25
     Height = 25
+    Hint = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091'...'
     Anchors = [akTop, akRight]
     Caption = '...'
     TabOrder = 9
@@ -187,6 +189,7 @@ object CameraForm: TCameraForm
     Top = 148
     Width = 25
     Height = 25
+    Hint = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1076#1083#1103' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103'...'
     Anchors = [akTop, akRight]
     Caption = '...'
     TabOrder = 12
@@ -229,6 +232,7 @@ object CameraForm: TCameraForm
     Top = 148
     Width = 25
     Height = 25
+    Hint = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
     Anchors = [akTop, akRight]
     Caption = #8634
     TabOrder = 15

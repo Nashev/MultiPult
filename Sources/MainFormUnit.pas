@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
+  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
 
 const
   ControlActionStackDeep = 10;
@@ -528,7 +528,7 @@ var
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
-  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles, ProgressFormUnit;
+  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles, ProgressFormUnit, UtilsUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -636,16 +636,6 @@ end;
 procedure TMainForm.actShowControllerFormUpdate(Sender: TObject);
 begin
   actShowControllerForm.Checked := ControllerForm.Visible;
-end;
-
-procedure InfoMsg(AText: string);
-begin
-  MessageBox(
-    MainForm.Handle,
-    PChar(AText),
-    PChar(Application.Title),
-    MB_OK + MB_ICONINFORMATION + MB_SETFOREGROUND
-  );
 end;
 
 procedure SafeShellExecute(hWnd: HWND; const Operation, FileName, Parameters, Directory: string; ShowCmd: Integer = SW_NORMAL);
@@ -931,69 +921,11 @@ var
     MenuItem.Action := nil;
   end;
 
-  procedure TakeVersionInfo;
-
-    function AppFileName: string;
-    var
-      FileName: array [0 .. 255] of Char;
-    begin
-      if IsLibrary then
-        begin
-          GetModuleFileName(HInstance, FileName, SizeOf(FileName) - 1);
-          Result := StrPas(FileName);
-        end
-      else
-        Result := ParamStr(0);
-    end;
-
-  type
-    TLongVersion = record
-      case Integer of
-      0: (All: array[1..4 ] of Word);
-      1: (MS, LS: LongInt);
-    end;
-  var
-    FileName: string;
-    VersionInfoHandle: DWORD;
-    VersionInfoSize: DWORD;
-    VersionInfoBuffer: PByte;
-    Len: UINT;
-    FixedFileInfo: PVSFixedFileInfo;
-    V: TLongVersion;
-    Translation: Pointer;
-    TranslationString: string;
-    Copyright: Pointer;
-  begin
-    // на случай, если что-то пойдёт не так
-    VersionNameString := '0.9.???';
-    VersionCopyrightString := 'МультиСтудия, Москва, 20??';
-    VersionInfoBuffer := nil;
-    // пробуем получить от файла:
-    FileName := AppFileName;
-    VersionInfoSize := GetFileVersionInfoSize(PWideChar(FileName), VersionInfoHandle);
-    if VersionInfoSize > 0 then
-      try
-        GetMem(VersionInfoBuffer, VersionInfoSize);
-        if not GetFileVersionInfo(PWideChar(FileName), VersionInfoHandle, VersionInfoSize, VersionInfoBuffer) then
-          Exit;
-        VerQueryValue(VersionInfoBuffer, '\', Pointer(FixedFileInfo), Len);
-        V.MS := FixedFileInfo^.dwFileVersionMS;
-        V.LS := FixedFileInfo^.dwFileVersionLS;
-        with V do
-          VersionNameString := Format('%d.%d.%d', [All[2], All[1], All[4]]);
-
-        if VerQueryValue(VersionInfoBuffer, '\VarFileInfo\Translation', Translation, Len) then
-          begin
-            TranslationString := IntToHex(MakeLong(HiWord(LongInt(Translation^)), LoWord(LongInt(Translation^))), 8);
-            if VerQueryValue(VersionInfoBuffer, PWideChar('\StringFileInfo\' + TranslationString + '\LegalCopyright'), Copyright, Len) then
-              VersionCopyrightString := StrPas(PChar(Copyright));
-          end;
-      finally
-        FreeMem(VersionInfoBuffer, VersionInfoSize);
-      end;
-  end;
-
 begin
+  // на случай, если что-то пойдёт не так
+  VersionNameString := '0.9.???';
+  VersionCopyrightString := 'МультиСтудия, Москва, 20??';
+
   TakeVersionInfo;
   for i := Low(Bookmarks) to High(Bookmarks) do
     AppendBookmarkMenu(i);
@@ -1791,7 +1723,7 @@ begin
               PreparedFrameInfoIndex := -1;
               for i := 0 to RecordedFrames.Count - 1 do
                 begin
-                  SetProgress(i + 1, RecordedFrames.Count);
+                  SetProgress(i + 1, RecordedFrames.Count + AdvertisementDuration div FrameRate);
                   CurrentRecordPosition := i; // preview
                   DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
                   pbRecord.Invalidate;
@@ -1836,6 +1768,7 @@ begin
                       end;
                   end;
                 end;
+              SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
               Image := AdvertisementFrameImage;
               R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
               Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
@@ -1843,12 +1776,13 @@ begin
               Bmp.PixelFormat := pf24bit;
               CurrentRecordPosition := RecordedFrames.Count;
               pbRecord.Invalidate;
-              SetProgressStatus(Format(rs_AVIExportingCaption, ['-', RecordedFrames.Count, RecordedFrames.Count]));
+              SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
               Application.ProcessMessages;
               if ExportCancelled then
                 Abort;
               for i := 1 to AdvertisementDuration div FrameRate do
               begin
+                SetProgress(RecordedFrames.Count + i, RecordedFrames.Count + AdvertisementDuration div FrameRate);
                 CheckAVIError(Compressor.WriteFrame(Bmp));
                 Application.ProcessMessages;
                 if ExportCancelled then

@@ -15,6 +15,7 @@ type
     tmrHideControl: TTimer;
     btnControlPanel: TBitBtn;
     btnExit: TBitBtn;
+    btnAbout: TBitBtn;
     procedure FormPaint(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure FormDblClick(Sender: TObject);
@@ -28,6 +29,7 @@ type
     procedure imgMouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
     procedure btnExitClick(Sender: TObject);
+    procedure btnAboutClick(Sender: TObject);
   private
     PreviousBounds: TRect;
     FFullScreen: Boolean;
@@ -67,7 +69,7 @@ function StretchSize(AWidth, AHeight, ABoundsWidth, ABoundsHeight: Integer): TRe
 implementation
 
 uses
-  IniFiles;
+  IniFiles, UtilsUnit;
 
 {$R *.dfm}
 
@@ -104,6 +106,7 @@ begin
   begin
     btnControlPanel.Show;
     btnExit.Show;
+    btnAbout.Show;
     LastMousePos := Mouse.CursorPos;
     tmrHideControl.Enabled := False;
     tmrHideControl.Enabled := True;
@@ -146,6 +149,7 @@ procedure TScreenForm.tmrHideControlTimer(Sender: TObject);
 begin
   btnControlPanel.Hide;
   btnExit.Hide;
+  btnAbout.Hide;
   tmrHideControl.Enabled := False;
 end;
 
@@ -182,6 +186,25 @@ procedure TScreenForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
 begin
   if SettingsChanged then
     SaveSettings;
+end;
+
+procedure TScreenForm.btnAboutClick(Sender: TObject);
+resourcestring
+  rs_AboutText =
+    'Версия %s'#13#10 +
+    'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
+    'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
+    'в лице Евгения Генриховича Кабакова'#13#10 +
+    ''#13#10 +
+    'Исходный код программы доступен для просмотра и доработок'#13#10 +
+    'по адресу https://github.com/Nashev/MultiPult'#13#10 +
+    ''#13#10 +
+    '(А Вы знаете, что Ctrl+C в подобных окошках работает?)';
+begin
+  InfoMsg(
+    Application.Title + #13#10 +
+    Format(rs_AboutText, [VersionNameString])
+  );
 end;
 
 procedure TScreenForm.btnExitClick(Sender: TObject);

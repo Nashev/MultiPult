@@ -14,7 +14,8 @@ uses
   DirectSound in 'Webcam_Capture_V2\Common\DirectX\DirectSound.pas',
   CameraFormUnit in 'CameraFormUnit.pas' {CameraForm},
   ScreenFormUnit in 'ScreenFormUnit.pas' {ScreenForm},
-  DirMon in 'DirMon.pas';
+  DirMon in 'DirMon.pas',
+  UtilsUnit in 'UtilsUnit.pas';
 
 {$R *.res}
 
@@ -23,7 +24,6 @@ begin
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TScreenForm, ScreenForm);
   Application.CreateForm(TCameraForm, CameraForm);
-
   ScreenForm.imgCamPreview.Show;
   ScreenForm.OnControlButtonClick := CameraForm.ToggleVisibility;
   ScreenForm.OnKeyPress := CameraForm.FormKeyPress;
@@ -37,6 +37,11 @@ begin
 
   ScreenForm.Caption :=  CameraForm.Caption;
   Application.Title := CameraForm.Caption;
+
+  // на случай, если что-то пойдёт не так
+  VersionNameString := '0.9.???';
+  VersionCopyrightString := 'МультиСтудия, Москва, 20??';
+  TakeVersionInfo;
 
   Application.Run;
 end.
