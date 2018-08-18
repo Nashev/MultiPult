@@ -8604,6 +8604,11 @@ object MainForm: TMainForm
       OnExecute = actSaveExecute
       OnUpdate = actSaveUpdate
     end
+    object actExportToGif: TAction
+      Caption = #1069#1082#1089#1087#1086#1088#1090#1080#1088#1086#1074#1072#1090#1100' '#1074' GIF...'
+      OnExecute = actExportToGifClick
+      OnUpdate = actUpdate_HaveRecorded
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -8793,6 +8798,9 @@ object MainForm: TMainForm
       end
       object mmiExportToAVI: TMenuItem
         Action = actExportToAVI
+      end
+      object mmiExportToGif: TMenuItem
+        Action = actExportToGif
       end
       object mmiExitSeparator: TMenuItem
         Caption = '-'

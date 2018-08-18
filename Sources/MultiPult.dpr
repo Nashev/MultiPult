@@ -37,7 +37,8 @@ uses
   MP3ConvertFormUnit in 'MP3ConvertFormUnit.pas' {MP3ConvertForm},
   MovieNameDialogUnit in 'MovieNameDialogUnit.pas' {MovieNameDialog},
   UtilsUnit in 'UtilsUnit.pas',
-  DirMon in 'DirMon.pas';
+  DirMon in 'DirMon.pas',
+  GifPreviewUnit in 'GifPreviewUnit.pas' {GifPreviewForm};
 
 {$R *.res}
 
@@ -53,5 +54,6 @@ begin
   Application.CreateForm(TScreenForm, ScreenForm);
   Application.CreateForm(TWorkingSetManagementForm, WorkingSetManagementForm);
   Application.CreateForm(TCameraForm, CameraForm);
+  Application.CreateForm(TGifPreviewForm, GifPreviewForm);
   Application.Run;
 end.

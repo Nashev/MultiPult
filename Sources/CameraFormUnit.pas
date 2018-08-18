@@ -84,10 +84,11 @@ type
     FOnActiveChanged: TNotifyEvent;
     FOverlayDirMonitor: TDirMonitor;
     FFileCommanderDirMonitor: TDirMonitor;
+    FPrevResolution: string;
     procedure GetNewFrame(Sender: TObject; Width, Height: Integer; DataPtr: Pointer);
     function IntervalToString(AInterval: Integer): string;
-    procedure SetPhotoFolder(const Value: string);
-    procedure LookupPhotoFolder;
+    procedure SetPhotoFolder(Value: string);
+    procedure LookupPhotoFolder(APhotoFolder: string);
     procedure SetActive(const Value: Boolean);
     procedure StartCamera;
     procedure StopCamera;
@@ -143,7 +144,6 @@ procedure TCameraForm.LoadSettings;
 var
   IniFile: TIniFile;
   LastUsedCam: string;
-  LastUsedResolution: Integer;
 begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
@@ -158,18 +158,8 @@ begin
       cbCamSelector.ItemIndex := cbCamSelector.Items.IndexOf(LastUsedCam);
       if cbCamSelector.ItemIndex = -1 then
         cbCamSelector.ItemIndex := 0;
-      FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex]));
-      try
-        cbbResolution.Items.Clear;
-        FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
-      finally
-        FVideoImage.VideoStop;
-      end;
-      LastUsedResolution := cbbResolution.Items.IndexOf(IniFile.ReadString('LastUsed', 'CamResolution', ''));
-      if LastUsedResolution < 0 then
-        LastUsedResolution := 0;
-      cbbResolution.ItemIndex := LastUsedResolution;
     end;
+    FPrevResolution := IniFile.ReadString('LastUsed', 'CamResolution', '');
     btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
     chkOverlay.Checked := IniFile.ReadBool('LastUsed', 'ShowOverlay', chkOverlay.Checked);
     edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
@@ -177,8 +167,6 @@ begin
     tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
-    if PhotoFolder = '' then
-      PhotoFolder := ParamStr(1);
     if PhotoFolder = '' then
       PhotoFolder := IniFile.ReadString('LastUsed', 'Folder', GetCurrentDir);
     Left := IniFile.ReadInteger('LastUsed', 'CamSettingsLeft', Left);
@@ -284,6 +272,8 @@ begin
         tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
     end;
   imgCamPreview.Repaint;
+  TForm(imgCamPreview.Owner).Cursor := crDefault; //  TODO: переделать на нормальное событие с обработчиком
+  Screen.Cursor := TForm(imgCamPreview.Owner).Cursor;
 
   LastPreviewFrameTimeStamp := GetTickCount;
 end;
@@ -295,23 +285,20 @@ end;
 
 procedure TCameraForm.btnFolderLookupClick(Sender: TObject);
 begin
-  LookupPhotoFolder;
+  LookupPhotoFolder(PhotoFolder);
 end;
 
-procedure TCameraForm.LookupPhotoFolder;
+procedure TCameraForm.LookupPhotoFolder(APhotoFolder: string);
 resourcestring
   rs_SelectPhotoFolderCaption = 'В какую папку сохранять взятые кадры?';
-var
-  NewPhotoFolder: string;
 begin
-  NewPhotoFolder := PhotoFolder;
   if SelectDirectory(
-    rs_SelectPhotoFolderCaption, '', NewPhotoFolder
+    rs_SelectPhotoFolderCaption, '', APhotoFolder
     {$IFDEF DelphiXE}
     , [sdNewFolder, sdShowFiles, sdShowEdit, sdShowShares, sdValidateDir, sdNewUI]
     {$ENDIF}
   ) then
-    PhotoFolder := NewPhotoFolder + '\';
+    PhotoFolder := APhotoFolder + '\';
 end;
 
 procedure TCameraForm.btnMakePhotoClick(Sender: TObject);
@@ -367,15 +354,15 @@ end;
 
 procedure TCameraForm.StartCamera;
 var
-  PrevResolution: string;
   NewIndex: Integer;
 begin
   if FVideoImage.VideoStart(Trim(cbCamSelector.Items[cbCamSelector.ItemIndex])) = 0 then
     begin
-      PrevResolution := cbbResolution.Items[cbbResolution.ItemIndex];
+      if cbbResolution.Items.Count > 0 then
+        FPrevResolution := cbbResolution.Items[cbbResolution.ItemIndex];
       cbbResolution.Clear;
       FVideoImage.GetListOfSupportedVideoSizes(cbbResolution.Items);
-      NewIndex := cbbResolution.Items.IndexOf(PrevResolution);
+      NewIndex := cbbResolution.Items.IndexOf(FPrevResolution);
       if NewIndex = -1 then
         NewIndex := 0;
       cbbResolution.ItemIndex := NewIndex;
@@ -433,7 +420,10 @@ begin
   begin
     case cbbUnit.ItemIndex of
       0: TimeLapseTimer.Interval := seInterval.Value;
-      1: if seInterval.Value <= 64 then TimeLapseTimer.Interval := seInterval.Value * 1000 else begin ShowMessage('Поддержка интервалов более 64 секунд пока не сделана.'); Abort; end;
+      1: if seInterval.Value <= 64 then TimeLapseTimer.Interval := seInterval.Value * 1000 else begin
+        ShowMessage('Поддержка интервалов более 64 секунд пока не сделана.');
+        Abort;
+      end;
 //      2: TimeLapseTimer.Interval := seInterval.Value * 1000 * 60;
 //      3: TimeLapseTimer.Interval := seInterval.Value * 1000 * 60 * 60;
 //      4: TimeLapseTimer.Interval := seInterval.Value * 1000 * 60 * 60 * 24;
@@ -605,20 +595,33 @@ begin
     end;
 end;
 
-procedure TCameraForm.SetPhotoFolder(const Value: string);
+procedure TCameraForm.SetPhotoFolder(Value: string);
 begin
-  FPhotoFolder := Value;
-  if Value <> '' then
-    if not DirectoryExists(FPhotoFolder) then
-      if FileExists(FPhotoFolder) then
-        LookupPhotoFolder;
+  if Value <> '' then begin
+    if Value[Length(Value)] <> '\' then
+      Value := Value + '\';
 
-  if (FPhotoFolder <> '') and (FPhotoFolder[Length(FPhotoFolder)] <> '\') then
-    FPhotoFolder := FPhotoFolder + '\';
+    if not DirectoryExists(Value) then
+      if FileExists(Value) then begin
+        ShowMessage(Format('Вместо папки для сохранения кадров с камеры указан файл "%s". Нужно указать папку.', [Value]));
+        // внутри, если пользователь выберет папку,
+        // этот сеттер будет вызван рекурсивно и там всё сделает,
+        // а если пользователь откажется - то ничего вызвано не будет
+        // и значение у свойтва останется прежним.
+        LookupPhotoFolder(Value);
+        Exit;
+      end else
+        ForceDirectories(Value);
 
-  StartFileCommander;
+    FPhotoFolder := Value;
 
-  edtFolder.Text := Value;
+    StartFileCommander;
+  end else begin
+    FPhotoFolder := Value;
+    StopFileCommander;
+  end;
+
+  edtFolder.Text := PhotoFolder;
 end;
 
 function TCameraForm.IntervalToString(AInterval: Integer): string;

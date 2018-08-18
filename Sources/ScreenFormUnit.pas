@@ -385,8 +385,6 @@ end;
 procedure TScreenForm.LoadSettings;
 var
   IniFile: TIniFile;
-  LastUsedCam: string;
-  LastUsedResolution: Integer;
 begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try

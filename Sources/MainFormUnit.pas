@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg{$IFDEF Delphi6}, Actions{$ENDIF};
+  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
 
 const
   ControlActionStackDeep = 10;
@@ -262,6 +262,8 @@ type
     imgOverlay: TImage;
     actShowCameraControl: TAction;
     mmiShowCameraControl: TMenuItem;
+    actExportToGif: TAction;
+    mmiExportToGif: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -391,11 +393,13 @@ type
     procedure actSaveUpdate(Sender: TObject);
     procedure actSaveExecute(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure actExportToGifClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
     SettingsChanged: Boolean;
     ExportCancelled: Boolean;
+    //CameraWaiting: Boolean; // TODO: сделать событие про отрисовку кадра с камеры и обработчик тут для него
     function NextControlAction: TControlAction;
     procedure PopControlAction;
     procedure PushControlAction(Value: TControlAction);
@@ -405,6 +409,7 @@ type
     procedure Stop;
     procedure SaveWorkingSet(ANewProjectFileName: string = '');
     function CheckBeforeOpenAudio: Boolean;
+    procedure SetCameraPhotoFolder;
   private
     ProjectFileName: string;
     FFrameInfoList: TObjectList;
@@ -441,7 +446,6 @@ type
     AdvertisementFrameBottom: Integer;
     AdvertisementFrameImage: TBitmap;
     AdvertisementFrameTipShowing: Boolean;
-    ExportSize: TSize;
     FirstFrameSize: TSize;
     FExternalAudioFileName: string;
     FDisplayedFrameIndex: Integer;
@@ -499,6 +503,7 @@ type
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
     AdvertisementDuration: Integer;
+    ExportSize: TSize;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean; override;
@@ -526,7 +531,8 @@ var
 implementation
 uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
-  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles, ProgressFormUnit, UtilsUnit;
+  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles, ProgressFormUnit, UtilsUnit,
+  GifPreviewUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -1121,6 +1127,8 @@ begin
   CameraForm.imgCamPreview := imgCamPreview;
   CameraForm.imgOverlay := imgOverlay;
   CameraForm.DisablePhotoFolderLookup;
+  if PhotoFolder <> '' then
+    SetCameraPhotoFolder;
 
   ScreenForm.OnKeyDown := FormKeyDown;
   ScreenForm.OnKeyUp := FormKeyUp;
@@ -1828,8 +1836,16 @@ begin
 end;
 
 procedure TMainForm.actFramesFromCameraModeExecute(Sender: TObject);
+var
+  CameraWasNonActive: Boolean;
 begin
-  CameraForm.Active := not CameraForm.Active;
+  CameraWasNonActive := not CameraForm.Active;
+  if CameraWasNonActive then begin
+    Cursor := crHourGlass;
+    Screen.Cursor := Cursor;
+    //CameraWaiting := True;
+  end;
+  CameraForm.Active := CameraWasNonActive;
 end;
 
 procedure TMainForm.CameraFormActiveChanged(Sender: TObject);
@@ -2298,13 +2314,18 @@ begin
   pbFrameTip.Visible := (FFrameTipRecordedFrame <> nil);
 end;
 
-procedure TMainForm.SetPhotoFolder(const Value: string);
+procedure TMainForm.SetCameraPhotoFolder;
 resourcestring
   CamFolder = 'FromCam\';
 begin
+  CameraForm.PhotoFolder := PhotoFolder + CamFolder;
+end;
+
+procedure TMainForm.SetPhotoFolder(const Value: string);
+begin
   FPhotoFolder := Value;
   if Assigned(CameraForm) then
-    CameraForm.PhotoFolder := PhotoFolder + CamFolder;
+    SetCameraPhotoFolder;
   // TODO: PhotoFolderMonitor := TDirMonitor.Create(FPhotoFolder, PhotoFolderChanged, nil)
 end;
 
@@ -3456,6 +3477,11 @@ begin
   mmiExportResolution.Caption := Copy(mmiExportResolution.Caption, 1, Pos('-', mmiExportResolution.Caption) + 1) + TrimLeft(TMenuItem(Sender).Caption);
   if FrameInfoCount > 0 then
     Saved := False;
+end;
+
+procedure TMainForm.actExportToGifClick(Sender: TObject);
+begin
+  GifPreviewForm.Execute(RecordedFrames);
 end;
 
 procedure TMainForm.actExportResolutionCustomExecute(Sender: TObject);

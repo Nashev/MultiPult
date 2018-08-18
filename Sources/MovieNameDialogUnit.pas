@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.ImgList,
-  Vcl.Menus;
+  Vcl.Menus, System.ImageList;
 
 type
   TMovieNameDialogCloseQueryEvent = function(const ANewMovieName: string): Boolean of object;

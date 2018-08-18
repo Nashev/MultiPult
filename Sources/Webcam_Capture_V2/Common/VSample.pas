@@ -283,7 +283,6 @@ VAR
           END; {GetNextDeviceName}
 
 begin
-  Result := S_FALSE;
   Assert(Assigned(SL), 'VSample.GetCaptureDeviceList: SL must be assigned');
 
   // Create the system device enumerator
@@ -1185,7 +1184,7 @@ VAR
   VI    : VideoInfo;
   VIH   : VideoInfoHeader;
 
-  State: TFilterState;
+//  State: TFilterState;
 BEGIN
   Width := 0;
   Height := 0;

@@ -33,6 +33,10 @@ begin
   CameraForm.OnOpacityChanged := ScreenForm.AdjustOpacity;
   //CameraForm.OnCloseQuery := ScreenForm.DoCloseQueryScreenForm;
   //CameraForm.OnClose := ScreenForm.DoCloseScreenForm;
+
+  if ParamStr(1) <> '' then
+    CameraForm.PhotoFolder := ParamStr(1);
+
   CameraForm.Active := True;
 
   ScreenForm.Caption :=  CameraForm.Caption;
