@@ -8,3 +8,4 @@
 *.identcache
 *.bak
 *.stat
+/bin/*.tds

@@ -43,7 +43,7 @@ type
   public
     Preview: TBitmap;
     Iconic: TBitmap;
-    Teleport: Integer; // TODO: move to ResultFrame (?)
+    Teleport: Integer; // TODO: move to TRecordedFrame(List) (?)
     PreviewLoaded: Boolean;
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
@@ -427,7 +427,7 @@ type
         'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'
       );
   private
-    Bookmarks: array [0..19] of Integer; // TODO: move to ResultFrameList (?)
+    Bookmarks: array [0..19] of Integer; // TODO: move to TRecordedFrame(List) (?)
      // RecordedAudioCopy - рисуема€ копи€ звука. ѕо мере записи мульта пополн€етс€ из AudioRecorder
      // копи€ми очередных порций записываемого им себе звука.
      // ѕри открытии старой записи инициализируетс€ копией загруженного в WaveStorage звука.
@@ -1079,7 +1079,7 @@ begin
         vk_Left:   begin PushControlAction(caStepBackward); KeyPressBlocked := True; end;
         vk_Right:  begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
         VK_ESCAPE: if actFullScreenMode.Checked then actFullScreenMode.Execute; // TODO: что ещЄ тут стоит прерывать эскейпом?
-        vk_Shift:  pbWorkingSet.Invalidate; // телепорты выключаютс€
+        VK_SHIFT, VK_CAPITAL:  pbWorkingSet.Repaint; // телепорты выключаютс€
       end;
 
   UpdatePlayActions;
@@ -1091,7 +1091,7 @@ procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
 begin
   KeyPressBlocked := False; // TODO: разблокировать не любую клавишу, а ту, что блокировали. „тоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
   case Key of
-    vk_Shift: pbWorkingSet.Invalidate; // телепорты включаютс€
+    VK_SHIFT, VK_CAPITAL: pbWorkingSet.Repaint; // телепорты включаютс€
   end;
 //  pbIndicator.Refresh;
 end;
@@ -1454,6 +1454,7 @@ procedure TMainForm.actClearBookmarksClick(Sender: TObject);
 begin
   ClearBookmarks;
   ClearTeleports;
+  pbWorkingSet.Repaint;
 end;
 
 procedure TMainForm.mmiNewBookmarkClick(Sender: TObject);
@@ -1465,7 +1466,7 @@ begin
     if Bookmarks[i] = DisplayedFrameIndex then
       begin
         Bookmarks[i] := -1;
-        pbWorkingSet.Invalidate;
+        pbWorkingSet.Repaint;
         Saved := False;
         Exit;
       end;
@@ -1475,7 +1476,7 @@ begin
     if Bookmarks[i] = -1 then
       begin
         Bookmarks[i] := DisplayedFrameIndex;
-        pbWorkingSet.Invalidate;
+        pbWorkingSet.Repaint;
         Saved := False;
         Exit;
       end;
@@ -1501,7 +1502,7 @@ begin
     end;
   LiveAudioRecorder.Active := True;
   lblAudioFileName.Visible := False;
-  pbRecord.Invalidate;
+  pbRecord.Repaint;
   ShowTimes;
 end;
 
@@ -1609,7 +1610,7 @@ begin
           begin
             CurrentRecordPosition := i; // preview
             DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
-            pbRecord.Invalidate;
+            pbRecord.Repaint;
             SetStatus(Format(rs_FramesExportingCaption, [i + 1, RecordedFrames.Count]));
             Application.ProcessMessages;
             Cancel := False;
@@ -1732,7 +1733,7 @@ begin
                   SetProgress(i + 1, RecordedFrames.Count + AdvertisementDuration div FrameRate);
                   CurrentRecordPosition := i; // preview
                   DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
-                  pbRecord.Invalidate;
+                  pbRecord.Repaint;
                   SetProgressStatus(Format(rs_AVIExportingCaption, [
                     FrameInfoList[DisplayedFrameIndex].RelativeFileName,
                     FrameIndexToTimeStamp(CurrentRecordPosition),
@@ -1781,7 +1782,7 @@ begin
               Bmp.Canvas.StretchDraw(R, Image);
               Bmp.PixelFormat := pf24bit;
               CurrentRecordPosition := RecordedFrames.Count;
-              pbRecord.Invalidate;
+              pbRecord.Repaint;
               SetProgressStatus(Format(rs_AVIExportingCaption, ['ѕоследний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
               Application.ProcessMessages;
               if ExportCancelled then
@@ -1963,7 +1964,7 @@ begin
   WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
   RecordedAudioCopy.Clear;
   RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
-  pbRecord.Invalidate;
+  pbRecord.Repaint;
   WaveStorage.Wave.Position := 0;
   ShowTimes;
 end;
@@ -2644,7 +2645,7 @@ begin
     Bookmarks[TMenuItem(Sender).Tag] := -1
   else
     Bookmarks[TMenuItem(Sender).Tag] := DisplayedFrameIndex;
-  pbWorkingSet.Invalidate;
+  pbWorkingSet.Repaint;
   Saved := False;
 end;
 
@@ -2655,7 +2656,7 @@ begin
       Teleport := -1
     else
       Teleport := TMenuItem(Sender).Tag;
-  pbWorkingSet.Invalidate;
+  pbWorkingSet.Repaint;
   Saved := False;
 end;
 
@@ -3042,7 +3043,7 @@ begin
       pbFrameTip.Top  := Min(Max(0, Y - pbFrameTip.Height div 2), pbDisplay.Height - pbFrameTip.Height);
       FrameTipArrow := Y - pbFrameTip.Top;
     end;
-  pbFrameTip.Invalidate;
+  pbFrameTip.Repaint;
 end;
 
 procedure TMainForm.pbRecordPaint(Sender: TObject);
@@ -3268,7 +3269,7 @@ begin
   pbFrameTip.Left := Min(Max(0, X - pbFrameTip.Width div 2), pnlDisplay.Width - pbFrameTip.Width);
   FrameTipArrow := WorkingFrameToWorkingSetX(FrameTipRecordedFrame) - pbFrameTip.Left;
 
-  pbFrameTip.Invalidate;
+  pbFrameTip.Repaint;
 end;
 
 function TMainForm.WorkingFrameToWorkingSetX(AWorkingSetFrame: TRecordedFrame): Integer;
@@ -3526,7 +3527,7 @@ end;
 
 function TMainForm.TeleportEnabled: Boolean;
 begin
-  Result := not ((GetAsyncKeyState(vk_Shift) < 0) xor (GetKeyState(VK_CAPITAL) and 1 = 1)); // либо то, либо другое...
+  Result := not ((GetAsyncKeyState(VK_SHIFT) < 0) xor (GetKeyState(VK_CAPITAL) and 1 = 1)); // либо то, либо другое...
 end;
 
 procedure TMainForm.TimerTimer(Sender: TObject);
@@ -3540,7 +3541,7 @@ begin
       if CurrentRecordPosition < RecordedFrames.Count then
         begin
           DisplayedFrameIndex := RecordedFrames[CurrentRecordPosition].FrameInfoIndex;
-          pbRecord.Invalidate;
+          pbRecord.Repaint;
           Inc(FCurrentRecordPosition);
           ShowTimes;
         end
@@ -3600,7 +3601,7 @@ begin
           if not Assigned(CurrentWorkingSetFrame) then
             CurrentWorkingSetFrame := WorkingSetFrames[0];
           TRecordedFrame.Create(RecordedFrames, CurrentWorkingSetFrame.FrameInfoIndex);
-          pbRecord.Invalidate;
+          pbRecord.Repaint;
           CurrentRecordPosition := RecordedFrames.Count - 1;
         end;
 
@@ -3669,7 +3670,7 @@ end;
 
 procedure TMainForm.actStretchImagesExecute(Sender: TObject);
 begin
-  pbDisplay.Invalidate;
+  pbDisplay.Repaint;
   ScreenForm.StretchImages := actStretchImages.Checked;
 end;
 
@@ -3935,7 +3936,7 @@ begin
         else
           ilFrameset.Add(nil, nil);
       end;
-      pbWorkingSet.Invalidate;
+      pbWorkingSet.Repaint;
     finally
       lvFrameset.Items.EndUpdate;
       ilFrameset.EndUpdate;
@@ -3957,7 +3958,7 @@ begin
             Saved := False;
           end;
       end;
-      pbWorkingSet.Invalidate;
+      pbWorkingSet.Repaint;
     end;
   actWorkingSetManagement.Checked := lvFrameset.Visible;
 end;
