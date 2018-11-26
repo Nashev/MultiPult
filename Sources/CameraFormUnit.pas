@@ -110,13 +110,16 @@ type
     property imgOverlay: TImage read FimgOverlay write SetImgOverlay;
     property Active: Boolean read FActive write SetActive;
     procedure DisablePhotoFolderLookup;
-    function MakePhoto(const AFileName: string = ''): string;
+    function MakePhoto(const AFileName: string = ''; const AExtraExt: string = ''): string;
   end;
 
 var
   CameraForm: TCameraForm;
 
 implementation
+
+uses
+  UtilsUnit;
 
 {$R *.dfm}
 
@@ -402,10 +405,14 @@ begin
       if (LowerCase(FFileCommanderDirMonitor.Notifications[i]) = 'grab') then
         if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) then
           try
+            SavedFileName := GetFileContent(PhotoFolder + 'grab');
             DeleteFile(PhotoFolder + 'grab'); // забрали исполнять
 
-            SavedFileName := MakePhoto('Grabbed_tmp'); // создаём файл и "постепенно" наполняем содержимым
-            RenameFile(PhotoFolder + SavedFileName, PhotoFolder + 'Grabbed' + ExtractFileExt(SavedFileName)); // делаем, чтоб файл с нужным именем появлялся уже наполненным.
+            if SavedFileName = '' then
+              SavedFileName := 'Grabbed';
+
+            SavedFileName := MakePhoto(SavedFileName, '.tmp'); // создаём файл и "постепенно" наполняем содержимым
+            RenameFile(PhotoFolder + SavedFileName, PhotoFolder + ChangeFileExt(SavedFileName, '')); // делаем, чтоб файл с нужным именем появлялся уже наполненным.
           except
             ;
           end;
@@ -517,20 +524,32 @@ begin
   StopFileCommander;
 end;
 
-function TCameraForm.MakePhoto(const AFileName: string = ''): string;
+function TCameraForm.MakePhoto(const AFileName: string = ''; const AExtraExt: string = ''): string;
 var
   StoringFile: TPNGImage;
+  n: Integer;
+  StringDate: string;
+const
+  Ext = '.png';
 begin
   if AFileName = '' then
-    begin
-      DateTimeToString(Result, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
-      while FileExists(PhotoFolder + Result + '.png') do
-        Result := Result + '_';
-    end
+    Result := '%timestamp%%unique%'
   else
     Result := AFileName;
 
-  Result := Result + '.png';
+  if Result.IndexOf('%timestamp%') >= 0 then begin
+    DateTimeToString(StringDate, 'yyyy.mm.dd-hh.nn.ss.zzz', Now);
+    Result := Result.Replace('%timestamp%', StringDate, []);
+  end;
+
+  if Result.IndexOf('%unique%') >= 0 then begin
+    n := 0;
+    while FileExists(PhotoFolder + Result.Replace('%unique%', StringOfChar('_', n)) + Ext) do
+      Inc(n);
+    Result := Result.Replace('%unique%', StringOfChar('_', n));
+  end;
+
+  Result := Result + Ext + AExtraExt;
   StoringFile := TPNGImage.Create;
   try
     VideoBitmapCriticalSection.Enter;

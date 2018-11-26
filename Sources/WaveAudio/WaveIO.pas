@@ -166,7 +166,7 @@ begin
   WaveAudioIO.ThreadEvent := CreateEvent(nil, True, False, nil);
   FreeOnTerminate := True;
   Priority := tpHigher;
-  Resume;
+  Start;
 end;
 
 destructor TWaveThread.Destroy;
@@ -403,7 +403,8 @@ begin
       begin
         EnterCriticalSection(CS);
         try
-          DoWaveInDeviceOpen;
+          if not Closing then
+            DoWaveInDeviceOpen;
         finally
           LeaveCriticalSection(CS);
         end;

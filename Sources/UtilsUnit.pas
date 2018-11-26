@@ -5,13 +5,14 @@ interface
 function FormatFileSize(ASize: Int64; AShowUnits: Boolean = True): string;
 procedure InfoMsg(AText: string);
 procedure TakeVersionInfo;
+function GetFileContent(const AFileName: string): string;
 
 var
   VersionNameString, VersionCopyrightString: string;
 
 implementation
 
-uses Windows, SysUtils, Forms;
+uses Windows, SysUtils, Forms, Classes;
 
 resourcestring
   rs_Byte1 = ' байт';
@@ -117,6 +118,19 @@ begin
     finally
       FreeMem(VersionInfoBuffer, VersionInfoSize);
     end;
+end;
+
+function GetFileContent(const AFileName: string): string;
+var
+  StringStream: TStringStream;
+begin
+  StringStream := TStringStream.Create;
+  try
+    StringStream.LoadFromFile(AFileName);
+    Result := StringStream.DataString;
+  finally
+    StringStream.Free;
+  end;
 end;
 
 end.

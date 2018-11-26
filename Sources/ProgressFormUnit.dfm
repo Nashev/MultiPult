@@ -27,7 +27,6 @@ object ProgressForm: TProgressForm
     Height = 13
     Align = alTop
     Caption = 'Caption'
-    ExplicitWidth = 36
   end
   object lblCaption2: TLabel
     Left = 0
@@ -36,7 +35,6 @@ object ProgressForm: TProgressForm
     Height = 13
     Align = alTop
     Caption = 'lblCaption2'
-    ExplicitWidth = 52
   end
   object lblCaption3: TLabel
     Left = 0
@@ -45,7 +43,6 @@ object ProgressForm: TProgressForm
     Height = 13
     Align = alTop
     Caption = 'lblCaption3'
-    ExplicitWidth = 52
   end
   object ProgressBar1: TProgressBar
     Left = 0

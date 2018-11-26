@@ -18,7 +18,7 @@ type
   private
     FOnCancel: TNotifyEvent;
   public
-    constructor Create(const ACaption, ACaption2, ACaption3: string; AOnCancel: TNotifyEvent); virtual;
+    constructor Create(const ACaption, ACaption2, ACaption3: string; AOnCancel: TNotifyEvent); reintroduce; virtual;
     procedure SetProgress(AValue, AMaxValue: Integer);
     procedure SetProgressStatus(const ACaption3: string);
   end;

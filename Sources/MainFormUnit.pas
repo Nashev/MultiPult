@@ -18,9 +18,9 @@ uses
 {$ELSE}
   lclproc, fileutil, JwaWinBase, lMessages, FPReadJPEG,
 {$ENDIF}
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Windows, Messages, FileCtrl, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
-  Gauges, Buttons, Math, ComCtrls, FileCtrl, mmSystem,
+  Gauges, Buttons, Math, ComCtrls, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
   Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
@@ -394,6 +394,7 @@ type
     procedure actSaveExecute(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure actExportToGifClick(Sender: TObject);
+    procedure actRecordUpdate(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -938,7 +939,12 @@ begin
   mmiGotoBookmark0.Free;
   mmiToggleTeleport0.Free;
 
-  LiveAudioRecorder.Active := True;
+  try
+    LiveAudioRecorder.Active := True;
+    LiveAudioRecorder.WaitForStart;
+  except
+    // глушим ошибку, если микрофона нет
+  end;
 
   pnlDisplay.DoubleBuffered := True;
   pnlWorkingSet.DoubleBuffered := True;
@@ -1491,19 +1497,27 @@ begin
 end;
 
 procedure TMainForm.SwitchToMicrophoneUsage(AKeepOpenedWave: Boolean);
+resourcestring
+  rs_MicInitError = 'Не удалось включить микрофон';
 begin
-  FExternalAudioFileName := '';
-  actSelectAudioFile.Checked := False;
-  mmiUseMicrophone.Checked := True;
   if not AKeepOpenedWave then
     begin
       WaveStorage.Wave.Clear;
       RecordedAudioCopy.Clear;
     end;
-  LiveAudioRecorder.Active := True;
-  lblAudioFileName.Visible := False;
-  pbRecord.Repaint;
-  ShowTimes;
+  try
+    LiveAudioRecorder.Active := True;
+    LiveAudioRecorder.WaitForStart;
+
+    FExternalAudioFileName := '';
+    actSelectAudioFile.Checked := False;
+    mmiUseMicrophone.Checked := True;
+    lblAudioFileName.Visible := False;
+    pbRecord.Repaint;
+    ShowTimes;
+  except
+    InfoMsg(rs_MicInitError)// глушим ошибку, если микрофона нет
+  end;
 end;
 
 procedure TMainForm.btnBackwardWhilePressedClick(Sender: TObject);
@@ -1687,7 +1701,7 @@ begin
         ExportCancelled := False;
         Show;
         SetProgressStatus(rs_AVIExportingAudioStore);
-        if WaveStorage.Wave.Length = MulDiv(RecordedFrames.Count, 1000, FrameRate) then
+        if WaveStorage.Wave.Length = DWORD(MulDiv(RecordedFrames.Count, 1000, FrameRate)) then
           WaveToSave := WaveStorage.Wave
         else
           begin
@@ -2703,6 +2717,11 @@ begin
     end;
 end;
 
+procedure TMainForm.actRecordUpdate(Sender: TObject);
+begin
+  TAction(Sender).Enabled := not Exporting and ((FrameInfoCount > 0) or CameraForm.Active);
+end;
+
 procedure TMainForm.actRefreshPreviewExecute(Sender: TObject);
 begin
   Stop;
@@ -2756,7 +2775,7 @@ var
   Image: TGraphic;
   WorkSetFrame: TRecordedFrame;
 begin
-  Image := nil;
+//   Image := nil;
   try
     pbDisplay.Canvas.Brush.Color := clBlack;
     pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
@@ -4237,8 +4256,8 @@ end;
 procedure TMainForm.LoadSettings;
 var
   IniFile: TIniFile;
-  LastUsedCam: string;
-  LastUsedResolution: Integer;
+//   LastUsedCam: string;
+//   LastUsedResolution: Integer;
 begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try

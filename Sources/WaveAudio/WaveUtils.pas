@@ -232,7 +232,7 @@ begin
         try
           if lParam2 = SEEK_CUR then
             Stream.Seek(lpmmIOInfo^.lDiskOffset, SEEK_SET);
-          Result := Stream.Seek(lParam1, lParam2);
+          Result := Stream.Seek(lParam1, TSeekOrigin(lParam2));
           lpmmIOInfo^.lDiskOffset := Result;
         except
           Result := -1;
