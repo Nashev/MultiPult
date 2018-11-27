@@ -294,14 +294,22 @@ end;
 procedure TCameraForm.LookupPhotoFolder(APhotoFolder: string);
 resourcestring
   rs_SelectPhotoFolderCaption = 'В какую папку сохранять взятые кадры?';
+var
+  Directories: TArray<string>;
 begin
   if SelectDirectory(
-    rs_SelectPhotoFolderCaption, '', APhotoFolder
-    {$IFDEF DelphiXE}
-    , [sdNewFolder, sdShowFiles, sdShowEdit, sdShowShares, sdValidateDir, sdNewUI]
-    {$ENDIF}
-  ) then
-    PhotoFolder := APhotoFolder + '\';
+      APhotoFolder,
+      Directories,
+      [],
+      rs_SelectPhotoFolderCaption
+//   if SelectDirectory(
+//     rs_SelectPhotoFolderCaption, '', APhotoFolder
+//     {$IFDEF DelphiXE}
+//     , [sdNewFolder, sdShowFiles, sdShowEdit, sdShowShares, sdValidateDir, sdNewUI]
+//     {$ENDIF}
+  ) then begin
+    PhotoFolder := Directories[0] + '\';
+  end;
 end;
 
 procedure TCameraForm.btnMakePhotoClick(Sender: TObject);

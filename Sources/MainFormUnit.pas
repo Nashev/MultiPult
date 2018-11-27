@@ -23,7 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
-  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF};
+  Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF}, System.IOUtils;
 
 const
   ControlActionStackDeep = 10;
@@ -599,26 +599,34 @@ end;
 procedure TMainForm.actSelectPhotoFolderClick(Sender: TObject);
 var
   NewPhotoFolder: string;
+  Directories: TArray<string>;
 resourcestring
-  rs_SelectPhotoFolderCaption = 'С какой папки начинать искать кадры?';
+  rs_SelectPhotoFolderCaption = 'В какой папке хранить мульт, озвучку и искать/сохранять кадры?';
   rs_SaveBeforeChooseFolderRequest = 'созданием нового';
 begin
   Stop;
   SaveBeforeClose(rs_SaveBeforeChooseFolderRequest);
 
-  NewPhotoFolder := ExtractFilePath(ExpandFileName('..\testdata\'));
+  NewPhotoFolder := TPath.GetDocumentsPath + '\MultiPult\';
+  ForceDirectories(NewPhotoFolder);
   if SelectDirectory(
-    rs_SelectPhotoFolderCaption, '', NewPhotoFolder
-    {$IFDEF DelphiXE}
-    , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
-    {$ENDIF}
-  ) then
+      NewPhotoFolder,
+      Directories,
+      [],
+      rs_SelectPhotoFolderCaption
+//     rs_SelectPhotoFolderCaption, '', NewPhotoFolder
+//     {$IFDEF DelphiXE}
+//     , [sdNewFolder, sdShowFiles, sdShowEdit, (*sdShowShares, *) sdValidateDir, sdNewUI]
+//     {$ENDIF}
+  ) then begin
+    NewPhotoFolder := Directories[0];
     OpenNewPhotoFolder(NewPhotoFolder + '\');
+  end;
 end;
 
 procedure TMainForm.actFramesFromCameraModeUpdate(Sender: TObject);
 begin
-  actFramesFromCameraMode.Enabled := not Exporting and (PhotoFolder <> '');
+  actFramesFromCameraMode.Enabled := not Exporting;
   actFramesFromCameraMode.Checked := CameraForm.Active;
 end;
 
@@ -1854,11 +1862,16 @@ procedure TMainForm.actFramesFromCameraModeExecute(Sender: TObject);
 var
   CameraWasNonActive: Boolean;
 begin
+  if PhotoFolder = '' then begin
+    actSelectPhotoFolder.Execute;
+    if PhotoFolder = '' then
+      Exit;
+  end;
+
   CameraWasNonActive := not CameraForm.Active;
   if CameraWasNonActive then begin
     Cursor := crHourGlass;
     Screen.Cursor := Cursor;
-    //CameraWaiting := True;
   end;
   CameraForm.Active := CameraWasNonActive;
 end;
