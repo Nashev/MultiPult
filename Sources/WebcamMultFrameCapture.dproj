@@ -42,7 +42,7 @@
         <SanitizedProjectName>WebcamMultFrameCapture</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.64.0;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2019;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=Получение кадров с веб-камеры (отдельно от МультиПульта);ProductVersion=0.9</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.64.1;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2019;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=Получение кадров с веб-камеры (отдельно от МультиПульта);ProductVersion=0.9</VerInfo_Keys>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Release>64</VerInfo_Release>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
@@ -64,6 +64,7 @@
         <DCC_K>false</DCC_K>
         <DCC_E>false</DCC_E>
         <DCC_F>false</DCC_F>
+        <VerInfo_Build>1</VerInfo_Build>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
