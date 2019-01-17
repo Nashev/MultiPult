@@ -406,7 +406,7 @@ type
     procedure PushControlAction(Value: TControlAction);
     procedure ReplaceControlActions(Value: TControlAction);
     procedure ClearSound;
-    function FrameIndexToTimeStamp(AFrameIndex: Integer): string;
+    function FrameIndexToTimeStamp(AFrameIndex: Integer; AShowZeroFrameIndex: Boolean = True): string;
     procedure Stop;
     procedure SaveWorkingSet(ANewProjectFileName: string = '');
     function CheckBeforeOpenAudio: Boolean;
@@ -530,10 +530,11 @@ var
   FrameRate: byte = 25;
 
 implementation
-uses AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
+uses
+  AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
-  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles, ProgressFormUnit, UtilsUnit,
-  GifPreviewUnit;
+  CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles,
+  ProgressFormUnit, UtilsUnit, GifPreviewUnit, System.Generics.Collections;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -1290,7 +1291,7 @@ function CompareFramesFileName(Item1, Item2: Pointer): Integer;
         // Порядок получается такой:
         // 1аа
         // 01аа // число как у 1аа, конец не различается, но больше знаков в числе
-        // 1ав  // число как у 1аа и 01аа, но строка дальще - больше, чем аа
+        // 1ав  // число как у 1аа и 01аа, но строка дальше - больше, чем аа
         // 01вв // число как у всех, а строка - ещё больше, чем у всех.
         if Result = 0 then
           Result := CompareStringWithInt(CopyTillSlash(s1, PosDif1), CopyTillSlash(s2, PosDif2));
@@ -1300,11 +1301,12 @@ function CompareFramesFileName(Item1, Item2: Pointer): Integer;
       end
     else
       // если хоть одно не число, то сравню как строки, по правилам сравнения
-      // имён файлов, с учётом текущей кодовой страницы (но без региональной регистрозависимости, так как уже на входе был применён AnsUpperCase)
+      // имён файлов, с учётом текущей кодовой страницы (но без региональной регистрозависимости,
+      // так как уже на входе был применён AnsUpperCase)
       // и можно с начала строк, до отличия функция и сама доберётся быстрее,
       // чем если тут одинаковое начало отрезать у двух строк
-      // однако, разделители папок в пути должны иметь приоритет перед любыми символами, типа пробелов, например
-      // поэтому меняю их на 1-ый символ.
+      // однако, разделители папок в пути должны иметь приоритет перед любыми
+      // символами, типа пробелов, например, поэтому меняю их на 1-ый символ.
       Result := AnsiCompareFileName(StringReplace(s1, '\', #1, [rfReplaceAll]), StringReplace(s2, '\', #1, [rfReplaceAll]));
   end;
 
@@ -1442,6 +1444,7 @@ end;
 procedure TMainForm.actAboutExecute(Sender: TObject);
 resourcestring
   rs_AboutText =
+    'Программа для съёмки, сборки и озвучки мультиков. Монтаж в реальном времени!'#13#10 +
     'Версия %s'#13#10 +
     'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
     'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
@@ -1562,6 +1565,7 @@ begin
 
   MultimediaTimer.Interval := 1000 div FrameRate;
   RepaintAll;
+  ShowTimes;
 end;
 
 procedure TMainForm.actPreviewModeExecute(Sender: TObject);
@@ -3125,10 +3129,24 @@ var
   end;
 
   procedure DrawScaleMark;
+    procedure Draw(AThickness: Integer);
+    var
+      Text: string;
+      TextSize: TSize;
+    begin
+//       pbRecord.Canvas.Brush.Color := clRed;
+      pbRecord.Canvas.Brush.Style := bsSolid;
+      pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + AThickness));
+      Text := FrameIndexToTimeStamp(RecordedFrameIndex, False);
+      TextSize := pbRecord.Canvas.TextExtent(Text);
+      pbRecord.Canvas.Brush.Style := bsFDiagonal; // bsClear почпему-то не выключался обратно и линии, делаемые выше через FillRect, пропадали вовсе
+      pbRecord.Canvas.TextOut(pbRecord.Width - TextSize.cx - 8, y - TextSize.cy - 3, Text);
+      pbRecord.Canvas.Brush.Style := bsSolid;
+    end;
   begin
-    if RecordedFrameIndex mod FrameRate        = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 1));
-    if RecordedFrameIndex mod (FrameRate * 10) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 2));
-    if RecordedFrameIndex mod (FrameRate * 60) = 0 then pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + 3));
+    if RecordedFrameIndex mod FrameRate        = 0 then Draw(1);
+    if RecordedFrameIndex mod (FrameRate * 10) = 0 then Draw(2);
+    if RecordedFrameIndex mod (FrameRate * 60) = 0 then Draw(3);
   end;
 
 begin
@@ -3179,6 +3197,8 @@ begin
   R.Bottom := R.Bottom - FramesBorderSize;
   pbRecord.Canvas.Brush.Color := clWindow;
   pbRecord.Canvas.FillRect(R);
+
+  pbRecord.Canvas.Font.Color := clLtGray;
 
   pbRecord.Canvas.Brush.Color := clLtGray;
 
@@ -3798,14 +3818,15 @@ begin
     CameraForm.Active := False;
 end;
 
-function TMainForm.FrameIndexToTimeStamp(AFrameIndex: Integer): string;
+function TMainForm.FrameIndexToTimeStamp(AFrameIndex: Integer; AShowZeroFrameIndex: Boolean = True): string;
 var
   d, d2: Integer;
 begin
   d := AFrameIndex;
   d2 := d mod FrameRate;
   // frames in last second
-  Result := Format('%2.2d', [d2]);
+  if (d2 = 0) and AShowZeroFrameIndex then
+    Result := Format('[%2.2d]', [d2]);
   d := d div FrameRate;
   // seconds
   if d < 60 then
@@ -3818,7 +3839,7 @@ begin
       d := d div 60;
       // minutes
       if d < 60 then
-        Result := Format('00:%2.2d', [d]) + ':' + Result
+        Result := Format('%2.2d', [d]) + ':' + Result
       else
       begin
         d2 := d mod 60;
@@ -3827,7 +3848,7 @@ begin
         d := d div 60;
         // hours
         if d < 24 then
-          Result := Format('00:%2.2d', [d]) + ':' + Result
+          Result := Format('%2.2d', [d]) + ':' + Result
         else
         begin
           d2 := d mod 24;
@@ -4208,25 +4229,15 @@ end;
 
 procedure TMainForm.lvFramesetDragDrop(Sender, Source: TObject; X, Y: Integer);
 var
+  MovedItems: TList<TListItem>;
   MovedItem, TargetItem: TListItem;
   TargetIndex: Integer;
   MovedItemIndex: Integer;
   MovedItemCaption: string;
   TargetPosition: TPoint;
-begin
-  MovedItem := lvFrameset.ItemFocused;
-  TargetItem := lvFrameset.GetItemAt(X, Y);
-  if Assigned(TargetItem) then
-    begin
-      TargetIndex := TargetItem.Index;
-      TargetPosition := TargetItem.Position;
-    end
-  else
-  begin
-    TargetIndex := lvFrameset.Items.Count - 1;
-    TargetPosition.x := -1;
-  end;
-  if TargetIndex <> MovedItem.Index then
+  i: Integer;
+
+  procedure MoveItem;
   begin
     MovedItemIndex :=  MovedItem.ImageIndex;
     MovedItemCaption := MovedItem.Caption;
@@ -4237,6 +4248,45 @@ begin
     if TargetPosition.x <> -1 then
       TargetItem.Position := TargetPosition;
   end;
+
+begin
+  MovedItems := TList<TListItem>.Create;
+  try
+    MovedItems.Capacity := lvFrameset.SelCount;
+    for i := 0 to lvFrameset.Items.Count - 1 do
+      if lvFrameset.Items[i].Selected then
+        MovedItems.Add(lvFrameset.Items[i]);
+
+    TargetItem := lvFrameset.GetItemAt(X, Y);
+    if Assigned(TargetItem) then
+      begin
+        TargetIndex := TargetItem.Index;
+        TargetPosition := TargetItem.Position;
+      end
+    else
+      begin
+        TargetIndex := lvFrameset.Items.Count - 1;
+        TargetPosition.x := -1;
+      end;
+    // двигаем вперёд те, что были перед целью
+    for i := 0 to MovedItems.Count - 1 do begin
+      MovedItem := MovedItems[i];
+      if TargetIndex > MovedItem.Index then
+        MoveItem;
+    end;
+    // Двигаем назад те, что были после цели.
+    // Если их двигать этим методом в прямом порядке, они окажутся в обратном.
+    // Поэтому двигаю в обратном, чтоб получались в прямом.
+    for i := MovedItems.Count - 1 downto 0 do begin
+      MovedItem := MovedItems[i];
+      if TargetIndex < MovedItem.Index then
+        MoveItem;
+    end;
+    for i := 0 to MovedItems.Count - 1 do
+      MovedItems[i].Selected := True;
+  finally
+    MovedItems.Free;
+  end
 end;
 
 procedure TMainForm.lvFramesetDragOver(Sender, Source: TObject; X, Y: Integer;

@@ -411,7 +411,9 @@ begin
   if Assigned(FFileCommanderDirMonitor) then
     for i := 0 to FFileCommanderDirMonitor.Notifications.Count - 1 do
       if (LowerCase(FFileCommanderDirMonitor.Notifications[i]) = 'grab') then
-        if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) then
+        if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) and
+           ([dmaRemoved] * FFileCommanderDirMonitor.Notifications.Actions[i] = [])
+        then
           try
             SavedFileName := GetFileContent(PhotoFolder + 'grab');
             DeleteFile(PhotoFolder + 'grab'); // забрали исполнять
