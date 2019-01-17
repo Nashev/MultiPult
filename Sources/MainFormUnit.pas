@@ -3830,7 +3830,7 @@ begin
   d := d div FrameRate;
   // seconds
   if d < 60 then
-    Result := Format('00:%2.2d', [d]) + ':' + Result
+    Result := Format('%2.2d', [d]) + ':' + Result
   else
     begin
       d2 := d mod 60;
