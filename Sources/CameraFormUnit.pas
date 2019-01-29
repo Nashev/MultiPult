@@ -40,13 +40,15 @@ type
     edtFolder: TEdit;
     btnFolderLookup: TButton;
     btnStart: TButton;
-    edtOverlay: TEdit;
+    edtOverlay: TComboBox;
     btnSelectOverlay: TButton;
     chkOverlay: TCheckBox;
     chkMinimize: TCheckBox;
     tbOpacity: TTrackBar;
     lblOpacity: TLabel;
     btnReloadOverlay: TButton;
+    btnNextOverlay: TButton;
+    btnPrevOverlay: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -67,6 +69,8 @@ type
     procedure ToggleVisibility(Sender: TObject);
     procedure tbOpacityChange(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure btnPrevOverlayClick(Sender: TObject);
+    procedure btnNextOverlayClick(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
@@ -101,6 +105,7 @@ type
     procedure FileCommanderDirChangedHandler(Sender: TObject);
     procedure LoadSettings;
     procedure SaveSettings;
+    procedure LoadOverlays(AFileName: string);
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -119,7 +124,7 @@ var
 implementation
 
 uses
-  UtilsUnit;
+  UtilsUnit, System.Types, System.IOUtils;
 
 {$R *.dfm}
 
@@ -136,7 +141,7 @@ begin
   FVideoImage := TVideoImage.Create;
   FVideoImage.OnNewVideoFrame := GetNewFrame;
 
-  edtOverlay.Text := '';
+  edtOverlay.Items.Clear;
   LoadSettings;
 
   if LowerCase(ParamStr(2)) = '/timelapse' then
@@ -340,6 +345,40 @@ begin
       ShowMessage('Параметры открыть не удалось');
 end;
 
+procedure TCameraForm.btnPrevOverlayClick(Sender: TObject);
+begin
+  if edtOverlay.ItemIndex = 0 then
+    edtOverlay.ItemIndex := edtOverlay.Items.Count - 1
+   else
+    edtOverlay.ItemIndex := 0;
+  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+end;
+
+procedure TCameraForm.btnNextOverlayClick(Sender: TObject);
+begin
+  if edtOverlay.ItemIndex = edtOverlay.Items.Count - 1 then
+    edtOverlay.ItemIndex := 0
+   else
+    edtOverlay.ItemIndex := edtOverlay.ItemIndex + 1;
+  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+end;
+
+procedure TCameraForm.LoadOverlays(AFileName: string);
+begin
+  var Files := TDirectory.GetFiles(
+    ExtractFilePath(AFileName),
+    function (const Path: string; const FileInfo: TSearchRec): Boolean
+    begin
+      var Ext := LowerCase(ExtractFileExt(FileInfo.Name));
+      Result := (Ext = '.png') or (Ext = '.gif');
+    end
+  );
+  edtOverlay.Items.Clear;
+  for var i := Low(Files) to High(Files) do
+    edtOverlay.Items.Add(Files[i]);
+  edtOverlay.ItemIndex := edtOverlay.Items.IndexOf(AFileName);
+end;
+
 procedure TCameraForm.btnSelectOverlayClick(Sender: TObject);
 begin
   with TOpenDialog.Create(nil) do
@@ -348,7 +387,7 @@ begin
     FileName := edtOverlay.Text;
     if Execute then
     begin
-      edtOverlay.Text := FileName;
+      LoadOverlays(FileName);
       imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
       imgOverlay.Visible := True;
       chkOverlay.Checked := True;

@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{EC55AEFF-ACC0-46D5-B261-AADB0AEAE041}</ProjectGuid>
-        <ProjectVersion>18.4</ProjectVersion>
+        <ProjectVersion>18.5</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <MainSource>WebcamMultFrameCapture.dpr</MainSource>
         <Base>True</Base>
@@ -42,9 +42,9 @@
         <SanitizedProjectName>WebcamMultFrameCapture</SanitizedProjectName>
         <VerInfo_Locale>1049</VerInfo_Locale>
         <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.64.1;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2019;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=Получение кадров с веб-камеры (отдельно от МультиПульта);ProductVersion=0.9</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.65.0;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2019;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=Получение кадров с веб-камеры (отдельно от МультиПульта);ProductVersion=0.9</VerInfo_Keys>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Release>64</VerInfo_Release>
+        <VerInfo_Release>65</VerInfo_Release>
         <DCC_Namespace>Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;System;Xml;Data;Datasnap;Web;Soap;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <DCC_Inlining>off</DCC_Inlining>
@@ -64,7 +64,6 @@
         <DCC_K>false</DCC_K>
         <DCC_E>false</DCC_E>
         <DCC_F>false</DCC_F>
-        <VerInfo_Build>1</VerInfo_Build>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
@@ -122,8 +121,8 @@
                     <Source Name="MainSource">WebcamMultFrameCapture.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k250.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp250.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcloffice2k260.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclofficexp260.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
             <Platforms>

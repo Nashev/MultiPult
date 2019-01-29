@@ -144,6 +144,7 @@ object CameraForm: TCameraForm
     Color = clBtnFace
     Ctl3D = False
     ParentCtl3D = False
+    ReadOnly = True
     TabOrder = 8
     Text = 'edtFolder'
     OnDblClick = btnFolderLookupClick
@@ -169,24 +170,27 @@ object CameraForm: TCameraForm
     TabOrder = 10
     OnClick = btnStartClick
   end
-  object edtOverlay: TEdit
+  object edtOverlay: TComboBox
     Left = 114
-    Top = 150
-    Width = 497
-    Height = 19
+    Top = 148
+    Width = 450
+    Height = 21
+    Style = csDropDownList
     Anchors = [akLeft, akTop, akRight]
-    BevelInner = bvNone
-    BorderStyle = bsNone
     Color = clBtnFace
     Ctl3D = False
+    ItemIndex = 0
     ParentCtl3D = False
     TabOrder = 11
-    Text = 'edtOverlay'
+    Text = 'pathToOverlay'
+    OnChange = btnReloadOverlayClick
     OnDblClick = btnSelectOverlayClick
+    Items.Strings = (
+      'pathToOverlay')
   end
   object btnSelectOverlay: TButton
-    Left = 617
-    Top = 148
+    Left = 570
+    Top = 146
     Width = 25
     Height = 25
     Hint = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1076#1083#1103' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103'...'
@@ -197,7 +201,7 @@ object CameraForm: TCameraForm
   end
   object chkOverlay: TCheckBox
     Left = 15
-    Top = 148
+    Top = 150
     Width = 98
     Height = 17
     Caption = #1042#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1100':'
@@ -228,8 +232,8 @@ object CameraForm: TCameraForm
     OnChange = tbOpacityChange
   end
   object btnReloadOverlay: TButton
-    Left = 640
-    Top = 148
+    Left = 593
+    Top = 146
     Width = 25
     Height = 25
     Hint = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
@@ -246,6 +250,28 @@ object CameraForm: TCameraForm
     Caption = #1041#1088#1072#1090#1100' '#1082#1072#1076#1088' '#1082#1072#1078#1076#1099#1077
     TabOrder = 5
     OnClick = btnTimeLapseClick
+  end
+  object btnNextOverlay: TButton
+    Left = 640
+    Top = 146
+    Width = 25
+    Height = 25
+    Hint = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
+    Anchors = [akTop, akRight]
+    Caption = '>'
+    TabOrder = 17
+    OnClick = btnNextOverlayClick
+  end
+  object btnPrevOverlay: TButton
+    Left = 617
+    Top = 146
+    Width = 25
+    Height = 25
+    Hint = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
+    Anchors = [akTop, akRight]
+    Caption = '<'
+    TabOrder = 18
+    OnClick = btnPrevOverlayClick
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer
