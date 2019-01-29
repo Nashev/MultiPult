@@ -350,7 +350,7 @@ begin
   if edtOverlay.ItemIndex = 0 then
     edtOverlay.ItemIndex := edtOverlay.Items.Count - 1
    else
-    edtOverlay.ItemIndex := 0;
+    edtOverlay.ItemIndex := edtOverlay.ItemIndex - 1;
   imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
 end;
 
@@ -364,17 +364,21 @@ begin
 end;
 
 procedure TCameraForm.LoadOverlays(AFileName: string);
+var
+  Files: TStringDynArray;
+  i: Integer;
 begin
-  var Files := TDirectory.GetFiles(
+  Files := TDirectory.GetFiles(
     ExtractFilePath(AFileName),
     function (const Path: string; const FileInfo: TSearchRec): Boolean
+    var Ext: string;
     begin
-      var Ext := LowerCase(ExtractFileExt(FileInfo.Name));
+      Ext := LowerCase(ExtractFileExt(FileInfo.Name));
       Result := (Ext = '.png') or (Ext = '.gif');
     end
   );
   edtOverlay.Items.Clear;
-  for var i := Low(Files) to High(Files) do
+  for i := Low(Files) to High(Files) do
     edtOverlay.Items.Add(Files[i]);
   edtOverlay.ItemIndex := edtOverlay.Items.IndexOf(AFileName);
 end;
