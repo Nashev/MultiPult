@@ -1865,7 +1865,9 @@ end;
 procedure TMainForm.actFramesFromCameraModeExecute(Sender: TObject);
 var
   CameraWasNonActive: Boolean;
+  FirstTime: Boolean;
 begin
+  FirstTime := PhotoFolder = '';
   if PhotoFolder = '' then begin
     actSelectPhotoFolder.Execute;
     if PhotoFolder = '' then
@@ -1878,6 +1880,8 @@ begin
     Screen.Cursor := Cursor;
   end;
   CameraForm.Active := CameraWasNonActive;
+  if FirstTime then
+    actShowCameraControl.Execute;
 end;
 
 procedure TMainForm.CameraFormActiveChanged(Sender: TObject);

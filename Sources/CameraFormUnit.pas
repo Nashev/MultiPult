@@ -289,6 +289,9 @@ end;
 procedure TCameraForm.btnReloadOverlayClick(Sender: TObject);
 begin
   imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+  btnPrevOverlay.Enabled := edtOverlay.Items.Count > 1;
+  btnNextOverlay.Enabled := edtOverlay.Items.Count > 1;
+  btnReloadOverlay.Enabled := edtOverlay.Items.Count > 0;
 end;
 
 procedure TCameraForm.btnFolderLookupClick(Sender: TObject);
@@ -351,7 +354,7 @@ begin
     edtOverlay.ItemIndex := edtOverlay.Items.Count - 1
    else
     edtOverlay.ItemIndex := edtOverlay.ItemIndex - 1;
-  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+  btnReloadOverlay.Click;
 end;
 
 procedure TCameraForm.btnNextOverlayClick(Sender: TObject);
@@ -360,7 +363,7 @@ begin
     edtOverlay.ItemIndex := 0
    else
     edtOverlay.ItemIndex := edtOverlay.ItemIndex + 1;
-  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+  btnReloadOverlay.Click;
 end;
 
 procedure TCameraForm.LoadOverlays(AFileName: string);
@@ -392,7 +395,7 @@ begin
     if Execute then
     begin
       LoadOverlays(FileName);
-      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+      btnReloadOverlay.Click;
       imgOverlay.Visible := True;
       chkOverlay.Checked := True;
       chkOverlayClick(nil);
@@ -547,7 +550,7 @@ begin
       if (FOverlayDirMonitor.Path + FOverlayDirMonitor.Notifications[i] = edtOverlay.Text) then
         if ([dmaAdded, dmaNewName, dmaModified] * FOverlayDirMonitor.Notifications.Actions[i] <> []) then
           try
-            imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+            btnReloadOverlay.Click;
           except
             ;
           end;
@@ -661,7 +664,7 @@ begin
   FimgOverlay := Value;
   if Assigned(FimgOverlay) and FileExists(edtOverlay.Text) then
     begin
-      imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+      btnReloadOverlay.Click;
       imgOverlay.Visible := chkOverlay.Checked;
       chkOverlayClick(nil);
     end;

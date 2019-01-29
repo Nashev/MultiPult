@@ -239,6 +239,7 @@ object CameraForm: TCameraForm
     Hint = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
     Anchors = [akTop, akRight]
     Caption = #8634
+    Enabled = False
     TabOrder = 15
     OnClick = btnReloadOverlayClick
   end
@@ -259,6 +260,7 @@ object CameraForm: TCameraForm
     Hint = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
     Anchors = [akTop, akRight]
     Caption = '>'
+    Enabled = False
     TabOrder = 17
     OnClick = btnNextOverlayClick
   end
@@ -270,6 +272,7 @@ object CameraForm: TCameraForm
     Hint = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
     Anchors = [akTop, akRight]
     Caption = '<'
+    Enabled = False
     TabOrder = 18
     OnClick = btnPrevOverlayClick
   end
