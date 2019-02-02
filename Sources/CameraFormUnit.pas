@@ -49,6 +49,7 @@ type
     btnReloadOverlay: TButton;
     btnNextOverlay: TButton;
     btnPrevOverlay: TButton;
+    chkAutoChangeOverlay: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure btnMakePhotoClick(Sender: TObject);
     procedure btnNextCamClick(Sender: TObject);
@@ -171,6 +172,8 @@ begin
     btnNextCam.Enabled := cbCamSelector.Items.Count > 0;
     chkOverlay.Checked := IniFile.ReadBool('LastUsed', 'ShowOverlay', chkOverlay.Checked);
     edtOverlay.Text := IniFile.ReadString('LastUsed', 'OverlayFile', edtOverlay.Text);
+    LoadOverlays(edtOverlay.Text);
+    chkAutoChangeOverlay.Checked := IniFile.ReadBool('LastUsed', 'AutoChangeOverlay', chkAutoChangeOverlay.Checked);
     chkOverlayClick(nil);
     tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
@@ -224,6 +227,7 @@ begin
     IniFile.WriteInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
     IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
     IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
+    IniFile.WriteBool('LastUsed', 'AutoChangeOverlay', chkAutoChangeOverlay.Checked);
     IniFile.WriteInteger('LastUsed', 'Opacity', tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
     //    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
     //    if WindowState = wsNormal then
@@ -456,13 +460,13 @@ var
 begin
   if Assigned(FFileCommanderDirMonitor) then
     for i := 0 to FFileCommanderDirMonitor.Notifications.Count - 1 do
-      if (LowerCase(FFileCommanderDirMonitor.Notifications[i]) = 'grab') then
+      if (ChangeFileExt(LowerCase(FFileCommanderDirMonitor.Notifications[i]), '') = 'grab') then
         if ([dmaAdded, dmaNewName] * FFileCommanderDirMonitor.Notifications.Actions[i] <> []) and
            ([dmaRemoved] * FFileCommanderDirMonitor.Notifications.Actions[i] = [])
         then
           try
-            SavedFileName := GetFileContent(PhotoFolder + 'grab');
-            DeleteFile(PhotoFolder + 'grab'); // забрали исполнять
+            SavedFileName := GetFileContent(PhotoFolder + FFileCommanderDirMonitor.Notifications[i]);
+            DeleteFile(PhotoFolder + FFileCommanderDirMonitor.Notifications[i]); // забрали исполнять
 
             if SavedFileName = '' then
               SavedFileName := 'Grabbed';
@@ -623,6 +627,9 @@ begin
     OnNewFrame(PhotoFolder + Result);
   LastFileName := Result;
   lblLapseStatus.Caption := LastFileName;
+
+  if chkAutoChangeOverlay.Checked then
+    btnNextOverlay.Click;
 end;
 
 procedure TCameraForm.DoActiveChanged;

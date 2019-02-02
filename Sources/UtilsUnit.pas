@@ -122,14 +122,14 @@ end;
 
 function GetFileContent(const AFileName: string): string;
 var
-  StringStream: TStringStream;
+  StringList: TStringList;
 begin
-  StringStream := TStringStream.Create;
+  StringList := TStringList.Create;
   try
-    StringStream.LoadFromFile(AFileName);
-    Result := StringStream.DataString;
+    StringList.LoadFromFile(AFileName);
+    Result := StringList.Text;
   finally
-    StringStream.Free;
+    StringList.Free;
   end;
 end;
 

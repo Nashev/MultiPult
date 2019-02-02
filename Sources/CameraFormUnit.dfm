@@ -50,7 +50,7 @@ object CameraForm: TCameraForm
   end
   object lblFolder: TLabel
     Left = 17
-    Top = 123
+    Top = 97
     Width = 43
     Height = 13
     Caption = #1042' '#1087#1072#1087#1082#1091':'
@@ -135,7 +135,7 @@ object CameraForm: TCameraForm
   end
   object edtFolder: TEdit
     Left = 66
-    Top = 123
+    Top = 97
     Width = 568
     Height = 19
     Anchors = [akLeft, akTop, akRight]
@@ -151,7 +151,7 @@ object CameraForm: TCameraForm
   end
   object btnFolderLookup: TButton
     Left = 640
-    Top = 117
+    Top = 91
     Width = 25
     Height = 25
     Hint = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091'...'
@@ -172,7 +172,7 @@ object CameraForm: TCameraForm
   end
   object edtOverlay: TComboBox
     Left = 114
-    Top = 148
+    Top = 122
     Width = 450
     Height = 21
     Style = csDropDownList
@@ -190,7 +190,7 @@ object CameraForm: TCameraForm
   end
   object btnSelectOverlay: TButton
     Left = 570
-    Top = 146
+    Top = 120
     Width = 25
     Height = 25
     Hint = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1076#1083#1103' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103'...'
@@ -201,7 +201,7 @@ object CameraForm: TCameraForm
   end
   object chkOverlay: TCheckBox
     Left = 15
-    Top = 150
+    Top = 124
     Width = 98
     Height = 17
     Caption = #1042#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1100':'
@@ -233,7 +233,7 @@ object CameraForm: TCameraForm
   end
   object btnReloadOverlay: TButton
     Left = 593
-    Top = 146
+    Top = 120
     Width = 25
     Height = 25
     Hint = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
@@ -254,7 +254,7 @@ object CameraForm: TCameraForm
   end
   object btnNextOverlay: TButton
     Left = 640
-    Top = 146
+    Top = 120
     Width = 25
     Height = 25
     Hint = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
@@ -266,7 +266,7 @@ object CameraForm: TCameraForm
   end
   object btnPrevOverlay: TButton
     Left = 617
-    Top = 146
+    Top = 120
     Width = 25
     Height = 25
     Hint = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1103
@@ -275,6 +275,15 @@ object CameraForm: TCameraForm
     Enabled = False
     TabOrder = 18
     OnClick = btnPrevOverlayClick
+  end
+  object chkAutoChangeOverlay: TCheckBox
+    Left = 32
+    Top = 146
+    Width = 632
+    Height = 17
+    Caption = #1052#1077#1085#1103#1090#1100' '#1074#1080#1076#1086#1080#1089#1082#1072#1090#1077#1083#1100' '#1085#1072' '#1089#1083#1077#1076#1091#1102#1097#1080#1081' '#1087#1088#1080' '#1082#1072#1078#1076#1086#1084' '#1074#1079#1103#1090#1080#1080' '#1082#1072#1076#1088#1072
+    TabOrder = 19
+    OnClick = chkOverlayClick
   end
   object TimeLapseTimer: TMultimediaTimer
     OnTimer = TimeLapseTimerTimer
