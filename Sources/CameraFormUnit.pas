@@ -375,6 +375,9 @@ var
   Files: TStringDynArray;
   i: Integer;
 begin
+  if not DirectoryExists(ExtractFilePath(AFileName)) then
+    Exit;
+
   Files := TDirectory.GetFiles(
     ExtractFilePath(AFileName),
     function (const Path: string; const FileInfo: TSearchRec): Boolean

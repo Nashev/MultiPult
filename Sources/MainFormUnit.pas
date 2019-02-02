@@ -3144,6 +3144,7 @@ var
       Text := FrameIndexToTimeStamp(RecordedFrameIndex, False);
       TextSize := pbRecord.Canvas.TextExtent(Text);
       pbRecord.Canvas.Brush.Style := bsFDiagonal; // bsClear почпему-то не выключался обратно и линии, делаемые выше через FillRect, пропадали вовсе
+      pbRecord.Canvas.Font.Color := clBlack;
       pbRecord.Canvas.TextOut(pbRecord.Width - TextSize.cx - 8, y - TextSize.cy - 3, Text);
       pbRecord.Canvas.Brush.Style := bsSolid;
     end;
@@ -3210,6 +3211,7 @@ begin
   pbRecord.Canvas.Pen.Width := 1;
   pbRecord.Canvas.Pen.Style := psSolid;
   TopOfMainRecord := R.Top;
+
   // content of main record
   RecordedFrameIndex := pbRecordOffset;
   for y := R.Top to R.Bottom - 1 do
@@ -3224,7 +3226,7 @@ begin
     end;
 
   // current position in main record
-  pbRecord.Canvas.Brush.Color := clWhite;
+  pbRecord.Canvas.Brush.Color := clMaroon;
   if not AdvertisementShowing and (CurrentRecordPosition >= 0) and (CurrentRecordPosition < RecordedFrames.Count) then
     with Point(
       MulDiv(RecordedFrames[CurrentRecordPosition].FrameInfoIndex, DataWidth, FrameInfoCount - 1) + R.Left,
@@ -3828,18 +3830,21 @@ var
 begin
   d := AFrameIndex;
   d2 := d mod FrameRate;
-  // frames in last second
-  if (d2 = 0) and AShowZeroFrameIndex then
-    Result := Format('[%2.2d]', [d2]);
   d := d div FrameRate;
+  // frames in last second
+  if (d2 <> 0) or AShowZeroFrameIndex then begin
+    Result := Format('[%2.2d]', [d2]);
+    if d > 0 then
+      Result := ':' + Result;
+  end;
   // seconds
   if d < 60 then
-    Result := Format('%2.2d', [d]) + ':' + Result
+    Result := Format('%2.2d', [d]) + Result
   else
     begin
       d2 := d mod 60;
       // seconds in a last minute
-      Result := Format('%2.2d', [d2]) + ':' + Result;
+      Result := Format('%2.2d', [d2]) + Result;
       d := d div 60;
       // minutes
       if d < 60 then
