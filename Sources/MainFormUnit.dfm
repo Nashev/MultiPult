@@ -7636,7 +7636,7 @@ object MainForm: TMainForm
     object pbWorkingSet: TPaintBox
       Left = 1
       Top = 1
-      Width = 775
+      Width = 764
       Height = 42
       Hint = #1047#1072#1075#1088#1091#1078#1077#1085#1085#1099#1077' '#1080#1089#1093#1086#1076#1085#1099#1077' '#1082#1072#1076#1088#1099
       Align = alClient
@@ -7646,15 +7646,15 @@ object MainForm: TMainForm
       OnPaint = pbWorkingSetPaint
     end
     object pnlFramesetMode: TPanel
-      Left = 776
+      Left = 765
       Top = 1
-      Width = 21
+      Width = 32
       Height = 42
       Align = alRight
       BevelOuter = bvNone
       TabOrder = 0
       object btnFrameSetExpand: TSpeedButton
-        Left = 0
+        Left = 9
         Top = 0
         Width = 23
         Height = 22
@@ -7688,7 +7688,7 @@ object MainForm: TMainForm
         OnClick = btnFrameSetExpandClick
       end
       object btnFrameSetZoom: TSpeedButton
-        Left = 0
+        Left = 9
         Top = 20
         Width = 23
         Height = 22

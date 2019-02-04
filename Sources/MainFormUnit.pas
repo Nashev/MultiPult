@@ -3161,8 +3161,8 @@ begin
 
   // Automatic scrollbar position
   pbRecordOffset := CurrentRecordPosition - (DataAreaHeight div 2);
-  if (pbRecordOffset + DataAreaHeight) > RecordedFrames.Count then
-    pbRecordOffset := RecordedFrames.Count - DataAreaHeight;
+  if (pbRecordOffset + DataAreaHeight) > RecordedFrames.Count + FrameRate then //  + FrameRate чтоб одну секунду хвоста звука после кадра рекламы можно было увидеть
+    pbRecordOffset := RecordedFrames.Count + FrameRate - DataAreaHeight;
   if pbRecordOffset < 0 then
     pbRecordOffset := 0;
 
