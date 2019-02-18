@@ -23,6 +23,7 @@ uses
   Gauges, Buttons, Math, ComCtrls, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
+  System.Generics.Collections,
   Vcl.Imaging.pngimage, Vcl.Imaging.GIFimg, System.ImageList{$IFDEF Delphi6}, Actions{$ENDIF}, System.IOUtils;
 
 const
@@ -35,6 +36,8 @@ const
   FrameTipH = 90;
   FrameTipD = 5;
   FrameTipT = 2;
+
+  MaxAudioLineWidth = 1024;
 
 type
   TFrameInfo = class
@@ -438,6 +441,10 @@ type
      // ѕаралельно всему этому всЄ врем€ работает LiveAudioRecorder
      // на отображение уровн€ звука в статусе.
     RecordedAudioCopy: TMemoryStream;
+    // ѕосчитанные относительно заранее ширины полосочек дл€ рисуемого звука.
+    // Ёто как RecordedAudioCopy, только уже усреднЄнное по отрезкам времени,
+    // готовое дл€ отрисовки
+    RecordedAudioLines: TList<Integer>;
     pbRecordOffset: Integer;
     OutOfMemoryRaised: Boolean;
     PreviousBounds: TRect;
@@ -459,6 +466,7 @@ type
     procedure LoadSettings;
     procedure SaveSettings;
     procedure DoCancelExport(Sender: TObject);
+    procedure MakeRecordedAudioLines;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -534,7 +542,7 @@ uses
   AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
   CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles,
-  ProgressFormUnit, UtilsUnit, GifPreviewUnit, System.Generics.Collections;
+  ProgressFormUnit, UtilsUnit, GifPreviewUnit;
 {$R *.dfm}
 
 function Size(AX, AY: Integer): TSize;
@@ -707,6 +715,7 @@ begin
   FRecordedFrames := TRecordedFrameList.Create;
   FWorkingSetFrames := TRecordedFrameList.Create;
   RecordedAudioCopy := TMemoryStream.Create;
+  RecordedAudioLines := TList<Integer>.Create;
   DisplayedFrameIndex := -1;
   ClearBookmarks;
   MultimediaTimer.Enabled := True;
@@ -870,6 +879,7 @@ destructor TMainForm.Destroy;
 begin
   MultimediaTimer.Enabled := False;
   FreeAndNil(RecordedAudioCopy);
+  FreeAndNil(RecordedAudioLines);
   FreeAndNil(FWorkingSetFrames);
   FreeAndNil(FRecordedFrames);
   FreeAndNil(FFrameInfoList);
@@ -1515,6 +1525,7 @@ begin
     begin
       WaveStorage.Wave.Clear;
       RecordedAudioCopy.Clear;
+      RecordedAudioLines.Clear;
     end;
   try
     LiveAudioRecorder.Active := True;
@@ -1999,6 +2010,8 @@ begin
   WaveStorage.Wave.Stream.Position := WaveStorage.Wave.DataOffset;
   RecordedAudioCopy.Clear;
   RecordedAudioCopy.CopyFrom(WaveStorage.Wave.Stream, WaveStorage.Wave.DataSize);
+  RecordedAudioLines.Clear;
+  MakeRecordedAudioLines;
   pbRecord.Repaint;
   WaveStorage.Wave.Position := 0;
   ShowTimes;
@@ -2491,6 +2504,7 @@ begin
   if RecordingMustBeChanged then // значит, начали играть дл€ записи мультика
     begin
       Recording := True;
+      AdvertisementShowing := False;
       RecordingMustBeChanged := False;
       actRecord.Checked := True;
     end
@@ -2876,6 +2890,8 @@ begin
         imgCamPreview.BoundsRect := R_MainScreen;
         imgOverlay.BoundsRect := R_MainScreen;
 
+        ScreenForm.Image := Image;
+
         if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
           begin
             // лева€ миниатюра
@@ -2929,7 +2945,6 @@ begin
               end;
           end;
       end;
-    ScreenForm.Image := Image;
   except
     ; // на вс€кий случай глушим ошибки рисовани€, потому что они непон€тно откуда лезут
   end;
@@ -3086,37 +3101,36 @@ begin
   pbFrameTip.Repaint;
 end;
 
-procedure TMainForm.pbRecordPaint(Sender: TObject);
-const
-  FramesBorderSize = 5;
-  FragmentsGap = 1;
-  ScrollBarWidth = 2;
+
+procedure TMainForm.MakeRecordedAudioLines;
+var
+  SamplesPerFrame: Integer;
+  WaveFormat: TWaveFormatEx;
+  CalculatedCount, FrameIndex: Integer;
+  FirstSample: Integer;
+  pSample: PSmallInt;
+  MaxData, MinData: SmallInt;
+  i: Integer;
 type
   TSampleArray = array [0..256] of SmallInt;
   PSampleArray = ^TSampleArray;
-var
-  y: Integer;
-  RecordedFrameIndex: Integer;
-  R: TRect;
-  TopOfMainRecord: Integer;
-  DataWidth: Integer;
-  DataWidthHalf: Integer;
-  DataAreaHeight: Integer;
+begin
+  CalculatedCount := CalculateSoundFramesCount;
+  if RecordedAudioLines.Count = CalculatedCount then
+    Exit;
 
-  SamplesPerFrame: Integer;
-  WaveFormat: TWaveFormatEx;
+  SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
 
-  procedure DrawSoundLine;
-  var
-    FirstSample: Integer;
-    pSample: PSmallInt;
-    MaxData, MinData: SmallInt;
-    i: Integer;
-  begin
-    FirstSample := (pbRecordOffset + y - TopOfMainRecord) * SamplesPerFrame;
+  SamplesPerFrame := 2 * (WaveFormat.nSamplesPerSec div FrameRate);
+  Assert(WaveFormat.wBitsPerSample = 16, '{F90018C7-D187-41DE-A30C-CB8D15A72149}');
+  Assert(WaveFormat.nChannels = 2,       '{9655AC01-69A1-456D-B55E-027A9B04CA93}');
+
+  CalculatedCount := RecordedAudioLines.Count;
+  RecordedAudioLines.Count := CalculateSoundFramesCount;
+  for FrameIndex := CalculatedCount to RecordedAudioLines.Count - 1 do begin
+    FirstSample := FrameIndex * SamplesPerFrame;
     if (FirstSample + SamplesPerFrame) > (RecordedAudioCopy.Size div 2) then
       Exit;
-
     pSample := Pointer(PSampleArray(RecordedAudioCopy.Memory));
     inc(pSample, FirstSample);
     MaxData := PWordArray(pSample)^[0];
@@ -3128,8 +3142,34 @@ var
         Inc(pSample);
         Inc(pSample); // stereo
       end;
-    pbRecord.Canvas.MoveTo(R.Left + DataWidthHalf + MulDiv(MinData, DataWidthHalf, $FFFF div 2),     y);
-    pbRecord.Canvas.LineTo(R.Left + DataWidthHalf + MulDiv(MaxData, DataWidthHalf, $FFFF div 2) + 1, y);
+    RecordedAudioLines[FrameIndex] := MulDiv(MaxData - MinData, MaxAudioLineWidth, $FFFF);
+  end;
+end;
+
+procedure TMainForm.pbRecordPaint(Sender: TObject);
+const
+  FramesBorderSize = 5;
+  FragmentsGap = 1;
+  ScrollBarWidth = 2;
+var
+  y: Integer;
+  DrawingRecordedFrameIndex: Integer;
+  R: TRect;
+  TopOfMainRecord: Integer;
+  DataWidth: Integer;
+  DataWidthHalf: Integer;
+  DataAreaHeight: Integer;
+
+  procedure DrawSoundLine;
+  var
+    w: Integer;
+  begin
+    if DrawingRecordedFrameIndex >= RecordedAudioLines.Count then
+      Exit;
+
+    w := MulDiv(RecordedAudioLines[DrawingRecordedFrameIndex], DataWidthHalf, MaxAudioLineWidth);
+    pbRecord.Canvas.MoveTo(R.Left + DataWidthHalf - w,     y);
+    pbRecord.Canvas.LineTo(R.Left + DataWidthHalf + w + 1, y);
   end;
 
   procedure DrawScaleMark;
@@ -3141,7 +3181,7 @@ var
 //       pbRecord.Canvas.Brush.Color := clRed;
       pbRecord.Canvas.Brush.Style := bsSolid;
       pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + AThickness));
-      Text := FrameIndexToTimeStamp(RecordedFrameIndex, False);
+      Text := FrameIndexToTimeStamp(DrawingRecordedFrameIndex, False);
       TextSize := pbRecord.Canvas.TextExtent(Text);
       pbRecord.Canvas.Brush.Style := bsFDiagonal; // bsClear почпему-то не выключалс€ обратно и линии, делаемые выше через FillRect, пропадали вовсе
       pbRecord.Canvas.Font.Color := clBlack;
@@ -3149,9 +3189,9 @@ var
       pbRecord.Canvas.Brush.Style := bsSolid;
     end;
   begin
-    if RecordedFrameIndex mod FrameRate        = 0 then Draw(1);
-    if RecordedFrameIndex mod (FrameRate * 10) = 0 then Draw(2);
-    if RecordedFrameIndex mod (FrameRate * 60) = 0 then Draw(3);
+    if DrawingRecordedFrameIndex mod FrameRate        = 0 then Draw(1);
+    if DrawingRecordedFrameIndex mod (FrameRate * 10) = 0 then Draw(2);
+    if DrawingRecordedFrameIndex mod (FrameRate * 60) = 0 then Draw(3);
   end;
 
 begin
@@ -3166,11 +3206,7 @@ begin
   if pbRecordOffset < 0 then
     pbRecordOffset := 0;
 
-  SetPCMAudioFormatS(@WaveFormat, AudioRecorder.PCMFormat);
-
-  SamplesPerFrame := 2 * (WaveFormat.nSamplesPerSec div FrameRate);
-  Assert(WaveFormat.wBitsPerSample = 16, '{F90018C7-D187-41DE-A30C-CB8D15A72149}');
-  Assert(WaveFormat.nChannels = 2,       '{9655AC01-69A1-456D-B55E-027A9B04CA93}');
+  MakeRecordedAudioLines; // досчитываем непосчитанное, новое записанное
 
   // background
   pbRecord.Canvas.Brush.Color := clBtnFace;
@@ -3213,16 +3249,16 @@ begin
   TopOfMainRecord := R.Top;
 
   // content of main record
-  RecordedFrameIndex := pbRecordOffset;
+  DrawingRecordedFrameIndex := pbRecordOffset;
   for y := R.Top to R.Bottom - 1 do
     begin
       DrawSoundLine;
 
       DrawScaleMark;
 
-      pbRecord.Canvas.Pixels[R.Left + MulDiv(RecordedFrames[RecordedFrameIndex].FrameInfoIndex, DataWidth, FrameInfoCount - 1), y] := clBlack;
+      pbRecord.Canvas.Pixels[R.Left + MulDiv(RecordedFrames[DrawingRecordedFrameIndex].FrameInfoIndex, DataWidth, FrameInfoCount - 1), y] := clBlack;
 
-      Inc(RecordedFrameIndex);
+      Inc(DrawingRecordedFrameIndex);
     end;
 
   // current position in main record
@@ -3268,8 +3304,12 @@ begin
   pbRecord.Canvas.Pen.Width := 1;
   pbRecord.Canvas.Pen.Style := psSolid;
 
+  DrawingRecordedFrameIndex := RecordedFrames.Count;
   for y := R.Bottom + FramesBorderSize to pbRecord.Height do
-    DrawSoundLine;
+    begin
+      DrawSoundLine;
+      Inc(DrawingRecordedFrameIndex);
+    end;
 end;
 
 procedure TMainForm.ListBoxClick(Sender: TObject);
@@ -3875,6 +3915,7 @@ procedure TMainForm.ClearSound;
 begin
   WaveStorage.Wave.Clear;
   RecordedAudioCopy.Clear;
+  RecordedAudioLines.Clear;
 end;
 
 procedure TMainForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);

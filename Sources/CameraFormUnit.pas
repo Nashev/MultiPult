@@ -107,6 +107,7 @@ type
     procedure LoadSettings;
     procedure SaveSettings;
     procedure LoadOverlays(AFileName: string);
+    procedure UpdateOverlay;
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -531,21 +532,25 @@ end;
 
 procedure TCameraForm.chkOverlayClick(Sender: TObject);
 begin
-  if Assigned(imgOverlay) then
+  UpdateOverlay;
+end;
+
+procedure TCameraForm.UpdateOverlay;
+begin
+  if Assigned(imgOverlay) then begin
+    imgOverlay.Visible := chkOverlay.Checked and Active;
+    if Assigned(FOverlayDirMonitor) then
     begin
-      imgOverlay.Visible := chkOverlay.Checked;
-      if Assigned(FOverlayDirMonitor) then
-        begin
-          FOverlayDirMonitor.FreeOnTerminate := True;
-          FOverlayDirMonitor.Terminate;
-          FOverlayDirMonitor := nil;
-        end;
-      if chkOverlay.Checked and DirectoryExists(ExtractFilePath(edtOverlay.Text)) then
-        begin
-          FOverlayDirMonitor := TDirMonitor.Create(ExtractFilePath(edtOverlay.Text), OverlayDirChangedHandler, nil);
-          FOverlayDirMonitor.Start;
-        end;
+      FOverlayDirMonitor.FreeOnTerminate := True;
+      FOverlayDirMonitor.Terminate;
+      FOverlayDirMonitor := nil;
     end;
+    if chkOverlay.Checked and DirectoryExists(ExtractFilePath(edtOverlay.Text)) then
+    begin
+      FOverlayDirMonitor := TDirMonitor.Create(ExtractFilePath(edtOverlay.Text), OverlayDirChangedHandler, nil);
+      FOverlayDirMonitor.Start;
+    end;
+  end;
 end;
 
 procedure TCameraForm.OverlayDirChangedHandler(Sender: TObject);
@@ -637,6 +642,7 @@ end;
 
 procedure TCameraForm.DoActiveChanged;
 begin
+  UpdateOverlay;
   if Assigned(OnActiveChanged) then
     OnActiveChanged(Self);
 end;
