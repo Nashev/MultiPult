@@ -15,6 +15,9 @@
         <Projects Include="Sources\WaveAudio\WA2010.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Sources\DirMonDemo.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="WA2010:Make">
         <MSBuild Projects="Sources\WaveAudio\WA2010.dproj" Targets="Make"/>
     </Target>
+    <Target Name="DirMonDemo">
+        <MSBuild Projects="Sources\DirMonDemo.dproj"/>
+    </Target>
+    <Target Name="DirMonDemo:Clean">
+        <MSBuild Projects="Sources\DirMonDemo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DirMonDemo:Make">
+        <MSBuild Projects="Sources\DirMonDemo.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="MultiPult;WebcamMultFrameCapture;NewAC_10;WA2010"/>
+        <CallTarget Targets="MultiPult;WebcamMultFrameCapture;NewAC_10;WA2010;DirMonDemo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="MultiPult:Clean;WebcamMultFrameCapture:Clean;NewAC_10:Clean;WA2010:Clean"/>
+        <CallTarget Targets="MultiPult:Clean;WebcamMultFrameCapture:Clean;NewAC_10:Clean;WA2010:Clean;DirMonDemo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="MultiPult:Make;WebcamMultFrameCapture:Make;NewAC_10:Make;WA2010:Make"/>
+        <CallTarget Targets="MultiPult:Make;WebcamMultFrameCapture:Make;NewAC_10:Make;WA2010:Make;DirMonDemo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

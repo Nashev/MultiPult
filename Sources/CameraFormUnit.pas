@@ -293,7 +293,10 @@ end;
 
 procedure TCameraForm.btnReloadOverlayClick(Sender: TObject);
 begin
-  imgOverlay.Picture.LoadFromFile(edtOverlay.Text);
+  if FileExists(edtOverlay.Text) then
+    imgOverlay.Picture.LoadFromFile(edtOverlay.Text)
+  else
+    imgOverlay.Hide;
   btnPrevOverlay.Enabled := edtOverlay.Items.Count > 1;
   btnNextOverlay.Enabled := edtOverlay.Items.Count > 1;
   btnReloadOverlay.Enabled := edtOverlay.Items.Count > 0;
