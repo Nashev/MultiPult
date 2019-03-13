@@ -8,12 +8,13 @@
 
 Исходный код программы доступен для просмотра и доработок на [github](https://github.com/Nashev/MultiPult), перечень задач ведётся [там же](https://github.com/Nashev/MultiPult/issues). Так же была попытка использовать сервис Waffle.io, чтобы отмечать, какие из запланированных задач достаточно продуманы, чтобы к ним можно было приступить в свободную минутку и сколько задач сейчас в работе: [![Issues in Ready for work](https://badge.waffle.io/nashev/multipult.png?label=ready to work&title=Ready), ![Issues in progress](https://badge.waffle.io/nashev/multipult.png?label=in progress&title=InProgress)](http://waffle.io/nashev/multipult)
 
-Пишется на Delphi 6, XE2 и XE4, 10 Seattle, а также на FPC. Соответственно, стараюсь не завязываться на специфику кого-либо из них. Иногда такие завязки всё ж появляются, иногда чистятся. Не вписывать Expliсit-размеры в dfm под XE помогает расширение DDevExtensions (http://andy.jgknet.de/ddev)
+Пишется на Delphi 6, XE2 и XE4, 10.3 Rio Community Edition, а также на FPC. Соответственно, стараюсь не завязываться на специфику кого-либо из них. Иногда такие завязки всё ж появляются, иногда чистятся. Не вписывать Expliсit-размеры в dfm под XE помогает расширение DDevExtensions (http://andy.jgknet.de/ddev)
 
 Справочная информация размещается [в местной вики](https://github.com/Nashev/MultiPult/wiki) и на  [страничке программы на сайте МультиСтудии](http://multistudia.ru/?page_id=923).
 
 Скачать последнюю версию МультиПульта можно по ссылке https://github.com/Nashev/MultiPult/raw/origin/bin/MultiPult.exe
 
+см. так же https://github.com/Nashev/CreatePNGSequenceForSlides
 
 Первоначальный проект выглядел так:
 ===================================
