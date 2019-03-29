@@ -2020,7 +2020,8 @@ end;
 procedure TMainForm.OpenMovie(AFileName: string);
 var
   i: Integer;
-  FrameInfoIndex: Integer;
+  FrameInfoIndex, FoundFrameInfoIndex: Integer;
+  RelativePath, FileName: string;
   WaveFileName: string;
   s: string;
   LastDelimiterPos: Integer;
@@ -2039,10 +2040,8 @@ var
 
 begin
   ExportCancelled := True;
-  UnloadFrames;
   ClearBookmarks;
   PhotoFolder := ExtractFilePath(AFileName);
-  lblWorkPath.Caption := PhotoFolder;
   ProjectFileName := ChangeFileExt(ExtractFileName(AFileName), '');
   UpdateCaption;
 
@@ -2085,6 +2084,7 @@ begin
         end;
       if s = FilesSectionStart then
         begin
+          FrameInfoIndex := 0;
           while i < (Count - 1) do
             begin
               inc(i);
@@ -2094,8 +2094,17 @@ begin
               if s = WorkingSetSectionStart then
                 Break;
               LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
-              FFrameInfoList.Add(TFrameInfo.Create(Copy(s, 1, LastDelimiterPos), Copy(s, LastDelimiterPos + 1, MaxInt)));
+              RelativePath := Copy(s, 1, LastDelimiterPos);
+              FileName := Copy(s, LastDelimiterPos + 1, MaxInt);
+              FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);
+              if FoundFrameInfoIndex <> -1 then
+                FFrameInfoList.Move(FoundFrameInfoIndex, FrameInfoIndex)
+              else
+                FFrameInfoList.Insert(FrameInfoIndex, TFrameInfo.Create(RelativePath, FileName));
+              Inc(FrameInfoIndex);
             end;
+          FFrameInfoList.Count := FrameInfoIndex;
+          WorkingSetFrames.Clear;
           if s = WorkingSetSectionStart then
             while i < (Count - 1) do
               begin
@@ -2372,7 +2381,11 @@ end;
 
 procedure TMainForm.SetPhotoFolder(const Value: string);
 begin
+  if PhotoFolder = Value then
+    Exit;
+  UnloadFrames;
   FPhotoFolder := Value;
+  lblWorkPath.Caption := FPhotoFolder;
   if Assigned(CameraForm) then
     SetCameraPhotoFolder;
   // TODO: PhotoFolderMonitor := TDirMonitor.Create(FPhotoFolder, PhotoFolderChanged, nil)
@@ -3155,7 +3168,7 @@ var
   y: Integer;
   DrawingRecordedFrameIndex: Integer;
   R: TRect;
-  TopOfMainRecord: Integer;
+  //TopOfMainRecord: Integer;
   DataWidth: Integer;
   DataWidthHalf: Integer;
   DataAreaHeight: Integer;
@@ -3246,7 +3259,7 @@ begin
   pbRecord.Canvas.Pen.Color := clSkyBlue;
   pbRecord.Canvas.Pen.Width := 1;
   pbRecord.Canvas.Pen.Style := psSolid;
-  TopOfMainRecord := R.Top;
+  // TopOfMainRecord := R.Top;
 
   // content of main record
   DrawingRecordedFrameIndex := pbRecordOffset;
@@ -3284,7 +3297,7 @@ begin
 
   pbRecord.Canvas.Pen.Style := psSolid;
   pbRecord.Canvas.Brush.Color := clBtnFace;
-  Inc(TopOfMainRecord, R.Height);
+  // Inc(TopOfMainRecord, R.Height);
   pbRecord.Canvas.RoundRect(R.Left + pbRecord.Canvas.Pen.Width div 2, R.Top + pbRecord.Canvas.Pen.Width div 2, R.Right, R.Bottom, FramesBorderSize, FramesBorderSize);
   R.Left   := R.Left   + FramesBorderSize;
   R.Top    := R.Top    + FramesBorderSize;
