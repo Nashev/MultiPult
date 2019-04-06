@@ -1443,6 +1443,7 @@ begin
     IDCANCEL: Abort;
   end;
   ClearBookmarks;
+  UnloadFrames;
   LoadPhotoFolder;
 end;
 
@@ -2839,7 +2840,8 @@ begin
     else
       begin
         CreateAdvertisementFrame; // на всякий случай
-        LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
+        if (DisplayedFrameIndex >= 0) then
+          LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
         // основной кадр.
         // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
 
@@ -4140,6 +4142,10 @@ end;
 
 function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
+  if not Active then
+    if Screen.ActiveForm is TCameraForm then
+      Exit(False);
+
   if not (
     // если не клавиша, обрабатываемая другим способом, то обрабатываем по-прежнему как потенциальный ShortCut
     // А другим способом обрабатываются клавиши движения по кадрам при не нажатых Ctrl и Alt
