@@ -267,6 +267,8 @@ type
     mmiShowCameraControl: TMenuItem;
     actExportToGif: TAction;
     mmiExportToGif: TMenuItem;
+    mmiFillByAllFrames: TMenuItem;
+    actFillByAllFrames: TAction;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -398,6 +400,7 @@ type
     procedure FormResize(Sender: TObject);
     procedure actExportToGifClick(Sender: TObject);
     procedure actRecordUpdate(Sender: TObject);
+    procedure actFillByAllFramesExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -815,6 +818,18 @@ begin
     CurrentWorkingSetFrame := nil;
   Saved := False;
   OldCurrentFrame.Free;
+end;
+
+procedure TMainForm.actFillByAllFramesExecute(Sender: TObject);
+var
+  FrameInfoIndex, i: Integer;
+begin
+  actNew.Execute;
+  for FrameInfoIndex := 0 to FFrameInfoList.Count - 1 do
+    for i := 1 to CurrentSpeedInterval do
+      TRecordedFrame.Create(RecordedFrames, FrameInfoIndex);
+  Saved := False;
+  RepaintAll;
 end;
 
 procedure TMainForm.actMoveFrameLeftClick(Sender: TObject);

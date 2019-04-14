@@ -8620,6 +8620,10 @@ object MainForm: TMainForm
       OnExecute = actExportToGifClick
       OnUpdate = actUpdate_HaveRecorded
     end
+    object actFillByAllFrames: TAction
+      Caption = #1057#1086#1079#1076#1072#1090#1100' '#1084#1091#1083#1100#1090' '#1080#1079' '#1074#1089#1077#1093' '#1082#1072#1076#1088#1086#1074
+      OnExecute = actFillByAllFramesExecute
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -8884,6 +8888,9 @@ object MainForm: TMainForm
       object N19: TMenuItem
         Caption = #1056#1072#1079#1073#1080#1074#1072#1090#1100' '#1082#1072#1076#1088#1099' '#1085#1072' '#1084#1085#1086#1075#1086' '#1084#1072#1083#1077#1085#1100#1082#1080#1093
         Enabled = False
+      end
+      object mmiFillByAllFrames: TMenuItem
+        Action = actFillByAllFrames
       end
     end
     object mmiNavigation: TMenuItem
