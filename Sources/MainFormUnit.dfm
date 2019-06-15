@@ -8336,7 +8336,7 @@ object MainForm: TMainForm
     end
     object actStepPrev: TAction
       Caption = #1053#1072#1079#1072#1076' '#1085#1072' '#1082#1072#1076#1088
-      Hint = #1053#1072#1079#1072#1076' '#1085#1072' '#1082#1072#1076#1088' (Left, A)'
+      Hint = #1053#1072#1079#1072#1076' '#1085#1072' '#1086#1076#1080#1085' '#1082#1072#1076#1088' (Left)'
       ImageIndex = 2
       SecondaryShortCuts.Strings = (
         'v')
@@ -8346,7 +8346,7 @@ object MainForm: TMainForm
     end
     object actStepNext: TAction
       Caption = #1042#1087#1077#1088#1105#1076' '#1085#1072' '#1082#1072#1076#1088
-      Hint = #1042#1087#1077#1088#1105#1076' '#1085#1072' '#1082#1072#1076#1088' (N, Right)'
+      Hint = #1042#1087#1077#1088#1105#1076' '#1085#1072' '#1086#1076#1080#1085' '#1082#1072#1076#1088' (Right)'
       ImageIndex = 3
       ShortCut = 78
       OnExecute = actStepNextExecute
@@ -8573,7 +8573,7 @@ object MainForm: TMainForm
       OnUpdate = actReloadPhotoFolderUpdate
     end
     object actClearBookmarks: TAction
-      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080' '#1080' '#1090#1077#1083#1077#1087#1086#1088#1090#1099
+      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080', '#1090#1077#1083#1077#1087#1086#1088#1090#1099' '#1080' '#1089#1090#1086#1087#1087#1077#1088#1099
       OnExecute = actClearBookmarksClick
       OnUpdate = actNavigate_Update
     end
@@ -8623,6 +8623,12 @@ object MainForm: TMainForm
     object actFillByAllFrames: TAction
       Caption = #1057#1086#1079#1076#1072#1090#1100' '#1084#1091#1083#1100#1090' '#1080#1079' '#1074#1089#1077#1093' '#1082#1072#1076#1088#1086#1074
       OnExecute = actFillByAllFramesExecute
+    end
+    object actToggleStopper: TAction
+      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1089#1090#1086#1087#1087#1077#1088
+      ShortCut = 83
+      OnExecute = actToggleStopperExecute
+      OnUpdate = actNavigate_Update
     end
   end
   object MainMenu: TMainMenu
@@ -8947,8 +8953,11 @@ object MainForm: TMainForm
           Action = actToggleTeleport0
         end
       end
+      object mmiToggleStopper: TMenuItem
+        Action = actToggleStopper
+      end
       object mmiSuspendTeleports: TMenuItem
-        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099'     Caps Lock   /'
+        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099' '#1080' '#1089#1090#1086#1087#1087#1077#1088#1099'     Caps Lock   /'
         ShortCut = 16
       end
       object mmiClearBookmarks: TMenuItem

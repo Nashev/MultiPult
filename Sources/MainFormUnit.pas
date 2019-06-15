@@ -47,6 +47,7 @@ type
     Preview: TBitmap;
     Iconic: TBitmap;
     Teleport: Integer; // TODO: move to TRecordedFrame(List) (?)
+    Stopper: Boolean;
     PreviewLoaded: Boolean;
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
@@ -269,6 +270,8 @@ type
     mmiExportToGif: TMenuItem;
     mmiFillByAllFrames: TMenuItem;
     actFillByAllFrames: TAction;
+    actToggleStopper: TAction;
+    mmiToggleStopper: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -303,6 +306,7 @@ type
     procedure mmiBackwardWhilePressedClick(Sender: TObject);
     procedure actExportToAVIExecute(Sender: TObject);
     procedure actToggleTeleport0Execute(Sender: TObject);
+    procedure actToggleStopperExecute(Sender: TObject);
     procedure pbIndicatorClick(Sender: TObject);
     procedure actDoubleFramerateExecute(Sender: TObject);
     procedure AudioRecorderActivate(Sender: TObject);
@@ -462,6 +466,7 @@ type
     FDisplayedFrameIndex: Integer;
     FPhotoFolder: string;
     FSaved: Boolean;
+    AutoMovementStopped: Boolean;
     procedure SetSaved(const Value: Boolean);
     procedure CheckStopCamera;
     function OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
@@ -487,6 +492,7 @@ type
     procedure FreeAdvertisementFrame;
     procedure LoadPhotoFolder;
     procedure ClearTeleports;
+    procedure ClearStoppers;
     procedure SetPhotoFolder(const Value: string);
     procedure CameraFormActiveChanged(Sender: TObject);
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
@@ -738,6 +744,14 @@ var
 begin
   for i := 0 to FrameInfoCount - 1 do
     FrameInfoList[i].Teleport := -1;
+end;
+
+procedure TMainForm.ClearStoppers;
+var
+  i: Integer;
+begin
+  for i := 0 to FrameInfoCount - 1 do
+    FrameInfoList[i].Stopper := False;
 end;
 
 procedure TMainForm.CreateAdvertisementFrame;
@@ -1129,7 +1143,7 @@ end;
 procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  KeyPressBlocked := False; // TODO: разблокировать не любую клавишу, а ту, что блокировали. Чтоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
+  KeyPressBlocked := False; // Отпускаем блокировку обработку автоповтора зажатой клавиши. TODO: разблокировать не любую клавишу, а ту, что блокировали. Чтоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
   case Key of
     VK_SHIFT, VK_CAPITAL: pbWorkingSet.Repaint; // телепорты включаются
   end;
@@ -1216,6 +1230,7 @@ procedure TMainForm.imgLeftRightByMouseDownControllerMouseUp(Sender: TObject;
 begin
   actBackwardWhilePressed.Checked := False;
   actForwardWhilePressed.Checked := False;
+  AutoMovementStopped := False;
 end;
 
 procedure TMainForm.UnloadFrames;
@@ -1497,6 +1512,7 @@ procedure TMainForm.actClearBookmarksClick(Sender: TObject);
 begin
   ClearBookmarks;
   ClearTeleports;
+  ClearStoppers;
   pbWorkingSet.Repaint;
 end;
 
@@ -1997,6 +2013,7 @@ const // do not localise
   BookmarkSectionStart   = '------------------- Bookmarks: --------------------';
   FrameSectionStart      = '-------------------- Frames: ----------------------';
   TeleportsSectionStart  = '------------------- Teleports: --------------------';
+  StopperSectionStart    = '------------------- Stoppers: --------------------';
 
 resourcestring
   rs_CustomSize = 'Свой (%d, %d)';
@@ -2139,7 +2156,7 @@ begin
           begin
             inc(i);
             s := Strings[i];
-            if s = FrameSectionStart then // for compatibility with prev. saves without Teleports
+            if s = FrameSectionStart then // for compatibility with old saves without Teleports
               Break;
             if s = TeleportsSectionStart then
               Break;
@@ -2150,9 +2167,20 @@ begin
           begin
             inc(i);
             s := Strings[i];
-            if s = FrameSectionStart then
+            if s = FrameSectionStart then // for compatibility with old saves without stoppers
+              Break;
+            if s = StopperSectionStart then
               Break;
             ReadTeleport(s);
+          end;
+      if s = StopperSectionStart then
+        while i < (Count - 1) do
+          begin
+            inc(i);
+            s := Strings[i];
+            if s = FrameSectionStart then
+              Break;
+            FrameInfoList[StrToInt(s)].Stopper := True;
           end;
       if s = FrameSectionStart then
         while i < (Count - 1) do
@@ -2313,6 +2341,10 @@ begin
       for i := 0 to FrameInfoCount - 1 do
         if FrameInfoList[i].Teleport <> -1 then
           Add(IntToStr(i) + ' = ' + IntToStr(FrameInfoList[i].Teleport));
+      Add(StopperSectionStart);
+      for i := 0 to FrameInfoCount - 1 do
+        if FrameInfoList[i].Stopper then
+          Add(IntToStr(i));
       Add(FrameSectionStart);
       for i := 0 to RecordedFrames.Count - 1 do
         Add(IntToStr(RecordedFrames[i].FrameInfoIndex));
@@ -2478,8 +2510,16 @@ end;
 procedure TMainForm.SetCurrentWorkingSetFrame(const Value: TRecordedFrame);
 begin
   FCurrentWorkingSetFrame := Value;
-  if Assigned(Value) then
+  if Assigned(Value) then begin
     DisplayedFrameIndex := Value.FrameInfoIndex; // else do not change for calls from SetDisplayedFrameIndex
+    if TeleportEnabled and FrameInfoList[DisplayedFrameIndex].Stopper then begin
+      AutoMovementStopped := True;
+      if NextControlAction <> caNone then begin
+        ReplaceControlActions(caNone);
+        UpdatePlayActions;
+      end;
+    end;
+  end;
   RepaintAll;
   ShowTimes;
 end;
@@ -2734,6 +2774,14 @@ begin
       Teleport := -1
     else
       Teleport := TMenuItem(Sender).Tag;
+  pbWorkingSet.Repaint;
+  Saved := False;
+end;
+
+procedure TMainForm.actToggleStopperExecute(Sender: TObject);
+begin
+  with FrameInfoList[DisplayedFrameIndex] do
+    Stopper := not Stopper;
   pbWorkingSet.Repaint;
   Saved := False;
 end;
@@ -3437,11 +3485,13 @@ var
   BookmarkText: string;
   BookmarkRect: TRect;
   TextSize: TSize;
+  BoxWidth, MinBoxWidth: Integer;
 begin
   if lvFrameset.Visible then
     Exit;
 
   y1 := 4;
+  MinBoxWidth := pbWorkingSet.Canvas.TextExtent('8').cx;
   if Assigned(CurrentWorkingSetFrame) then
     CurrentWorkingFrameIndex := CurrentWorkingSetFrame.Index
   else
@@ -3475,11 +3525,12 @@ begin
         if WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex = Bookmarks[BookmarkIndex] then
         begin
           BookmarkText := BookmarkKey[BookmarkIndex];
-          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
+//          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
           TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
-          BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
+          BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
+          BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
           pbWorkingSet.Canvas.Brush.Style := bsSolid;
           if WorkingFrameIndex = CurrentWorkingFrameIndex then
           begin
@@ -3494,7 +3545,7 @@ begin
           end;
           with BookmarkRect do
             pbWorkingSet.Canvas.RoundRect(Left, Top, Right, Bottom, 2, 2);
-          Inc(BookmarkRect.Left, 2);
+          Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
           pbWorkingSet.Canvas.Brush.Style := bsClear;
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
           pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top, BookmarkText);
@@ -3503,11 +3554,12 @@ begin
       if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport <> -1 then
         begin
           BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport];
-          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
+//          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
 //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
           TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
-          BookmarkRect := Rect(x - TextSize.cx div 2 - 2, y1 - 2, x + TextSize.cx div 2 + 2, y1 + TextSize.cy);
+          BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
+          BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
           pbWorkingSet.Canvas.Brush.Style := bsSolid;
           if not TeleportEnabled or (Bookmarks[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Teleport] = -1) then
             begin
@@ -3527,9 +3579,43 @@ begin
             end;
           with BookmarkRect do
             pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
-          Inc(BookmarkRect.Left, 2);
+          Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
           pbWorkingSet.Canvas.Brush.Style := bsClear;
 //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
+          pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
+        end;
+
+      if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].Stopper then
+        begin
+          BookmarkText := 'x';
+//          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
+//          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
+//          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
+          TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
+          BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
+          BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
+          pbWorkingSet.Canvas.Brush.Style := bsSolid;
+          if not TeleportEnabled then
+            begin
+              pbWorkingSet.Canvas.Brush.Color := clLtGray;
+              pbWorkingSet.Canvas.Font.Color := clDkGray;
+            end
+          else if WorkingFrameIndex = CurrentWorkingFrameIndex then
+            begin
+              pbWorkingSet.Canvas.Brush.Color := $9999FF;
+              pbWorkingSet.Canvas.Font.Color := clBlack;
+            end
+          else
+            begin
+              pbWorkingSet.Canvas.Brush.Color := $2222FF;
+              pbWorkingSet.Canvas.Brush.Style := bsSolid;
+              pbWorkingSet.Canvas.Font.Color := clWhite;
+            end;
+          with BookmarkRect do
+            pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
+          Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
+          pbWorkingSet.Canvas.Brush.Style := bsClear;
+    //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
           pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
         end;
     end;
@@ -3706,20 +3792,26 @@ begin
                 (GetAsyncKeyState(VK_CONTROL) >= 0) and
                 ((GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0))
               )
-              then
-                CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1)
-              else if actForwardWhilePressed.Checked or (
+              then begin
+                if not AutoMovementStopped then
+                  CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1)
+              end else if actForwardWhilePressed.Checked or (
                 (GetAsyncKeyState(VK_CONTROL) >= 0) and
                 ((GetAsyncKeyState(Ord('D')) < 0) or (GetAsyncKeyState(Ord('M')) < 0))
               )
-              then
-                CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1)
-              else
+              then begin
+                if not AutoMovementStopped then
+                  CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1)
+              end else
                 case NextControlAction of
                   caPlayBackward:
-                    CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1);
+                    if not AutoMovementStopped then
+                      CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(-1);
                   caPlayForward:
-                    CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
+                    if not AutoMovementStopped then
+                      CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
+                  caNone:
+                    AutoMovementStopped := False; // самая последняя альтернатива, если клавиши не нажаты, то следующее нажатие должно опять сработать
                 end;
             end;
       end;
@@ -4017,12 +4109,14 @@ end;
 procedure TMainForm.btnBackwardWhilePressedMouseLeave(Sender: TObject);
 begin
   actBackwardWhilePressed.Checked := False;
+  AutoMovementStopped := False;
 end;
 
 procedure TMainForm.btnBackwardWhilePressedMouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   actBackwardWhilePressed.Checked := False;
+  AutoMovementStopped := False;
 end;
 
 procedure TMainForm.btnForwardWhilePressedMouseDown(Sender: TObject;
@@ -4034,12 +4128,14 @@ end;
 procedure TMainForm.btnForwardWhilePressedMouseLeave(Sender: TObject);
 begin
   actForwardWhilePressed.Checked := False;
+  AutoMovementStopped := False;
 end;
 
 procedure TMainForm.btnForwardWhilePressedMouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   actForwardWhilePressed.Checked := False;
+  AutoMovementStopped := False;
 end;
 
 procedure TMainForm.btnFrameSetExpandClick(Sender: TObject);

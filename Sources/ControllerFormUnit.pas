@@ -285,6 +285,9 @@ begin
   Assert(ScrollHandleMode = shmAuto, 'Timer working in non auto mode are useless!');
   MainForm.CurrentWorkingSetFrame := MainForm.FindWorkingSetFrameByOffset(ScrollHandleAutoDirection);
 
+  if MainForm.FrameInfoList[MainForm.CurrentWorkingSetFrame.FrameInfoIndex].Stopper then
+    ScrollHandleMode := shmManual;
+
   FScrollHandlePosition := FScrollHandlePosition + ScrollHandleAutoDirection;
   if FScrollHandlePosition < 0 then
     FScrollHandlePosition := ScrollHandlePositionCount - 1
