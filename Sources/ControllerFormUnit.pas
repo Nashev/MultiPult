@@ -75,6 +75,8 @@ end;
 procedure TControllerForm.pbScrollHandleMouseLeave(Sender: TObject);
 begin
   ScrollHandleMode := shmInactive;
+  MainForm.AutoMovementStopped := False;
+  MainForm.SkipFirstStopper := True;
 end;
 
 procedure TControllerForm.pbScrollHandleMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
@@ -260,7 +262,7 @@ begin
       else if ScrollHandleFramesOffset > (ScrollHandlePositionCount div 2) then
         ScrollHandleFramesOffset := ScrollHandleFramesOffset - ScrollHandlePositionCount;
 
-      MainForm.CurrentWorkingSetFrame := MainForm.FindWorkingSetFrameByOffset(ScrollHandleFramesOffset);
+      MainForm.AutoMove(ScrollHandleFramesOffset);
 
       // For auto mode:
       if ScrollHandleFramesOffset > 0 then
@@ -268,8 +270,7 @@ begin
       else // if ScrollHandleFramesOffset < 0 then
         ScrollHandleAutoDirection := -1;
 
-      // For auto mode:
-      ScrollHandleTimePerFrame := (NewTickCount - PreviousTickCount) div Abs(ScrollHandleFramesOffset);
+      ScrollHandleTimePerFrame := Integer(NewTickCount - PreviousTickCount) div Abs(ScrollHandleFramesOffset);
       // for display:
       ScrollHandleFramerate := Round(FrameRate * Round(ScrollHandleTimePerFrame) / 1000);
       lblFramerate.Caption := IntToStr(ScrollHandleFramerate) + '/' + IntToStr(FrameRate);
@@ -283,9 +284,9 @@ end;
 procedure TControllerForm.tmrAutoModeTimer(Sender: TObject);
 begin
   Assert(ScrollHandleMode = shmAuto, 'Timer working in non auto mode are useless!');
-  MainForm.CurrentWorkingSetFrame := MainForm.FindWorkingSetFrameByOffset(ScrollHandleAutoDirection);
+  MainForm.AutoMove(ScrollHandleAutoDirection);
 
-  if MainForm.FrameInfoList[MainForm.CurrentWorkingSetFrame.FrameInfoIndex].Stopper then
+  if MainForm.AutoMovementStopped then
     ScrollHandleMode := shmManual;
 
   FScrollHandlePosition := FScrollHandlePosition + ScrollHandleAutoDirection;
