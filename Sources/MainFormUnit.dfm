@@ -8573,7 +8573,7 @@ object MainForm: TMainForm
       OnUpdate = actReloadPhotoFolderUpdate
     end
     object actClearBookmarks: TAction
-      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080', '#1090#1077#1083#1077#1087#1086#1088#1090#1099' '#1080' '#1089#1090#1086#1087#1087#1077#1088#1099
+      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1089#1077' '#1079#1072#1082#1083#1072#1076#1082#1080' '#1080' '#1092#1083#1072#1075#1080
       OnExecute = actClearBookmarksClick
       OnUpdate = actNavigate_Update
     end
@@ -8625,9 +8625,15 @@ object MainForm: TMainForm
       OnExecute = actFillByAllFramesExecute
     end
     object actToggleStopper: TAction
-      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1089#1090#1086#1087#1087#1077#1088
+      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1092#1083#1072#1075'-'#1089#1090#1086#1087#1087#1077#1088
       ShortCut = 83
       OnExecute = actToggleStopperExecute
+      OnUpdate = actNavigate_Update
+    end
+    object actToggleBouncer: TAction
+      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1092#1083#1072#1075'-'#1086#1090#1088#1072#1078#1072#1090#1077#1083#1100
+      ShortCut = 8275
+      OnExecute = actToggleBouncerExecute
       OnUpdate = actNavigate_Update
     end
   end
@@ -8948,20 +8954,22 @@ object MainForm: TMainForm
         end
       end
       object mmiTeleports: TMenuItem
-        Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
+        Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1092#1083#1072#1075'-'#1090#1077#1083#1077#1087#1086#1088#1090' '#1085#1072' '#1079#1072#1082#1083#1072#1076#1082#1091
         object mmiToggleTeleport0: TMenuItem
           Action = actToggleTeleport0
         end
       end
+      object mmiToggleBouncer: TMenuItem
+        Action = actToggleBouncer
+      end
       object mmiToggleStopper: TMenuItem
         Action = actToggleStopper
-        Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1089#1090#1086#1087#1087#1077#1088
       end
-      object mmiSuspendTeleports: TMenuItem
-        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1090#1077#1083#1077#1087#1086#1088#1090#1099' '#1080' '#1089#1090#1086#1087#1087#1077#1088#1099'     Caps Lock   /'
+      object mniSuspendFlags: TMenuItem
+        Caption = #1042#1088#1077#1084#1077#1085#1085#1086' '#1074#1099#1082#1083#1102#1095#1080#1090#1100' '#1092#1083#1072#1075#1080'     Caps Lock   /'
         ShortCut = 16
       end
-      object mmiClearBookmarks: TMenuItem
+      object mmiClearFlags: TMenuItem
         Action = actClearBookmarks
       end
     end

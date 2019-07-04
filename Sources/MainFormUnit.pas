@@ -42,17 +42,29 @@ const
   MaxAudioLineWidth = 1024;
 
 type
+  TAfterFrameFlag = (affNone, affTeleport, affStopper, affBouncer);
+
   TFrameInfo = class
   private
     FRelativePath, FFileName: string;
+    FTeleportTargetBookmark: Integer;
+    FFlagAfter: TAfterFrameFlag;
+    procedure SetFlagAfter(const Value: TAfterFrameFlag);
+    procedure SetTeleportTargetBookmark(const Value: Integer);
+    function GetHaveBouncerAfter: Boolean;
+    function GetHaveStopperAfter: Boolean;
+    procedure SetHaveBouncerAfter(const Value: Boolean);
+    procedure SetHaveStopperAfter(const Value: Boolean);
   public
     Preview: TBitmap;
     Iconic: TBitmap;
-    HaveTeleportAfter: Integer; // TODO: move to TRecordedFrame(List) (?)
-    HaveStopperAfter: Boolean;
     PreviewLoaded: Boolean;
+    property FlagAfter: TAfterFrameFlag read FFlagAfter write SetFlagAfter;
+    property TeleportTargetBookmark: Integer read FTeleportTargetBookmark write SetTeleportTargetBookmark; // TODO: move to TRecordedFrame(List) (?)
     function ImageFromDisc: TGraphic;
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
+    property HaveStopperAfter: Boolean read GetHaveStopperAfter write SetHaveStopperAfter;
+    property HaveBouncerAfter: Boolean read GetHaveBouncerAfter write SetHaveBouncerAfter;
     property FileName: string read FFileName;
     property RelativePath: string read FRelativePath;
     function FullFileName: string;
@@ -204,7 +216,7 @@ type
     mmiExportResolutionFirstFrame: TMenuItem;
     actExportResolutionCustom: TAction;
     actExportResolutionFirstFrame: TAction;
-    mmiSuspendTeleports: TMenuItem;
+    mniSuspendFlags: TMenuItem;
     mmiExportSeparator: TMenuItem;
     mmiSelectAudioFile: TMenuItem;
     actSelectAudioFile: TAction;
@@ -258,7 +270,7 @@ type
     btnFrameSetZoom: TSpeedButton;
     actReloadPhotoFolder: TAction;
     actClearBookmarks: TAction;
-    mmiClearBookmarks: TMenuItem;
+    mmiClearFlags: TMenuItem;
     mmiReloadPhotoFolder: TMenuItem;
     actNextRecordFrame: TAction;
     actPrevRecordFrame: TAction;
@@ -274,6 +286,8 @@ type
     actFillByAllFrames: TAction;
     actToggleStopper: TAction;
     mmiToggleStopper: TMenuItem;
+    actToggleBouncer: TAction;
+    mmiToggleBouncer: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -407,6 +421,7 @@ type
     procedure actExportToGifClick(Sender: TObject);
     procedure actRecordUpdate(Sender: TObject);
     procedure actFillByAllFramesExecute(Sender: TObject);
+    procedure actToggleBouncerExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -492,13 +507,12 @@ type
     procedure ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
     procedure FreeAdvertisementFrame;
     procedure LoadPhotoFolder;
-    procedure ClearTeleports;
-    procedure ClearStoppers;
+    procedure ClearFlags;
     procedure SetPhotoFolder(const Value: string);
     procedure CameraFormActiveChanged(Sender: TObject);
     property CurrentRecordPosition: Integer read FCurrentRecordPosition write SetCurrentRecordPosition;
     procedure SetFrameTipRecordedFrame(const Value: TRecordedFrame);
-    function TeleportEnabled: Boolean;
+    function FlagsEnabled: Boolean;
     procedure OpenMovie(AFileName: string);
     procedure OpenAudio(AFileName: string);
     property FrameTipRecordedFrame: TRecordedFrame read FFrameTipRecordedFrame write SetFrameTipRecordedFrame;
@@ -518,6 +532,7 @@ type
     procedure DestroyWindowHandle; override;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
     procedure WMMove(var Msg: TWMMove); message WM_MOVE;
+    function MoveToFrameByOffset(AOffset: Integer; ACalculateOnly: Boolean = False): TRecordedFrame;
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
@@ -533,8 +548,7 @@ type
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property DisplayedFrameIndex: Integer read FDisplayedFrameIndex write SetDisplayedFrameIndex;
     property CurrentWorkingSetFrame: TRecordedFrame read FCurrentWorkingSetFrame write SetCurrentWorkingSetFrame;
-    function FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame; overload;
-    function FindWorkingSetFrameByOffset(AOffset: Integer; var AHadStopper: Boolean; AUseStoppers: Boolean = True): TRecordedFrame; overload;
+    function FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
     property WorkingSetFrames: TRecordedFrameList read FWorkingSetFrames;
     property RecordedFrames: TRecordedFrameList read FRecordedFrames;
     property FrameInfoCount: Integer read GetFrameInfoCount;
@@ -743,20 +757,12 @@ begin
     Bookmarks[i] := -1;
 end;
 
-procedure TMainForm.ClearTeleports;
+procedure TMainForm.ClearFlags;
 var
   i: Integer;
 begin
   for i := 0 to FrameInfoCount - 1 do
-    FrameInfoList[i].HaveTeleportAfter := -1;
-end;
-
-procedure TMainForm.ClearStoppers;
-var
-  i: Integer;
-begin
-  for i := 0 to FrameInfoCount - 1 do
-    FrameInfoList[i].HaveStopperAfter := False;
+    FrameInfoList[i].FlagAfter := affNone;
 end;
 
 procedure TMainForm.CreateAdvertisementFrame;
@@ -1517,8 +1523,7 @@ end;
 procedure TMainForm.actClearBookmarksClick(Sender: TObject);
 begin
   ClearBookmarks;
-  ClearTeleports;
-  ClearStoppers;
+  ClearFlags;
   pbWorkingSet.Repaint;
 end;
 
@@ -2077,20 +2082,19 @@ var
     SeparatorPos := pos('=', s);
     FrameInfoIndex := StrToInt(Trim(Copy(s, 1, SeparatorPos-1)));
     TargetBookmarkIndex := StrToInt(Trim(Copy(s, SeparatorPos+1, Length(s))));
-    FrameInfoList[FrameInfoIndex].HaveTeleportAfter := TargetBookmarkIndex;
+    FrameInfoList[FrameInfoIndex].TeleportTargetBookmark := TargetBookmarkIndex;
     // В тех файлах телепорты стояли на кадре, а теперь стали между кадрами и поэтому,
     // для имитации прежнего поведения, должны быть до него и после него
     Dec(FrameInfoIndex);
     if FrameInfoIndex < 0 then
       FrameInfoIndex := FrameInfoCount - 1;
-    FrameInfoList[FrameInfoIndex].HaveTeleportAfter := TargetBookmarkIndex;
+    FrameInfoList[FrameInfoIndex].TeleportTargetBookmark := TargetBookmarkIndex;
   end;
 
 begin
   ExportCancelled := True;
   ClearBookmarks;
-  ClearStoppers;
-  ClearTeleports;
+  ClearFlags;
   PhotoFolder := ExtractFilePath(AFileName);
   ProjectFileName := ChangeFileExt(ExtractFileName(AFileName), '');
   UpdateCaption;
@@ -2110,46 +2114,58 @@ begin
 
         JSONArray := RootJSONObject.GetValue('FrameFiles') as TJSONArray;
         FrameInfoIndex := 0;
-        for i := 0 to JSONArray.Count - 1 do begin
-          s := JSONArray.Items[i].Value;
-          LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
-          RelativePath := Copy(s, 1, LastDelimiterPos);
-          FileName := Copy(s, LastDelimiterPos + 1, MaxInt);
-          FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // не перезачитываем кадры, если они уже были считаны
-          if FoundFrameInfoIndex <> -1 then
-            FFrameInfoList.Move(FoundFrameInfoIndex, FrameInfoIndex)
-          else
-            FFrameInfoList.Insert(FrameInfoIndex, TFrameInfo.Create(RelativePath, FileName));
-          Inc(FrameInfoIndex);
-        end;
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do begin
+            s := JSONArray.Items[i].Value;
+            LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
+            RelativePath := Copy(s, 1, LastDelimiterPos);
+            FileName := Copy(s, LastDelimiterPos + 1, MaxInt);
+            FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // не перезачитываем кадры, если они уже были считаны
+            if FoundFrameInfoIndex <> -1 then
+              FFrameInfoList.Move(FoundFrameInfoIndex, FrameInfoIndex)
+            else
+              FFrameInfoList.Insert(FrameInfoIndex, TFrameInfo.Create(RelativePath, FileName));
+            Inc(FrameInfoIndex);
+          end;
         FFrameInfoList.Count := FrameInfoIndex;
 
         WorkingSetFrames.Clear;
         JSONObject := RootJSONObject.GetValue('WorkingSet') as TJSONObject;
         JSONArray := JSONObject.GetValue('Frames') as TJSONArray;
-        for i := 0 to JSONArray.Count - 1 do
-          TRecordedFrame.Create(WorkingSetFrames, JSONArray.Items[i].GetValue<Integer>);
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            TRecordedFrame.Create(WorkingSetFrames, JSONArray.Items[i].GetValue<Integer>);
 
         JSONArray := JSONObject.GetValue('Bookmarks') as TJSONArray;
-        for i := 0 to JSONArray.Count - 1 do
-          Bookmarks[JSONArray.Items[i].GetValue<Integer>('BookMarkIndex')] :=
-                    JSONArray.Items[i].GetValue<Integer>('SitAtFrame');
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            Bookmarks[JSONArray.Items[i].GetValue<Integer>('BookMarkIndex')] :=
+                      JSONArray.Items[i].GetValue<Integer>('SitAtFrame');
 
         JSONArray := JSONObject.GetValue('Teleports') as TJSONArray;
-        for i := 0 to JSONArray.Count - 1 do
-          FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveTeleportAfter :=
-                        JSONArray.Items[i].GetValue<Integer>('TargetBookmarkIndex');
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].TeleportTargetBookmark :=
+                          JSONArray.Items[i].GetValue<Integer>('TargetBookmarkIndex');
 
         JSONArray := JSONObject.GetValue('Stoppers') as TJSONArray;
-        for i := 0 to JSONArray.Count - 1 do
-          FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveStopperAfter := True;
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveStopperAfter := True;
 
+        JSONArray := JSONObject.GetValue('Bouncers') as TJSONArray;
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveBouncerAfter := True;
 
         RecordedFrames.Clear;
         JSONObject := RootJSONObject.GetValue('RecordedSet') as TJSONObject;
-        JSONArray := JSONObject.GetValue('Frames') as TJSONArray;
-        for i := 0 to JSONArray.Count - 1 do
-          TRecordedFrame.Create(RecordedFrames, JSONArray.Items[i].GetValue<Integer>);
+        if Assigned(JSONObject) then begin
+          JSONArray := JSONObject.GetValue('Frames') as TJSONArray;
+          if Assigned(JSONArray) then
+            for i := 0 to JSONArray.Count - 1 do
+              TRecordedFrame.Create(RecordedFrames, JSONArray.Items[i].GetValue<Integer>);
+        end;
 
       finally
         JSONValue.Free;
@@ -2468,7 +2484,8 @@ var
   RootJSONObject, JSONObject: TJSONObject;
   OutputFile : TextFile;
 begin
-  ProjectFileName := ANewProjectFileName;
+  if ANewProjectFileName <> '' then
+    ProjectFileName := ANewProjectFileName;
   UpdateCaption;
   if FExternalAudioFileName <> '' then
     AudioName := ExtractFileName(FExternalAudioFileName)
@@ -2512,16 +2529,24 @@ begin
       JSONArray := TJsonArray.Create;
       JSONObject.AddPair('Teleports', JSONArray);
       for i := 0 to FrameInfoCount - 1 do
-        if FrameInfoList[i].HaveTeleportAfter <> -1 then
+        if FrameInfoList[i].TeleportTargetBookmark <> -1 then
           JSONArray.Add(TJSONObject.Create.
             AddPair('SitAfterFrame', TJSONNumber.Create(i)).
-            AddPair('TargetBookmarkIndex', TJSONNumber.Create(FrameInfoList[i].HaveTeleportAfter))
+            AddPair('TargetBookmarkIndex', TJSONNumber.Create(FrameInfoList[i].TeleportTargetBookmark))
           );
 
       JSONArray := TJsonArray.Create;
       JSONObject.AddPair('Stoppers', JSONArray);
       for i := 0 to FrameInfoCount - 1 do
         if FrameInfoList[i].HaveStopperAfter then
+          JSONArray.Add(TJSONObject.Create.
+            AddPair('SitAfterFrame', TJSONNumber.Create(i))
+          );
+
+      JSONArray := TJsonArray.Create;
+      JSONObject.AddPair('Bouncers', JSONArray);
+      for i := 0 to FrameInfoCount - 1 do
+        if FrameInfoList[i].HaveBouncerAfter then
           JSONArray.Add(TJSONObject.Create.
             AddPair('SitAfterFrame', TJSONNumber.Create(i))
           );
@@ -2951,13 +2976,21 @@ begin
   Saved := False;
 end;
 
+procedure TMainForm.actToggleBouncerExecute(Sender: TObject);
+begin
+  with FrameInfoList[DisplayedFrameIndex] do
+    HaveBouncerAfter := not HaveBouncerAfter;
+  pbWorkingSet.Repaint;
+  Saved := False;
+end;
+
 procedure TMainForm.actToggleTeleport0Execute(Sender: TObject);
 begin
   with FrameInfoList[DisplayedFrameIndex] do
-    if HaveTeleportAfter = TMenuItem(Sender).Tag then
-      HaveTeleportAfter := -1
+    if TeleportTargetBookmark = TMenuItem(Sender).Tag then
+      TeleportTargetBookmark := -1
     else
-      HaveTeleportAfter := TMenuItem(Sender).Tag;
+      TeleportTargetBookmark := TMenuItem(Sender).Tag;
   pbWorkingSet.Repaint;
   Saved := False;
 end;
@@ -3662,8 +3695,8 @@ end;
 procedure TMainForm.pbWorkingSetPaint(Sender: TObject);
 var
   SecondIndex: Integer;
-  i, WorkingFrameIndex: integer;
-  CurrentWorkingFrameIndex: Integer;
+  i, WorkingFrameIndex, CurrentWorkingFrameIndex: integer;
+  WorkingFrameInfo: TFrameInfo;
   BookmarkIndex: Integer;
   x, y1, y2: Integer;
   BookmarkText: string;
@@ -3698,7 +3731,8 @@ begin
           WorkingFrameIndex := WorkingSetFrames.Count - 1;
 
         x := WorkingFrameIndexToWorkingSetX(i);
-        if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].PreviewLoaded then
+        WorkingFrameInfo := FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex];
+        if WorkingFrameInfo.PreviewLoaded then
           y2 := y1 + 8
         else
           y2 := y1 + 4;
@@ -3717,9 +3751,6 @@ begin
             if WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex = Bookmarks[BookmarkIndex] then
             begin
               BookmarkText := BookmarkKey[BookmarkIndex];
-    //          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
-    //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
-    //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
               TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
               BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
               BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
@@ -3745,73 +3776,42 @@ begin
           end;
 
         x := x + MidFrameOffset;
-        if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].HaveTeleportAfter <> -1 then
-          begin
-            BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].HaveTeleportAfter];
-  //          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
-  //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
-  //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
-            TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
-            BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
-            BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
-            pbWorkingSet.Canvas.Brush.Style := bsSolid;
-            if not TeleportEnabled or (Bookmarks[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].HaveTeleportAfter] = -1) then
-              begin
-                pbWorkingSet.Canvas.Brush.Color := clLtGray;
-                pbWorkingSet.Canvas.Font.Color := clDkGray;
-              end
-            else if WorkingFrameIndex = CurrentWorkingFrameIndex then
-              begin
-                pbWorkingSet.Canvas.Brush.Color := clLime;
-                pbWorkingSet.Canvas.Font.Color := clBlack;
-              end
-            else
-              begin
-                pbWorkingSet.Canvas.Brush.Color := clGreen;
-                pbWorkingSet.Canvas.Brush.Style := bsSolid;
-                pbWorkingSet.Canvas.Font.Color := clWhite;
-              end;
-            with BookmarkRect do
-              pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
-            Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
-            pbWorkingSet.Canvas.Brush.Style := bsClear;
-  //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
-            pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
+        case WorkingFrameInfo.FlagAfter of
+          affNone: Continue;
+          affTeleport: BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].TeleportTargetBookmark];
+          affStopper: BookmarkText := 'x';
+          affBouncer: BookmarkText := '‡';
+        end;
+        TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
+        BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
+        BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
+        pbWorkingSet.Canvas.Brush.Style := bsSolid;
+        if not FlagsEnabled or
+          ((WorkingFrameInfo.FlagAfter = affTeleport) and (Bookmarks[WorkingFrameInfo.TeleportTargetBookmark] = -1))
+        then begin
+          pbWorkingSet.Canvas.Brush.Color := clLtGray;
+          pbWorkingSet.Canvas.Font.Color := clDkGray;
+        end else if WorkingFrameIndex = CurrentWorkingFrameIndex then begin
+          case WorkingFrameInfo.FlagAfter of
+            affTeleport: pbWorkingSet.Canvas.Brush.Color := clLime;
+            affStopper:  pbWorkingSet.Canvas.Brush.Color := $9999FF;
+            affBouncer:  pbWorkingSet.Canvas.Brush.Color := $FF9999;
           end;
-
-        if FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].HaveStopperAfter then
-          begin
-            BookmarkText := 'x';
-  //          BookmarkRect := Rect(x - 20, y1, x + 21, pbWorkingSet.Height);
-  //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop, tfCalcRect]);
-  //          BookmarkRect := Rect(x - (BookmarkRect.Right - BookmarkRect.Left) div 2 - 2, y1 - 2, x + (BookmarkRect.Right - BookmarkRect.Left) div 2 + 2, BookmarkRect.Bottom);
-            TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
-            BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
-            BookmarkRect := Rect(x - BoxWidth div 2, y1 - 2, x + BoxWidth div 2, y1 + TextSize.cy);
-            pbWorkingSet.Canvas.Brush.Style := bsSolid;
-            if not TeleportEnabled then
-              begin
-                pbWorkingSet.Canvas.Brush.Color := clLtGray;
-                pbWorkingSet.Canvas.Font.Color := clDkGray;
-              end
-            else if WorkingFrameIndex = CurrentWorkingFrameIndex then
-              begin
-                pbWorkingSet.Canvas.Brush.Color := $9999FF;
-                pbWorkingSet.Canvas.Font.Color := clBlack;
-              end
-            else
-              begin
-                pbWorkingSet.Canvas.Brush.Color := $2222FF;
-                pbWorkingSet.Canvas.Brush.Style := bsSolid;
-                pbWorkingSet.Canvas.Font.Color := clWhite;
-              end;
-            with BookmarkRect do
-              pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
-            Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
-            pbWorkingSet.Canvas.Brush.Style := bsClear;
-      //          pbWorkingSet.Canvas.TextRect(BookmarkRect, BookmarkText, [tfNoClip, tfLeft, tfTop]);
-            pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
+          pbWorkingSet.Canvas.Font.Color := clBlack;
+        end else begin
+          case WorkingFrameInfo.FlagAfter of
+            affTeleport: pbWorkingSet.Canvas.Brush.Color := clGreen;
+            affStopper:  pbWorkingSet.Canvas.Brush.Color := $2222FF;
+            affBouncer:  pbWorkingSet.Canvas.Brush.Color := $FF2222;
           end;
+          pbWorkingSet.Canvas.Brush.Style := bsSolid;
+          pbWorkingSet.Canvas.Font.Color := clWhite;
+        end;
+        with BookmarkRect do
+          pbWorkingSet.Canvas.RoundRect(Left, Top + TextSize.cy, Right, Bottom + TextSize.cy, 2, 2);
+        Inc(BookmarkRect.Left, (BoxWidth - TextSize.cx) div 2);
+        pbWorkingSet.Canvas.Brush.Style := bsClear;
+        pbWorkingSet.Canvas.TextOut(BookmarkRect.Left, BookmarkRect.Top + TextSize.cy, BookmarkText);
       end;
 end;
 
@@ -3933,7 +3933,7 @@ begin
   actExportResolutionFirstFrame.Enabled := (FrameInfoCount > 0);
 end;
 
-function TMainForm.TeleportEnabled: Boolean;
+function TMainForm.FlagsEnabled: Boolean;
 begin
   Result := not ((GetAsyncKeyState(VK_SHIFT) < 0) xor (GetKeyState(VK_CAPITAL) and 1 = 1)); // либо то, либо другое...
 end;
@@ -4399,23 +4399,15 @@ end;
 
 procedure TMainForm.AutoMove(AOffset: Integer);
 begin
-  if not AutoMovementStopped then begin
-    CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(AOffset, AutoMovementStopped);
-    if AutoMovementStopped and (NextControlAction <> caNone) then begin
-        ReplaceControlActions(caNone);
-        UpdatePlayActions;
-      end;
-  end;
+  CurrentWorkingSetFrame := MoveToFrameByOffset(AOffset);
 end;
 
 function TMainForm.FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
-var
-  HadStopper: Boolean;
 begin
-  Result := FindWorkingSetFrameByOffset(AOffset, HadStopper, False);
+  Result := MoveToFrameByOffset(AOffset, True);
 end;
 
-function TMainForm.FindWorkingSetFrameByOffset(AOffset: Integer; var AHadStopper: Boolean; AUseStoppers: Boolean = True): TRecordedFrame;
+function TMainForm.MoveToFrameByOffset(AOffset: Integer; ACalculateOnly: Boolean = False): TRecordedFrame;
 var
   Count, Direction: Integer;
   i: Integer;
@@ -4423,7 +4415,9 @@ var
   FrameAtLeft: TRecordedFrame;
 begin
   Result := CurrentWorkingSetFrame;
-  AHadStopper := False;
+  if not ACalculateOnly and AutoMovementStopped then
+    Exit;
+
   if AOffset = 0 then
     Exit;
 
@@ -4448,25 +4442,42 @@ begin
 
       Result := WorkingSetFrames[ResultIndex];
 
-      if TeleportEnabled then begin
+      if FlagsEnabled then begin
 
         if Direction > 0 then
           FrameAtLeft := WorkingSetFrames[InitialIndex]
         else // Direction < 0
           FrameAtLeft := Result;
 
-        if AUseStoppers then begin
+        if not ACalculateOnly and FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveBouncerAfter then begin
+          Direction := - Direction;
+          ResultIndex := InitialIndex + Direction;
+          Result := WorkingSetFrames[ResultIndex];
+          if (NextControlAction <> caNone) then begin
+            if NextControlAction = caPlayBackward then
+              ReplaceControlActions(caPlayForward)
+            else
+              ReplaceControlActions(caPlayBackward);
+            UpdatePlayActions;
+          end;
+        end;
+
+        if not ACalculateOnly then begin
           if not SkipFirstStopper then
             if FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveStopperAfter then begin
               Result := WorkingSetFrames[InitialIndex];
-              AHadStopper := True;
+              if not AutoMovementStopped and (NextControlAction <> caNone) then begin
+                AutoMovementStopped := True;
+                ReplaceControlActions(caNone);
+                UpdatePlayActions;
+              end;
               Exit;
             end;
           // Первый стоппер проверен, если надо поскипан, и теперь остальные стопперы не первые в этом забеге.
           SkipFirstStopper := False;
         end;
 
-        TeleportBookmarkIndex := FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveTeleportAfter;
+        TeleportBookmarkIndex := FrameInfoList[FrameAtLeft.FrameInfoIndex].TeleportTargetBookmark;
         if (TeleportBookmarkIndex <> -1) and (Bookmarks[TeleportBookmarkIndex] <> -1) then begin
           Result := WorkingSetFrames.FindByFrameIndex(Bookmarks[TeleportBookmarkIndex]);
           ResultIndex := Result.Index;
@@ -4526,7 +4537,7 @@ constructor TFrameInfo.Create(ARelativePath, AFileName: string);
 begin
   FRelativePath := ARelativePath;
   FFileName := AFileName;
-  HaveTeleportAfter := -1;
+  TeleportTargetBookmark := -1;
 end;
 
 destructor TFrameInfo.Destroy;
@@ -4538,6 +4549,38 @@ end;
 function TFrameInfo.RelativeFileName: string;
 begin
   Result := RelativePath + FileName;
+end;
+
+procedure TFrameInfo.SetFlagAfter(const Value: TAfterFrameFlag);
+begin
+  FFlagAfter := Value;
+  if FFlagAfter <> affTeleport then
+    FTeleportTargetBookmark := -1;
+end;
+
+procedure TFrameInfo.SetHaveBouncerAfter(const Value: Boolean);
+begin
+  if Value then
+    FlagAfter := affBouncer
+  else
+    FlagAfter := affNone;
+end;
+
+procedure TFrameInfo.SetHaveStopperAfter(const Value: Boolean);
+begin
+  if Value then
+    FlagAfter := affStopper
+  else
+    FlagAfter := affNone;
+end;
+
+procedure TFrameInfo.SetTeleportTargetBookmark(const Value: Integer);
+begin
+  FTeleportTargetBookmark := Value;
+  if FTeleportTargetBookmark <> -1 then
+    FFlagAfter := affTeleport
+  else
+    FFlagAfter := affNone;
 end;
 
 procedure TFrameInfo.Unload;
@@ -4586,6 +4629,16 @@ begin
       Canvas.TextOut(20, 20, RelativeFileName);
       Canvas.TextOut(20, 80, ErrorMessage);
     end;
+end;
+
+function TFrameInfo.GetHaveBouncerAfter: Boolean;
+begin
+  Result := FFlagAfter = affBouncer;
+end;
+
+function TFrameInfo.GetHaveStopperAfter: Boolean;
+begin
+  Result := FFlagAfter = affStopper;
 end;
 
 { TRecordedFrameList }
