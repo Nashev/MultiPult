@@ -8632,8 +8632,14 @@ object MainForm: TMainForm
     end
     object actToggleBouncer: TAction
       Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1092#1083#1072#1075'-'#1086#1090#1088#1072#1078#1072#1090#1077#1083#1100
-      ShortCut = 8275
+      ShortCut = 8268
       OnExecute = actToggleBouncerExecute
+      OnUpdate = actNavigate_Update
+    end
+    object actToggleLooper: TAction
+      Caption = #1055#1086#1089#1090#1072#1074#1080#1090#1100' '#1087#1086#1089#1083#1077' '#1082#1072#1076#1088#1072' '#1092#1083#1072#1075'-'#1079#1072#1094#1080#1082#1083#1080#1074#1072#1090#1077#1083#1100
+      ShortCut = 76
+      OnExecute = actToggleLooperExecute
       OnUpdate = actNavigate_Update
     end
   end
@@ -8958,6 +8964,9 @@ object MainForm: TMainForm
         object mmiToggleTeleport0: TMenuItem
           Action = actToggleTeleport0
         end
+      end
+      object mmToggleLooper: TMenuItem
+        Action = actToggleLooper
       end
       object mmiToggleBouncer: TMenuItem
         Action = actToggleBouncer

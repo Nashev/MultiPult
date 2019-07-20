@@ -42,7 +42,7 @@ const
   MaxAudioLineWidth = 1024;
 
 type
-  TAfterFrameFlag = (affNone, affTeleport, affStopper, affBouncer);
+  TAfterFrameFlag = (affNone, affTeleport, affStopper, affBouncer, affLooper);
 
   TFrameInfo = class
   private
@@ -55,6 +55,8 @@ type
     function GetHaveStopperAfter: Boolean;
     procedure SetHaveBouncerAfter(const Value: Boolean);
     procedure SetHaveStopperAfter(const Value: Boolean);
+    function GetHaveLooperAfter: Boolean;
+    procedure SetHaveLooperAfter(const Value: Boolean);
   public
     Preview: TBitmap;
     Iconic: TBitmap;
@@ -65,6 +67,7 @@ type
     function GenerateStubFrame(ErrorMessage: string): TGraphic;
     property HaveStopperAfter: Boolean read GetHaveStopperAfter write SetHaveStopperAfter;
     property HaveBouncerAfter: Boolean read GetHaveBouncerAfter write SetHaveBouncerAfter;
+    property HaveLooperAfter: Boolean read GetHaveLooperAfter write SetHaveLooperAfter;
     property FileName: string read FFileName;
     property RelativePath: string read FRelativePath;
     function FullFileName: string;
@@ -288,6 +291,8 @@ type
     mmiToggleStopper: TMenuItem;
     actToggleBouncer: TAction;
     mmiToggleBouncer: TMenuItem;
+    actToggleLooper: TAction;
+    mmToggleLooper: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -422,6 +427,7 @@ type
     procedure actRecordUpdate(Sender: TObject);
     procedure actFillByAllFramesExecute(Sender: TObject);
     procedure actToggleBouncerExecute(Sender: TObject);
+    procedure actToggleLooperExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -491,6 +497,8 @@ type
     procedure SaveSettings;
     procedure DoCancelExport(Sender: TObject);
     procedure MakeRecordedAudioLines;
+    function WrapFrameIndex(AIndex: Integer): Integer;
+    function FindNearestLooper(AIndex, ADirection: Integer): Integer;
     property Saved: Boolean read FSaved write SetSaved;
     procedure CaptureFirstFrameSizes;
     procedure SetCurrentRecordPosition(const Value: Integer);
@@ -532,7 +540,7 @@ type
     procedure DestroyWindowHandle; override;
     procedure WMDropFiles(var Msg: TWMDropFiles); message WM_DropFiles;
     procedure WMMove(var Msg: TWMMove); message WM_MOVE;
-    function MoveToFrameByOffset(AOffset: Integer; ACalculateOnly: Boolean = False): TRecordedFrame;
+    function MoveToFrameByOffset(AInitialIndex, AOffset: Integer; ASkipAutomovementFlags, AFollowFlags: Boolean): TRecordedFrame;
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
@@ -2158,6 +2166,11 @@ begin
           for i := 0 to JSONArray.Count - 1 do
             FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveBouncerAfter := True;
 
+        JSONArray := JSONObject.GetValue('Loopers') as TJSONArray;
+        if Assigned(JSONArray) then
+          for i := 0 to JSONArray.Count - 1 do
+            FrameInfoList[JSONArray.Items[i].GetValue<Integer>('SitAfterFrame')].HaveLooperAfter := True;
+
         RecordedFrames.Clear;
         JSONObject := RootJSONObject.GetValue('RecordedSet') as TJSONObject;
         if Assigned(JSONObject) then begin
@@ -2547,6 +2560,14 @@ begin
       JSONObject.AddPair('Bouncers', JSONArray);
       for i := 0 to FrameInfoCount - 1 do
         if FrameInfoList[i].HaveBouncerAfter then
+          JSONArray.Add(TJSONObject.Create.
+            AddPair('SitAfterFrame', TJSONNumber.Create(i))
+          );
+
+      JSONArray := TJsonArray.Create;
+      JSONObject.AddPair('Loopers', JSONArray);
+      for i := 0 to FrameInfoCount - 1 do
+        if FrameInfoList[i].HaveLooperAfter then
           JSONArray.Add(TJSONObject.Create.
             AddPair('SitAfterFrame', TJSONNumber.Create(i))
           );
@@ -2980,6 +3001,14 @@ procedure TMainForm.actToggleBouncerExecute(Sender: TObject);
 begin
   with FrameInfoList[DisplayedFrameIndex] do
     HaveBouncerAfter := not HaveBouncerAfter;
+  pbWorkingSet.Repaint;
+  Saved := False;
+end;
+
+procedure TMainForm.actToggleLooperExecute(Sender: TObject);
+begin
+  with FrameInfoList[DisplayedFrameIndex] do
+    HaveLooperAfter := not HaveLooperAfter;
   pbWorkingSet.Repaint;
   Saved := False;
 end;
@@ -3781,6 +3810,7 @@ begin
           affTeleport: BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].TeleportTargetBookmark];
           affStopper: BookmarkText := 'x';
           affBouncer: BookmarkText := '‡';
+          affLooper:  BookmarkText := '@';
         end;
         TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
         BoxWidth := Max(TextSize.cx, MinBoxWidth) + 4;
@@ -3796,6 +3826,7 @@ begin
             affTeleport: pbWorkingSet.Canvas.Brush.Color := clLime;
             affStopper:  pbWorkingSet.Canvas.Brush.Color := $9999FF;
             affBouncer:  pbWorkingSet.Canvas.Brush.Color := $FF9999;
+            affLooper:   pbWorkingSet.Canvas.Brush.Color := $99FF99;
           end;
           pbWorkingSet.Canvas.Font.Color := clBlack;
         end else begin
@@ -3803,6 +3834,7 @@ begin
             affTeleport: pbWorkingSet.Canvas.Brush.Color := clGreen;
             affStopper:  pbWorkingSet.Canvas.Brush.Color := $2222FF;
             affBouncer:  pbWorkingSet.Canvas.Brush.Color := $FF2222;
+            affLooper:   pbWorkingSet.Canvas.Brush.Color := $22FF22;
           end;
           pbWorkingSet.Canvas.Brush.Style := bsSolid;
           pbWorkingSet.Canvas.Font.Color := clWhite;
@@ -4399,59 +4431,89 @@ end;
 
 procedure TMainForm.AutoMove(AOffset: Integer);
 begin
-  CurrentWorkingSetFrame := MoveToFrameByOffset(AOffset);
+  if AutoMovementStopped then
+    Exit;
+  if AOffset = 0 then
+    Exit;
+  if WorkingSetFrames.Count = 0 then
+    Exit;
+  if CurrentWorkingSetFrame = nil then
+    Exit;
+  CurrentWorkingSetFrame := MoveToFrameByOffset(CurrentWorkingSetFrame.Index, AOffset, False, FlagsEnabled);
 end;
 
 function TMainForm.FindWorkingSetFrameByOffset(AOffset: Integer): TRecordedFrame;
 begin
-  Result := MoveToFrameByOffset(AOffset, True);
+  if AOffset = 0 then
+    Exit(CurrentWorkingSetFrame);
+  if WorkingSetFrames.Count = 0 then
+    Exit(nil);
+  if CurrentWorkingSetFrame = nil then
+    Exit(nil);
+  Result := MoveToFrameByOffset(CurrentWorkingSetFrame.Index, AOffset, True, FlagsEnabled);
 end;
 
-function TMainForm.MoveToFrameByOffset(AOffset: Integer; ACalculateOnly: Boolean = False): TRecordedFrame;
+function TMainForm.WrapFrameIndex(AIndex: Integer): Integer;
+begin
+  Result := AIndex;
+  if Result < 0 then
+    Result := WorkingSetFrames.Count + Result;
+  if Result > (WorkingSetFrames.Count - 1) then
+    Result := Result - WorkingSetFrames.Count;
+end;
+
+function TMainForm.FindNearestLooper(AIndex, ADirection: Integer): Integer;
+var
+  i: Integer;
+  FrameAtLeft: TRecordedFrame;
+begin
+  // разворачиваем направление поиска относительно исходного направления движения
+  ADirection := -ADirection;
+  // переходим к предыдущему кадру, к тому после которого словили лупер,
+  // чтоб на обратном пути не словить сразу же его же
+  i := MoveToFrameByOffset(AIndex, ADirection, True, False).Index;
+  repeat
+    // Если вправо - то кадр слева это тот, что до следующего
+    if ADirection > 0 then
+      FrameAtLeft := WorkingSetFrames[i];
+
+    // переходим к следующему кадру
+    i := MoveToFrameByOffset(i, ADirection, True, False).Index;
+
+    // Если влево - то кадр слева это тот, что следующий
+    if ADirection < 0 then
+      FrameAtLeft := WorkingSetFrames[i];
+
+    if FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveLooperAfter then
+      // переходим на кадр, расположенный в исходном направлениии после найденного луппера
+      Exit(MoveToFrameByOffset(i, -ADirection, True, False).Index);
+  until i = AIndex;
+  Exit(AIndex);
+end;
+
+function TMainForm.MoveToFrameByOffset(AInitialIndex, AOffset: Integer; ASkipAutomovementFlags, AFollowFlags: Boolean): TRecordedFrame;
 var
   Count, Direction: Integer;
   i: Integer;
-  InitialIndex, ResultIndex, TeleportBookmarkIndex: Integer;
+  ResultIndex, TeleportBookmarkIndex: Integer;
   FrameAtLeft: TRecordedFrame;
 begin
-  Result := CurrentWorkingSetFrame;
-  if not ACalculateOnly and AutoMovementStopped then
-    Exit;
-
-  if AOffset = 0 then
-    Exit;
-
-  if WorkingSetFrames.Count = 0 then
-    begin
-      Result := nil;
-      Exit;
-    end;
-  if CurrentWorkingSetFrame = nil then
-    Exit;
-
-  InitialIndex := CurrentWorkingSetFrame.Index;
   Count := Abs(AOffset);
   Direction := AOffset div Count;
   for i := 1 to Count do
     begin
-      ResultIndex := InitialIndex + Direction;
-      if ResultIndex < 0 then
-        ResultIndex := WorkingSetFrames.Count + ResultIndex;
-      if ResultIndex > (WorkingSetFrames.Count - 1) then
-        ResultIndex := ResultIndex - WorkingSetFrames.Count;
-
+      ResultIndex := WrapFrameIndex(AInitialIndex + Direction);
       Result := WorkingSetFrames[ResultIndex];
 
-      if FlagsEnabled then begin
-
+      if AFollowFlags then begin
         if Direction > 0 then
-          FrameAtLeft := WorkingSetFrames[InitialIndex]
+          FrameAtLeft := WorkingSetFrames[AInitialIndex]
         else // Direction < 0
           FrameAtLeft := Result;
 
-        if not ACalculateOnly and FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveBouncerAfter then begin
+        if not ASkipAutomovementFlags and FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveBouncerAfter then begin
           Direction := - Direction;
-          ResultIndex := InitialIndex + Direction;
+          ResultIndex := WrapFrameIndex(AInitialIndex + Direction);
           Result := WorkingSetFrames[ResultIndex];
           if (NextControlAction <> caNone) then begin
             if NextControlAction = caPlayBackward then
@@ -4462,10 +4524,10 @@ begin
           end;
         end;
 
-        if not ACalculateOnly then begin
+        if not ASkipAutomovementFlags then begin
           if not SkipFirstStopper then
             if FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveStopperAfter then begin
-              Result := WorkingSetFrames[InitialIndex];
+              Result := WorkingSetFrames[AInitialIndex];
               if not AutoMovementStopped and (NextControlAction <> caNone) then begin
                 AutoMovementStopped := True;
                 ReplaceControlActions(caNone);
@@ -4477,13 +4539,18 @@ begin
           SkipFirstStopper := False;
         end;
 
+        if FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveLooperAfter then begin
+          ResultIndex := FindNearestLooper(ResultIndex, Direction);
+          Result := WorkingSetFrames[ResultIndex];
+        end;
+
         TeleportBookmarkIndex := FrameInfoList[FrameAtLeft.FrameInfoIndex].TeleportTargetBookmark;
         if (TeleportBookmarkIndex <> -1) and (Bookmarks[TeleportBookmarkIndex] <> -1) then begin
           Result := WorkingSetFrames.FindByFrameIndex(Bookmarks[TeleportBookmarkIndex]);
           ResultIndex := Result.Index;
         end;
       end;
-      InitialIndex := ResultIndex;
+      AInitialIndex := ResultIndex;
     end;
 end;
 
@@ -4566,6 +4633,14 @@ begin
     FlagAfter := affNone;
 end;
 
+procedure TFrameInfo.SetHaveLooperAfter(const Value: Boolean);
+begin
+  if Value then
+    FlagAfter := affLooper
+  else
+    FlagAfter := affNone;
+end;
+
 procedure TFrameInfo.SetHaveStopperAfter(const Value: Boolean);
 begin
   if Value then
@@ -4634,6 +4709,11 @@ end;
 function TFrameInfo.GetHaveBouncerAfter: Boolean;
 begin
   Result := FFlagAfter = affBouncer;
+end;
+
+function TFrameInfo.GetHaveLooperAfter: Boolean;
+begin
+  Result := FFlagAfter = affLooper;
 end;
 
 function TFrameInfo.GetHaveStopperAfter: Boolean;
