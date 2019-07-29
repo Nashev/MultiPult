@@ -20,7 +20,7 @@ uses
 {$ENDIF}
   Windows, Messages, FileCtrl, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Menus, ActnList, ExtCtrls, ImgList, ExtDlgs, StdCtrls, Contnrs,
-  Gauges, Buttons, Math, ComCtrls, mmSystem,
+  AVICompression, Gauges, Buttons, Math, ComCtrls, mmSystem,
   WaveUtils, WaveStorage, WaveOut, WavePlayers, WaveIO, WaveIn, WaveRecorders, WaveTimer,
   ToolWin, ExtActns, Vcl.StdActns, System.Actions, Vcl.AppEvnts,
   System.Generics.Collections,
@@ -452,6 +452,9 @@ type
     KeyPressBlocked: Boolean;
     Interval, CurrentSpeedInterval: Integer;
     Recording, RecordingMustBeChanged, Playing, Exporting: Boolean;
+    Options: TAVIFileOptions;
+    Compressor: TAVICompressor;
+    OptionsInitialized: Boolean;
     LoopMode: Boolean;
     FrameTipMode: TFrameTipMode;
     FrameTipArrow: Integer;
@@ -575,7 +578,7 @@ var
 
 implementation
 uses
-  AVICompression, ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
+  ControllerFormUnit, ScreenFormUnit, Vcl.Imaging.JConsts,
   ExportSizeCustomRequestDialogUnit, ShellAPI, WorkingSetManagementFormUnit,
   CameraFormUnit, MP3ConvertFormUnit, MovieNameDialogUnit, IniFiles,
   ProgressFormUnit, UtilsUnit, GifPreviewUnit;
@@ -594,10 +597,10 @@ begin
   Stop;
   Result := True;
   if (WaveStorage.Wave.Length > 0) and (FExternalAudioFileName = '') then
-    case MessageBox(0, PChar(rs_SaveAudioBeforeOpenRequest), PChar(Application.Title), MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1) of
-      IDCANCEL:
+    case MessageDlg(rs_SaveAudioBeforeOpenRequest, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+      mrCANCEL:
         Result := False;
-      IDYES:
+      mrYES:
         begin
           if not dlgSaveAudio.Execute then
             Result := False
@@ -624,20 +627,19 @@ resourcestring
   rs_SaveMovieBeforeSomethingRequest = 'Хотите сохранить текущий мульт перед ';
 begin
   if (RecordedFrames.Count > 0) and not Saved then
-    case MessageBox(
-      0,
-      PChar(rs_SaveMovieBeforeSomethingRequest + APurpose + '?'),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    of
-      IDCANCEL: Abort;
-      IDYES:
+    case MessageDlg(
+      rs_SaveMovieBeforeSomethingRequest + APurpose + '?',
+      mtConfirmation,
+      [mbYes, mbNo, mbCancel],
+      0
+    ) of
+      mrCancel: Abort;
+      mrYes:
         begin
           actSave.Execute;
           if not Saved then
             Abort;
         end;
-      IDNO: ;
     end;
 end;
 
@@ -945,15 +947,10 @@ begin
 
   actSaveAs.Update;
   if actSaveAs.Enabled and not Saved then
-    case MessageBox(
-      0,
-      PChar(rs_SaveBeforeExit),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_YESNOCANCEL or MB_APPLMODAL or MB_DEFBUTTON1
-    ) of
-      IDYES: begin actSaveAs.Execute; CanClose := Saved; end;
-      IDNO: CanClose := True;
-      IDCANCEL: CanClose := False;
+    case MessageDlg(rs_SaveBeforeExit, mtConfirmation, [mbYes, mbNo, mbCancel], 0) of
+      mrYES: begin actSaveAs.Execute; CanClose := Saved; end;
+      mrNO: CanClose := True;
+      mrCANCEL: CanClose := False;
     end;
 end;
 
@@ -1172,7 +1169,7 @@ end;
 procedure TMainForm.FormMouseWheel(Sender: TObject; Shift: TShiftState;
   WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
 begin
-  if Playing then
+  if Playing or lvFrameset.Visible then
     Exit;
 
   if ssCtrl in Shift then
@@ -1484,12 +1481,7 @@ resourcestring
     'Перезагрузить?';
 begin
   Stop;
-  case MessageBox(
-    0,
-    PChar(rs_RelopadPhotoFolder),
-    PChar(Application.Title),
-    MB_ICONWARNING or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-  of
+  case MessageDlg(rs_RelopadPhotoFolder, mtConfirmation, [mbOk, mbCancel], 0) of
     IDCANCEL: Abort;
   end;
   ClearBookmarks;
@@ -1608,13 +1600,8 @@ begin
   Stop;
   actSaveAs.Update;
   if actSaveAs.Enabled and Saved then // на случай not saved спросит actNew.Execute
-    case MessageBox(
-      0,
-      PChar(rs_ConfirmNewBeforeChangeFramerate),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1
-    ) of
-      IDCANCEL: Exit;
+    case MessageDlg(rs_ConfirmNewBeforeChangeFramerate, mtConfirmation, [mbOk, mbCancel], 0) of
+      mrCANCEL: Exit;
     end;
 
   actNew.Execute;
@@ -1739,8 +1726,6 @@ end;
 
 procedure TMainForm.actExportToAVIExecute(Sender: TObject);
 var
-  Compressor: TAVICompressor;
-  Options: TAVIFileOptions;
   i: Integer;
   WaveToSave: TWave;
   Bmp: Graphics.TBitmap;
@@ -1794,120 +1779,115 @@ begin
           WaveToSave.Free;
 
         SetProgressStatus(rs_AVIExportingCompressorInit);
-        Compressor := TAVICompressor.Create;
-        try
+        if not Assigned(Compressor) then
+          Compressor := TAVICompressor.Create;
+        if not OptionsInitialized then begin
           Options.Init;
-          Options.FrameRate := FrameRate;
-          Options.Width := ExportSize.cx;
-          Options.Height := ExportSize.cy;
           Options.Handler := 'DIB '; // по умолчанию - без компрессии
-          Hide; // progress form на время выбора настроек кодека
-          CheckAVIError(Compressor.Open(Dir + '~Video.avi', Options));
-          Show; // progress form
+          OptionsInitialized := True;
+          Compressor.LoadOptionsFromFile(Application.ExeName + '.AviParam');
+        end;
+        Options.FrameRate := FrameRate;
+        Options.Width := ExportSize.cx;
+        Options.Height := ExportSize.cy;
+        Hide; // progress form на время выбора настроек кодека
+        CheckAVIError(Compressor.Open(Dir + '~Video.avi', False, Options));
+        Compressor.SaveOptionsToFile(Application.ExeName + '.AviParam');
+        Show; // progress form
+        try
+          Bmp := TBitmap.Create;
           try
-            Bmp := TBitmap.Create;
-            try
-              Bmp.Canvas.Brush.Color := clBlack;
-              {$IFDEF DelphiXE+}
-              Bmp.SetSize(ExportSize.cx, ExportSize.cy);
-              {$ELSE}
-              Bmp.Width := ExportSize.cx;
-              Bmp.Height := ExportSize.cy;
-              {$ENDIF}
-              AdvertisementShowing := False;
-              PreparedFrameInfoIndex := -1;
-              for i := 0 to RecordedFrames.Count - 1 do
-                begin
-                  SetProgress(i + 1, RecordedFrames.Count + AdvertisementDuration div FrameRate);
-                  CurrentRecordPosition := i; // preview
-                  DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
-                  pbRecord.Repaint;
-                  SetProgressStatus(Format(rs_AVIExportingCaption, [
-                    FrameInfoList[DisplayedFrameIndex].RelativeFileName,
-                    FrameIndexToTimeStamp(CurrentRecordPosition),
-                    i + 1,
-                    RecordedFrames.Count
-                  ]));
-                  Application.ProcessMessages;
-                  if ExportCancelled then
-                    Abort;
-                  try
-                    if PreparedFrameInfoIndex <> DisplayedFrameIndex then // skip preparing for already prepared
-                      begin
-                        Image := FrameInfoList[DisplayedFrameIndex].ImageFromDisc;
-                        R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
-                        Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
-                        Bmp.Canvas.StretchDraw(R, Image);
-                        Image.Free;
-                        Bmp.PixelFormat := pf24bit;
-                        PreparedFrameInfoIndex := DisplayedFrameIndex;
-                      end;
-                    CheckAVIError(Compressor.WriteFrame(Bmp));
-                  except
-                    on e: Exception do
-                      begin
-                        MessageBox(0,
-                          PWideChar(
-                            Format(rs_AVIExportingCaption, [
-                              FrameInfoList[DisplayedFrameIndex].RelativeFileName,
-                              FrameIndexToTimeStamp(CurrentRecordPosition),
-                              i + 1,
-                              RecordedFrames.Count
-                            ]) + #13#10 +
-                            e.Message
-                          ),
-                          PWideChar(Application.Title),
-                          MB_ICONINFORMATION or MB_OK or MB_TASKMODAL
-                        );
-                        Abort;
-                      end;
-                  end;
-                end;
-              SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
-              Image := AdvertisementFrameImage;
-              R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
-              Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
-              Bmp.Canvas.StretchDraw(R, Image);
-              Bmp.PixelFormat := pf24bit;
-              CurrentRecordPosition := RecordedFrames.Count;
-              pbRecord.Repaint;
-              SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
-              Application.ProcessMessages;
-              if ExportCancelled then
-                Abort;
-              for i := 1 to AdvertisementDuration div FrameRate do
+            Bmp.Canvas.Brush.Color := clBlack;
+            {$IFDEF DelphiXE+}
+            Bmp.SetSize(ExportSize.cx, ExportSize.cy);
+            {$ELSE}
+            Bmp.Width := ExportSize.cx;
+            Bmp.Height := ExportSize.cy;
+            {$ENDIF}
+            AdvertisementShowing := False;
+            PreparedFrameInfoIndex := -1;
+            for i := 0 to RecordedFrames.Count - 1 do
               begin
-                SetProgress(RecordedFrames.Count + i, RecordedFrames.Count + AdvertisementDuration div FrameRate);
-                CheckAVIError(Compressor.WriteFrame(Bmp));
+                SetProgress(i + 1, RecordedFrames.Count + AdvertisementDuration div FrameRate);
+                CurrentRecordPosition := i; // preview
+                DisplayedFrameIndex := RecordedFrames[i].FrameInfoIndex;
+                pbRecord.Repaint;
+                SetProgressStatus(Format(rs_AVIExportingCaption, [
+                  FrameInfoList[DisplayedFrameIndex].RelativeFileName,
+                  FrameIndexToTimeStamp(CurrentRecordPosition),
+                  i + 1,
+                  RecordedFrames.Count
+                ]));
                 Application.ProcessMessages;
                 if ExportCancelled then
                   Abort;
+                try
+                  if PreparedFrameInfoIndex <> DisplayedFrameIndex then // skip preparing for already prepared
+                    begin
+                      Image := FrameInfoList[DisplayedFrameIndex].ImageFromDisc;
+                      R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+                      Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
+                      Bmp.Canvas.StretchDraw(R, Image);
+                      Image.Free;
+                      Bmp.PixelFormat := pf24bit;
+                      PreparedFrameInfoIndex := DisplayedFrameIndex;
+                    end;
+                  CheckAVIError(Compressor.WriteFrame(Bmp));
+                except
+                  on e: Exception do
+                    begin
+                      InfoMsg(
+                        Format(rs_AVIExportingCaption, [
+                          FrameInfoList[DisplayedFrameIndex].RelativeFileName,
+                          FrameIndexToTimeStamp(CurrentRecordPosition),
+                          i + 1,
+                          RecordedFrames.Count
+                        ]) + #13#10 +
+                        e.Message
+                      );
+                      Abort;
+                    end;
+                end;
               end;
-            finally
-              Bmp.Free;
+            SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
+            Image := AdvertisementFrameImage;
+            R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+            Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
+            Bmp.Canvas.StretchDraw(R, Image);
+            Bmp.PixelFormat := pf24bit;
+            CurrentRecordPosition := RecordedFrames.Count;
+            pbRecord.Repaint;
+            SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
+            Application.ProcessMessages;
+            if ExportCancelled then
+              Abort;
+            for i := 1 to AdvertisementDuration div FrameRate do
+            begin
+              SetProgress(RecordedFrames.Count + i, RecordedFrames.Count + AdvertisementDuration div FrameRate);
+              CheckAVIError(Compressor.WriteFrame(Bmp));
+              Application.ProcessMessages;
+              if ExportCancelled then
+                Abort;
             end;
           finally
-            Compressor.Close;
+            Bmp.Free;
           end;
-          SetProgressStatus(rs_AVIExportingAudioMerge);
-
-          Application.ProcessMessages;
-          if ExportCancelled then
-            Abort;
-
-          Compressor.MergeFilesAndSaveAs(Dir + '~Video.avi', Dir + '~Audio.wav', SaveToAVIDialog.FileName);
         finally
-          Compressor.Destroy;
+          Compressor.Close;
         end;
+        SetProgressStatus(rs_AVIExportingAudioMerge);
+
+        Application.ProcessMessages;
+        if ExportCancelled then
+          Abort;
+
+        Compressor.MergeFilesAndSaveAs(Dir + '~Video.avi', Dir + '~Audio.wav', SaveToAVIDialog.FileName);
+
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Audio.wav');
         {$IFDEF FPC}DeleteFileUTF8{$ELSE}DeleteFile{$ENDIF}(Dir + '~Video.avi');
         SetProgressStatus(rs_ExportFinished);
         Hide; // progress
-        if (MessageBox(0,
-          PWideChar(rs_ExportFinished),
-          PWideChar(Application.Title),
-          MB_ICONINFORMATION or MB_YESNO or MB_TASKMODAL) = idYes)
-        then
+        if MessageDlg(rs_ExportFinished, mtConfirmation, [mbYes, mbNo], 0) = mrYes then
           ShellExecute(0, 'open', PWideChar(SaveToAVIDialog.FileName), nil, nil, SW_SHOWNORMAL);
       finally
         Free;
@@ -2408,13 +2388,12 @@ resourcestring
   rs_DoYouWantReplaceMovie = 'В папке "%s"'#13#10'уже есть мульт с именем "%s".'#13#10'Заменить?';
 begin
   if FileExists(PhotoFolder + ANewMovieName + '.mp') then
-    Result := (
-    MessageBox(
-      0,
-      PChar(Format(rs_DoYouWantReplaceMovie, [PhotoFolder, ANewMovieName])),
-      PChar(Application.Title),
-      MB_ICONQUESTION or MB_OKCANCEL or MB_APPLMODAL or MB_DEFBUTTON1)
-    = IDOK)
+    Result := MessageDlg(
+      Format(rs_DoYouWantReplaceMovie, [PhotoFolder, ANewMovieName]),
+      mtConfirmation,
+      [mbOk, mbCancel],
+      0
+    ) = mrOK
   else
     Result := True;
 
@@ -4473,6 +4452,7 @@ begin
   // чтоб на обратном пути не словить сразу же его же
   i := MoveToFrameByOffset(AIndex, ADirection, True, False).Index;
   repeat
+    FrameAtLeft := nil; // hide warning
     // Если вправо - то кадр слева это тот, что до следующего
     if ADirection > 0 then
       FrameAtLeft := WorkingSetFrames[i];
@@ -4498,6 +4478,7 @@ var
   ResultIndex, TeleportBookmarkIndex: Integer;
   FrameAtLeft: TRecordedFrame;
 begin
+  Result := nil; // hide warning
   Count := Abs(AOffset);
   Direction := AOffset div Count;
   for i := 1 to Count do
@@ -4557,7 +4538,10 @@ end;
 function TMainForm.IsShortCut(var Message: {$IFDEF FPC}TLMKey{$ELSE}TWMKey{$ENDIF}): Boolean;
 begin
   if not Active then
-    if Screen.ActiveForm is TCameraForm then
+    if not (
+      (Screen.ActiveForm is TControllerForm) or
+      (Screen.ActiveForm is TScreenForm)
+    ) then
       Exit(False);
 
   if not (

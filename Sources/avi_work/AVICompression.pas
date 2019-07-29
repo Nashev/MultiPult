@@ -41,6 +41,8 @@ interface
 
   TAVICompressor = class
                     private
+                     CompOptions : TAVICompressOptions;
+                     OptionsInitialized: Boolean;
                      AVIFile : PAVIFile;
                      AVIStream, CompStream : PAVIStream;
                      StreamSize : Integer;
@@ -49,13 +51,15 @@ interface
 
                      constructor Create;
                      destructor Destroy; override;
-                     function Open(Name: string; var Options: TAVIFileOptions): Integer;
+                     function Open(Name: string; Reinitialize: Boolean; var Options: TAVIFileOptions): Integer;
                      function Close: Integer;
 
                      function WriteFrame(Bitmap : PBitmapInfo): Integer;  overload;
                      function WriteFrame(Bitmap : Graphics.TBitmap): Integer;  overload;
                      procedure MergeSoundAndSaveAs(const AFileToMergeName: string; const AOutFileName: string);
                      procedure MergeFilesAndSaveAs(const AFileToMergeName1, AFileToMergeName2: string; const AOutFileName: string);
+                     procedure SaveOptionsToFile(const AFileName: string);
+                     procedure LoadOptionsFromFile(const AFileName: string);
                    end;
 
  type TChar4 = array[0..3] of Char;
@@ -164,10 +168,9 @@ begin
   CheckAVIError(AVIStreamRelease (pStreams[1]));
 end;
 
-function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Integer;
+function TAVICompressor.Open(Name: string; Reinitialize: Boolean; var Options: TAVIFileOptions): Integer;
  var
   AVIStreamInfo : TAVIStreamInfo;
-  CompOptions   : TAVICompressOptions;
   PCompOptions  : PAVICompressOptions;
   bmiHeader     : TBitmapInfoHeader;
   clsidHandler  : ^TClsID;
@@ -209,23 +212,26 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
 
   if Options.Compress then
   begin
-   FillChar(CompOptions,SizeOf(CompOptions),0);
-   with CompOptions do  // AVICompressOptions
-   begin
-    fccType:=AVIStreamInfo.fccType;
-    fccHandler:=AVIStreamInfo.fccHandler;
-    dwKeyFrameEvery:=Options.KeyFrameEvery;
-    dwQuality:=AVIStreamInfo.dwQuality;
-    dwBytesPerSecond:=Options.BytesPerSecond;
-    dwFlags:=Options.Flags;
-    lpFormat:=@bmiHeader;
-    cbFormat:=SizeOf(TBitmapInfoHeader);
-    dwInterleaveEvery := 1;
+    if not OptionsInitialized or Reinitialize then begin
+      FillChar(CompOptions,SizeOf(CompOptions),0);
+      with CompOptions do  // AVICompressOptions
+       begin
+        OptionsInitialized := True;
+        fccType:=AVIStreamInfo.fccType;
+        fccHandler:=AVIStreamInfo.fccHandler;
+        dwKeyFrameEvery:=Options.KeyFrameEvery;
+        dwQuality:=AVIStreamInfo.dwQuality;
+        dwBytesPerSecond:=Options.BytesPerSecond;
+        dwFlags:=Options.Flags or AVICOMPRESSF_VALID;
+        lpFormat:=@bmiHeader;
+        cbFormat:=SizeOf(TBitmapInfoHeader);
+        dwInterleaveEvery := 1;
+       end;
+    end;
 
     if Options.ShowDialog then
     begin
      PCompOptions:=@CompOptions;
-     dwFlags:=dwFlags or AVICOMPRESSF_VALID;
      if not AVISaveOptions(Application.MainForm.Handle,ICMF_CHOOSE_KEYFRAME or ICMF_CHOOSE_DATARATE,1,AVIStream,PCompOptions) then
      begin
       Result:=-1;
@@ -234,7 +240,6 @@ function TAVICompressor.Open(Name: string; var Options: TAVIFileOptions): Intege
       Exit;
      end;
     end;
-   end;
 
    clsidHandler:=nil;
    Result:=AVIMakeCompressedStream(CompStream,AVIStream,CompOptions,clsidHandler^);
@@ -335,6 +340,51 @@ function TAVICompressor.WriteFrame(Bitmap: Graphics.TBitmap): Integer;
   if AVIStream<>nil  then Result:=Result or AVIStreamRelease(AVIStream);  AVIStream:=nil;
   if AVIFile<>nil    then Result:=Result or AVIFileRelease(AVIFile);      AVIFile:=nil;
  end;
+
+const
+  OptSignature:ANSIString = 'AVIOptions';
+
+procedure TAVICompressor.SaveOptionsToFile(const AFileName: string);
+var
+  S: TFileStream;
+begin
+  S := TFileStream.Create(AFileName, fmCreate);
+  try
+    S.Write(OptSignature[1], Length(OptSignature));
+    S.Write(CompOptions, SizeOf(CompOptions));
+    S.Write(CompOptions.lpFormat^, CompOptions.cbFormat);
+    S.Write(CompOptions.lpParms^, CompOptions.cbParms);
+  finally
+    S.Free;
+  end;
+end;
+
+procedure TAVICompressor.LoadOptionsFromFile(const AFileName: string);
+var
+  S: TFileStream;
+  ReadedOptSignature: ANSIString;
+begin
+  if not FileExists(AFileName) then
+    Exit;
+
+  S := TFileStream.Create(AFileName, fmOpenRead);
+  try
+    ReadedOptSignature := OptSignature;
+    S.Read(ReadedOptSignature[1], Length(OptSignature));
+    if ReadedOptSignature <> OptSignature then
+      Exit;
+
+    S.Read(CompOptions, SizeOf(CompOptions));
+    CompOptions.lpFormat := Pointer(LocalAlloc(LMEM_FIXED, CompOptions.cbFormat));
+    S.Read(CompOptions.lpFormat^, CompOptions.cbFormat);
+    CompOptions.lpParms := Pointer(LocalAlloc(LMEM_FIXED, CompOptions.cbParms));
+    S.Read(CompOptions.lpParms^, CompOptions.cbParms);
+    OptionsInitialized := True;
+  finally
+    S.Free;
+  end;
+end;
+
 
 begin
  AVIInitCount:=0;
