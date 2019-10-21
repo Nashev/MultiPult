@@ -378,6 +378,7 @@ type
     procedure imgLeftRightByMouseDownControllerMouseUp(Sender: TObject;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure mmiExportResolutionClick(Sender: TObject);
+    procedure lvFramesetKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure actExportResolutionCustomExecute(Sender: TObject);
     procedure actExportResolutionFirstFrameExecute(Sender: TObject);
     procedure actExportResolutionFirstFrameUpdate(Sender: TObject);
@@ -428,6 +429,7 @@ type
     procedure actFillByAllFramesExecute(Sender: TObject);
     procedure actToggleBouncerExecute(Sender: TObject);
     procedure actToggleLooperExecute(Sender: TObject);
+    procedure lvFramesetDblClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -1487,6 +1489,10 @@ begin
   ClearBookmarks;
   UnloadFrames;
   LoadPhotoFolder;
+  if lvFrameset.Visible then begin
+    lvFrameset.Visible := False;
+    btnFrameSetExpand.Click;
+  end;
 end;
 
 procedure TMainForm.actReloadPhotoFolderUpdate(Sender: TObject);
@@ -1924,6 +1930,7 @@ begin
   CameraForm.Active := CameraWasNonActive;
   if FirstTime then
     actShowCameraControl.Execute;
+  RepaintAll;
 end;
 
 procedure TMainForm.CameraFormActiveChanged(Sender: TObject);
@@ -2747,7 +2754,7 @@ begin
   // При вызовах из SetCurrentWorkingSetFrame оставляем тот экземпляр,
   // какой был установлен и не ищем первый аналогичный. В других случаях - ищем.
   if not Assigned(CurrentWorkingSetFrame) or (CurrentWorkingSetFrame.FrameInfoIndex <> Value) then
-    CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(Value);
+    CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(FDisplayedFrameIndex);
 
   if Value >= 0 then
     begin
@@ -3198,7 +3205,10 @@ begin
         if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
           begin
             // левая миниатюра
-            WorkSetFrame := FindWorkingSetFrameByOffset(-1);
+            if CameraForm.Active then
+              WorkSetFrame := CurrentWorkingSetFrame
+            else
+              WorkSetFrame := FindWorkingSetFrameByOffset(-1);
             LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
             if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
               begin
@@ -4345,10 +4355,10 @@ end;
 
 procedure TMainForm.btnFrameSetExpandClick(Sender: TObject);
 var
-  i: Integer;
+  WorkingFrameIndex, ItemIndex: Integer;
   Item: TListItem;
   FrameInfo: TFrameInfo;
-  OriginalOrders: array of TRecordedFrame;
+  FramesInOriginalOrder: array of TRecordedFrame;
 begin
   CheckStopCamera;
   Stop;
@@ -4359,42 +4369,47 @@ begin
     try
       lvFrameset.Clear;
       ilFrameset.Clear;
-      for i := 0 to WorkingSetFrames.Count - 1 do
+      for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
       begin
-        FrameInfo := FrameInfoList[WorkingSetFrames[i].FrameInfoIndex];
+        FrameInfo := FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex];
         Item := lvFrameset.Items.Add;
         Item.Caption := FrameInfo.FileName;
-        Item.ImageIndex := i;
+        Item.ImageIndex := WorkingFrameIndex;
         if Assigned(FrameInfo.Iconic) then
           ilFrameset.Add(FrameInfo.Iconic, nil)
         else
           ilFrameset.Add(nil, nil);
       end;
-      pbWorkingSet.Repaint;
+      if Assigned(CurrentWorkingSetFrame) then
+        lvFrameset.ItemIndex := CurrentWorkingSetFrame.Index;
     finally
       lvFrameset.Items.EndUpdate;
       ilFrameset.EndUpdate;
       lvFrameset.Visible := True;
-      lvFrameset.BringToFront;
     end;
+    lvFrameset.BringToFront;
+    lvFrameset.SetFocus;
   end
   else
     begin
       lvFrameset.Visible := False;
-      SetLength(OriginalOrders, WorkingSetFrames.Count);
-      for i := 0 to WorkingSetFrames.Count - 1 do
-        OriginalOrders[i] := WorkingSetFrames[i];
-      for i := WorkingSetFrames.Count - 1 downto 0 do
-      begin
-        if lvFrameset.Items[i].ImageIndex <> i then
-          begin
-            OriginalOrders[lvFrameset.Items[i].ImageIndex].Index := i;
-            Saved := False;
-          end;
-      end;
-      pbWorkingSet.Repaint;
+      if lvFrameset.ItemIndex <> -1 then
+        CurrentWorkingSetFrame := WorkingSetFrames[lvFrameset.Items[lvFrameset.ItemIndex].ImageIndex];
+      SetLength(FramesInOriginalOrder, WorkingSetFrames.Count);
+      for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
+        FramesInOriginalOrder[WorkingFrameIndex] := WorkingSetFrames[WorkingFrameIndex];
+      for ItemIndex := lvFrameset.Items.Count - 1 downto 0 do
+        begin
+          FramesInOriginalOrder[lvFrameset.Items[ItemIndex].ImageIndex].Index := ItemIndex;
+          FramesInOriginalOrder[lvFrameset.Items[ItemIndex].ImageIndex] := nil;
+          Saved := False;
+        end;
+      // кто не нашёлся в lvFrameset.Items и не был убран из списка FramesInOriginalOrder - освобождаеся.
+      for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
+        FramesInOriginalOrder[WorkingFrameIndex].Free;
     end;
   actWorkingSetManagement.Checked := lvFrameset.Visible;
+  RepaintAll;
 end;
 
 procedure TMainForm.btnNavigationMouseDown(Sender: TObject; Button: TMouseButton;
@@ -4747,6 +4762,21 @@ procedure TMainForm.actSelectAudioFileUpdate(Sender: TObject);
 begin
   actSelectAudioFile.Enabled := not Exporting and (PhotoFolder <> '');
   mmiStopRecordingOnSoundtrackFinish.Enabled := actSelectAudioFile.Checked;
+end;
+
+procedure TMainForm.lvFramesetKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+  i: Integer;
+begin
+if Key = VK_DELETE then
+    for i := lvFrameset.Items.Count - 1 downto 0 do
+      if lvFrameset.Items[i].Selected then
+        lvFrameset.Items[i].Delete;
+end;
+
+procedure TMainForm.lvFramesetDblClick(Sender: TObject);
+begin
+  btnFrameSetExpand.Click;
 end;
 
 procedure TMainForm.lvFramesetDragDrop(Sender, Source: TObject; X, Y: Integer);

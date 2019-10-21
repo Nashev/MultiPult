@@ -47,8 +47,10 @@ object MainForm: TMainForm
     MultiSelect = True
     TabOrder = 4
     Visible = False
+    OnDblClick = lvFramesetDblClick
     OnDragDrop = lvFramesetDragDrop
     OnDragOver = lvFramesetDragOver
+    OnKeyDown = lvFramesetKeyDown
   end
   object pnlDisplay: TPanel
     Left = 0
@@ -8305,7 +8307,7 @@ object MainForm: TMainForm
     object actSelectPhotoFolder: TAction
       Caption = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091' '#1089' '#1082#1072#1076#1088#1072#1084#1080' '#1085#1072#1095#1072#1090#1100' '#1085#1086#1074#1099#1081' '#1084#1091#1083#1100#1090'...'
       Hint = #1042#1099#1073#1088#1072#1090#1100' '#1087#1072#1087#1082#1091
-      ShortCut = 16460
+      ShortCut = 24655
       OnExecute = actSelectPhotoFolderClick
     end
     object actNew: TAction
@@ -8523,7 +8525,7 @@ object MainForm: TMainForm
     end
     object actHideFrame: TAction
       Caption = #1057#1082#1088#1099#1090#1100' '#1090#1077#1082#1091#1097#1080#1081' '#1082#1072#1076#1088
-      ShortCut = 46
+      ShortCut = 16430
       OnExecute = actHideFrameClick
       OnUpdate = actHaveCurrentFrame
     end
@@ -8654,7 +8656,6 @@ object MainForm: TMainForm
       end
       object mmiSelectPhotoFolder: TMenuItem
         Action = actSelectPhotoFolder
-        ShortCut = 24655
       end
       object mmiNew: TMenuItem
         Action = actNew
@@ -8849,7 +8850,6 @@ object MainForm: TMainForm
       end
       object mmiHideFrame: TMenuItem
         Action = actHideFrame
-        ShortCut = 16430
       end
       object mmiDuplicateFrame: TMenuItem
         Action = actDuplicateFrame
