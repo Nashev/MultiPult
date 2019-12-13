@@ -31,7 +31,7 @@ uses
 const
   ControlActionStackDeep = 10;
 type
-  TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward);
+  TControlAction = (caNone, caStepBackward, caStepForward, caPlayBackward, caPlayForward, caPrevFlag, caNextFlag);
   TFrameTipMode = (ftmWorkingSet, ftmRecord);
 const
   FrameTipW = 120;
@@ -293,6 +293,11 @@ type
     mmiToggleBouncer: TMenuItem;
     actToggleLooper: TAction;
     mmToggleLooper: TMenuItem;
+    actPrevFlag: TAction;
+    mmiPrevFlag: TMenuItem;
+    actNextFlag: TAction;
+    mmiNextFlag: TMenuItem;
+    btnToggleCam: TSpeedButton;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -430,6 +435,8 @@ type
     procedure actToggleBouncerExecute(Sender: TObject);
     procedure actToggleLooperExecute(Sender: TObject);
     procedure lvFramesetDblClick(Sender: TObject);
+    procedure actPrevFlagUpdate(Sender: TObject);
+    procedure actPrevFlagExecute(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -1030,6 +1037,7 @@ begin
   with btnNext         do ControlStyle := ControlStyle - [csClickEvents];
   with btnPlayBackward do ControlStyle := ControlStyle - [csClickEvents];
   with btnPlayForward  do ControlStyle := ControlStyle - [csClickEvents];
+  with btnToggleCam do Caption := '';
 //  DoubleBuffered := True;
   if ParamCount >= 1 then
     if DirectoryExists(ParamStr(1)) then
@@ -1621,6 +1629,18 @@ begin
   MultimediaTimer.Interval := 1000 div FrameRate;
   RepaintAll;
   ShowTimes;
+end;
+
+procedure TMainForm.actPrevFlagExecute(Sender: TObject);
+begin
+  PushControlAction(caPrevFlag);
+  UpdatePlayActions;
+end;
+
+procedure TMainForm.actPrevFlagUpdate(Sender: TObject);
+begin
+  PushControlAction(caNextFlag);
+  UpdatePlayActions;
 end;
 
 procedure TMainForm.actPreviewModeExecute(Sender: TObject);
@@ -3728,7 +3748,10 @@ begin
 
   y1 := 4;
   MinBoxWidth := pbWorkingSet.Canvas.TextExtent('8').cx;
-  MidFrameOffset := ((pbWorkingSet.Width - 24) div (WorkingSetFrames.Count - 1)) div 2 + 1;
+  if WorkingSetFrames.Count > 2 then
+    MidFrameOffset := ((pbWorkingSet.Width - 24) div (WorkingSetFrames.Count - 1)) div 2 + 1
+  else
+    MidFrameOffset := 50;
   if Assigned(CurrentWorkingSetFrame) then
     CurrentWorkingFrameIndex := CurrentWorkingSetFrame.Index
   else
@@ -3849,9 +3872,10 @@ end;
 
 procedure TMainForm.PushControlAction(Value: TControlAction);
 begin
-  // Если была автоматика, то не отодвигаем её, а стираем.
-  if NextControlAction in [caPlayBackward, caPlayForward] then
-    NextControlActionStackPosition := 0;
+  // Если была автоматика, а пришло действие, которому надо автоматику отключить, то не отодвигаем её, а стираем.
+  if not (Value in [caPrevFlag, caNextFlag]) then
+    if NextControlAction in [caPlayBackward, caPlayForward] then
+      NextControlActionStackPosition := 0;
 
   if NextControlActionStackPosition = ControlActionStackDeep then
     Beep
