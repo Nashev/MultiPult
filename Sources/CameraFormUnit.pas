@@ -1,4 +1,4 @@
-unit CameraFormUnit;
+п»їunit CameraFormUnit;
 
 {$IFDEF FPC}
   {$MODE Delphi}
@@ -45,7 +45,7 @@ type
     chkOverlay: TCheckBox;
     chkMinimize: TCheckBox;
     tbOpacity: TTrackBar;
-    lblOpacity: TLabel;
+    chkOnionSkin: TCheckBox;
     btnReloadOverlay: TButton;
     btnNextOverlay: TButton;
     btnPrevOverlay: TButton;
@@ -72,6 +72,7 @@ type
     procedure FormKeyPress(Sender: TObject; var Key: Char);
     procedure btnPrevOverlayClick(Sender: TObject);
     procedure btnNextOverlayClick(Sender: TObject);
+    procedure chkOnionSkinClick(Sender: TObject);
   private
     FVideoImage: TVideoImage;
     FVideoBitmap: TBitmap;
@@ -108,6 +109,8 @@ type
     procedure SaveSettings;
     procedure LoadOverlays(AFileName: string);
     procedure UpdateOverlay;
+    function GetOnionSkinEnabled: Boolean;
+    procedure SetOnionSkinEnabled(const Value: Boolean);  public
   public
     property PhotoFolder: string read FPhotoFolder write SetPhotoFolder;
     property OnNewFrame: TNewFrameEvent read FOnNewFrame write FOnNewFrame;
@@ -116,6 +119,7 @@ type
     property imgCamPreview: TImage read FimgCamPreview write SetImgCamPreview;
     property imgOverlay: TImage read FimgOverlay write SetImgOverlay;
     property Active: Boolean read FActive write SetActive;
+    property OnionSkinEnabled: Boolean read GetOnionSkinEnabled write SetOnionSkinEnabled;
     procedure DisablePhotoFolderLookup;
     function MakePhoto(const AFileName: string = ''; const AExtraExt: string = ''): string;
   end;
@@ -132,7 +136,7 @@ uses
 
 procedure TCameraForm.ToggleVisibility(Sender: TObject);
 begin
-  Visible := not Visible; // используется в program WebcamMultFrameCapture;
+  Visible := not Visible; // РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ program WebcamMultFrameCapture;
 end;
 
 procedure TCameraForm.FormCreate(Sender: TObject);
@@ -176,6 +180,7 @@ begin
     LoadOverlays(edtOverlay.Text);
     chkAutoChangeOverlay.Checked := IniFile.ReadBool('LastUsed', 'AutoChangeOverlay', chkAutoChangeOverlay.Checked);
     chkOverlayClick(nil);
+    chkOnionSkin.Checked := IniFile.ReadBool('LastUsed', 'OnionSkinEnamled', chkOnionSkin.Checked);
     tbOpacity.Position := tbOpacity.Max - (IniFile.ReadInteger('LastUsed', 'Opacity', AlphaBlendValue) - tbOpacity.Min);
     seInterval.Value := IniFile.ReadInteger('LastUsed', 'TimeLapseInterval', seInterval.Value);
     cbbUnit.ItemIndex := IniFile.ReadInteger('LastUsed', 'TimeLapseIntervalUnit', cbbUnit.ItemIndex);
@@ -195,7 +200,7 @@ end;
 
 procedure TCameraForm.FormDestroy(Sender: TObject);
 begin
-  // наивные попытки выключить таймер. Но этот всё равно срабатывает в параллельном потоке и иногда падает
+  // РЅР°РёРІРЅС‹Рµ РїРѕРїС‹С‚РєРё РІС‹РєР»СЋС‡РёС‚СЊ С‚Р°Р№РјРµСЂ. РќРѕ СЌС‚РѕС‚ РІСЃС‘ СЂР°РІРЅРѕ СЃСЂР°Р±Р°С‚С‹РІР°РµС‚ РІ РїР°СЂР°Р»Р»РµР»СЊРЅРѕРј РїРѕС‚РѕРєРµ Рё РёРЅРѕРіРґР° РїР°РґР°РµС‚
   TimeLapseTimer.Enabled := False;
   TimeLapseStatusTimer.Enabled := False;
   TimeLapseTimer.OnTimer := nil;
@@ -229,6 +234,7 @@ begin
     IniFile.WriteBool('LastUsed', 'ShowOverlay', imgOverlay.Visible);
     IniFile.WriteString('LastUsed', 'OverlayFile', edtOverlay.Text);
     IniFile.WriteBool('LastUsed', 'AutoChangeOverlay', chkAutoChangeOverlay.Checked);
+    IniFile.WriteBool('LastUsed', 'OnionSkinEnamled', chkOnionSkin.Checked);
     IniFile.WriteInteger('LastUsed', 'Opacity', tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
     //    IniFile.WriteInteger('LastUsed', 'WindowState', Ord(WindowState));
     //    if WindowState = wsNormal then
@@ -252,7 +258,7 @@ end;
 
 procedure TCameraForm.FormKeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key = ' ' then  // пробел
+  if Key = ' ' then  // РїСЂРѕР±РµР»
     btnMakePhotoClick(nil);
 end;
 
@@ -276,7 +282,7 @@ begin
   finally
     VideoBitmapCriticalSection.Leave;
   end;
-  if not Assigned(OnOpacityChanged) and (tbOpacity.Position <> tbOpacity.Min) then
+  if not Assigned(OnOpacityChanged) and chkOnionSkin.Checked and (tbOpacity.Position <> tbOpacity.Min) then
     begin
       TPngImage(imgCamPreview.Picture.Graphic).CreateAlpha;
       FillMemory(
@@ -285,7 +291,7 @@ begin
         tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
     end;
   imgCamPreview.Repaint;
-  TForm(imgCamPreview.Owner).Cursor := crDefault; //  TODO: переделать на нормальное событие с обработчиком
+  TForm(imgCamPreview.Owner).Cursor := crDefault; //  TODO: РїРµСЂРµРґРµР»Р°С‚СЊ РЅР° РЅРѕСЂРјР°Р»СЊРЅРѕРµ СЃРѕР±С‹С‚РёРµ СЃ РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРј
   Screen.Cursor := TForm(imgCamPreview.Owner).Cursor;
 
   LastPreviewFrameTimeStamp := GetTickCount;
@@ -309,7 +315,7 @@ end;
 
 procedure TCameraForm.LookupPhotoFolder(APhotoFolder: string);
 resourcestring
-  rs_SelectPhotoFolderCaption = 'В какую папку сохранять взятые кадры?';
+  rs_SelectPhotoFolderCaption = 'Р’ РєР°РєСѓСЋ РїР°РїРєСѓ СЃРѕС…СЂР°РЅСЏС‚СЊ РІР·СЏС‚С‹Рµ РєР°РґСЂС‹?';
 var
   Directories: TArray<string>;
 begin
@@ -333,9 +339,9 @@ begin
   MakePhoto;
   if chkMinimize.Checked then
     if FCanChangePhotoFolder then
-      Application.MainForm.WindowState := wsMinimized // самостоятельным приложением
+      Application.MainForm.WindowState := wsMinimized // СЃР°РјРѕСЃС‚РѕСЏС‚РµР»СЊРЅС‹Рј РїСЂРёР»РѕР¶РµРЅРёРµРј
     else
-      Active := False; //  в составе МультиПульта
+      Active := False; //  РІ СЃРѕСЃС‚Р°РІРµ РњСѓР»СЊС‚РёРџСѓР»СЊС‚Р°
 end;
 
 procedure TCameraForm.btnNextCamClick(Sender: TObject);
@@ -353,7 +359,7 @@ procedure TCameraForm.btnPreferencesClick(Sender: TObject);
 begin
   if not SUCCEEDED(FVideoImage.ShowVfWCaptureDlg) then
     if not SUCCEEDED(FVideoImage.ShowProperty) then
-      ShowMessage('Параметры открыть не удалось');
+      ShowMessage('РџР°СЂР°РјРµС‚СЂС‹ РѕС‚РєСЂС‹С‚СЊ РЅРµ СѓРґР°Р»РѕСЃСЊ');
 end;
 
 procedure TCameraForm.btnPrevOverlayClick(Sender: TObject);
@@ -473,13 +479,13 @@ begin
         then
           try
             SavedFileName := GetFileContent(PhotoFolder + FFileCommanderDirMonitor.Notifications[i]);
-            DeleteFile(PhotoFolder + FFileCommanderDirMonitor.Notifications[i]); // забрали исполнять
+            DeleteFile(PhotoFolder + FFileCommanderDirMonitor.Notifications[i]); // Р·Р°Р±СЂР°Р»Рё РёСЃРїРѕР»РЅСЏС‚СЊ
 
             if SavedFileName = '' then
               SavedFileName := 'Grabbed';
 
-            SavedFileName := MakePhoto(SavedFileName, '.tmp'); // создаём файл и "постепенно" наполняем содержимым
-            RenameFile(PhotoFolder + SavedFileName, PhotoFolder + ChangeFileExt(SavedFileName, '')); // делаем, чтоб файл с нужным именем появлялся уже наполненным.
+            SavedFileName := MakePhoto(SavedFileName, '.tmp'); // СЃРѕР·РґР°С‘Рј С„Р°Р№Р» Рё "РїРѕСЃС‚РµРїРµРЅРЅРѕ" РЅР°РїРѕР»РЅСЏРµРј СЃРѕРґРµСЂР¶РёРјС‹Рј
+            RenameFile(PhotoFolder + SavedFileName, PhotoFolder + ChangeFileExt(SavedFileName, '')); // РґРµР»Р°РµРј, С‡С‚РѕР± С„Р°Р№Р» СЃ РЅСѓР¶РЅС‹Рј РёРјРµРЅРµРј РїРѕСЏРІР»СЏР»СЃСЏ СѓР¶Рµ РЅР°РїРѕР»РЅРµРЅРЅС‹Рј.
           except
             ;
           end;
@@ -487,15 +493,15 @@ end;
 
 procedure TCameraForm.btnTimeLapseClick(Sender: TObject);
 resourcestring
-  rs_TimeLapseStartButton = 'Брать кадр каждые';
-  rs_TimeLapseStopButton = 'Не брать кадр каждые';
+  rs_TimeLapseStartButton = 'Р‘СЂР°С‚СЊ РєР°РґСЂ РєР°Р¶РґС‹Рµ';
+  rs_TimeLapseStopButton = 'РќРµ Р±СЂР°С‚СЊ РєР°РґСЂ РєР°Р¶РґС‹Рµ';
 begin
   if not TimeLapseTimer.Enabled then
   begin
     case cbbUnit.ItemIndex of
       0: TimeLapseTimer.Interval := seInterval.Value;
       1: if seInterval.Value <= 64 then TimeLapseTimer.Interval := seInterval.Value * 1000 else begin
-        ShowMessage('Поддержка интервалов более 64 секунд пока не сделана.');
+        ShowMessage('РџРѕРґРґРµСЂР¶РєР° РёРЅС‚РµСЂРІР°Р»РѕРІ Р±РѕР»РµРµ 64 СЃРµРєСѓРЅРґ РїРѕРєР° РЅРµ СЃРґРµР»Р°РЅР°.');
         Abort;
       end;
 //      2: TimeLapseTimer.Interval := seInterval.Value * 1000 * 60;
@@ -573,7 +579,7 @@ end;
 
 procedure TCameraForm.StopCamera;
 resourcestring
-  rsPressStart = 'Если камера не включается, '#13#10'нажмите кнопку Пуск в окне управления камерой';
+  rsPressStart = 'Р•СЃР»Рё РєР°РјРµСЂР° РЅРµ РІРєР»СЋС‡Р°РµС‚СЃСЏ, '#13#10'РЅР°Р¶РјРёС‚Рµ РєРЅРѕРїРєСѓ РџСѓСЃРє РІ РѕРєРЅРµ СѓРїСЂР°РІР»РµРЅРёСЏ РєР°РјРµСЂРѕР№';
 var
   StubImage: TPngImage;
 begin
@@ -665,7 +671,7 @@ end;
 
 procedure TCameraForm.DisablePhotoFolderLookup;
 resourcestring
-  rsAndDeactivateCamera = 'И выключить камеру';
+  rsAndDeactivateCamera = 'Р РІС‹РєР»СЋС‡РёС‚СЊ РєР°РјРµСЂСѓ';
 begin
   FCanChangePhotoFolder := False;
   btnFolderLookup.Visible := False;
@@ -697,11 +703,11 @@ begin
 
     if not DirectoryExists(Value) then
       if FileExists(Value) then begin
-        ShowMessage(Format('Вместо папки для сохранения кадров с камеры указан файл "%s". Нужно указать папку.', [Value]));
-        // внутри, если пользователь выберет папку,
-        // этот сеттер будет вызван рекурсивно и там всё сделает,
-        // а если пользователь откажется - то ничего вызвано не будет
-        // и значение у свойтва останется прежним.
+        ShowMessage(Format('Р’РјРµСЃС‚Рѕ РїР°РїРєРё РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ РєР°РґСЂРѕРІ СЃ РєР°РјРµСЂС‹ СѓРєР°Р·Р°РЅ С„Р°Р№Р» "%s". РќСѓР¶РЅРѕ СѓРєР°Р·Р°С‚СЊ РїР°РїРєСѓ.', [Value]));
+        // РІРЅСѓС‚СЂРё, РµСЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІС‹Р±РµСЂРµС‚ РїР°РїРєСѓ,
+        // СЌС‚РѕС‚ СЃРµС‚С‚РµСЂ Р±СѓРґРµС‚ РІС‹Р·РІР°РЅ СЂРµРєСѓСЂСЃРёРІРЅРѕ Рё С‚Р°Рј РІСЃС‘ СЃРґРµР»Р°РµС‚,
+        // Р° РµСЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РѕС‚РєР°Р¶РµС‚СЃСЏ - С‚Рѕ РЅРёС‡РµРіРѕ РІС‹Р·РІР°РЅРѕ РЅРµ Р±СѓРґРµС‚
+        // Рё Р·РЅР°С‡РµРЅРёРµ Сѓ СЃРІРѕР№С‚РІР° РѕСЃС‚Р°РЅРµС‚СЃСЏ РїСЂРµР¶РЅРёРј.
         LookupPhotoFolder(Value);
         Exit;
       end else
@@ -772,7 +778,7 @@ begin
   if (GetTickCount > LastPhotoTimeStamp) and (TimeLapseTimer.Interval > (GetTickCount - LastPhotoTimeStamp))then
     s := IntervalToString(TimeLapseTimer.Interval - (GetTickCount - LastPhotoTimeStamp));
   if s <> '' then
-    s := ' (ждём ' + s + ')';
+    s := ' (Р¶РґС‘Рј ' + s + ')';
 
   lblLapseStatus.Caption := LastFileName + s;
 end;
@@ -786,10 +792,28 @@ begin
     end;
 end;
 
+function TCameraForm.GetOnionSkinEnabled: Boolean;
+begin
+  Result := chkOnionSkin.Checked;
+end;
+
+procedure TCameraForm.SetOnionSkinEnabled(const Value: Boolean);
+begin
+  chkOnionSkin.Checked := Value;
+end;
+
+procedure TCameraForm.chkOnionSkinClick(Sender: TObject);
+begin
+  tbOpacityChange(nil);
+end;
+
 procedure TCameraForm.tbOpacityChange(Sender: TObject);
 begin
   if Assigned(OnOpacityChanged) then
-    OnOpacityChanged(tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min));
+    if chkOnionSkin.Checked then
+      OnOpacityChanged(tbOpacity.Max - (tbOpacity.Position - tbOpacity.Min))
+    else
+      OnOpacityChanged(tbOpacity.Max);
 end;
 
 end.

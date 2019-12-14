@@ -5,7 +5,7 @@ object CameraForm: TCameraForm
   BorderIcons = [biSystemMenu, biMinimize, biMaximize, biHelp]
   BorderStyle = bsToolWindow
   Caption = #1055#1086#1083#1091#1095#1077#1085#1080#1077' '#1082#1072#1076#1088#1086#1074' '#1089' '#1074#1077#1073'-'#1082#1072#1084#1077#1088#1099
-  ClientHeight = 208
+  ClientHeight = 231
   ClientWidth = 680
   Color = clBtnFace
   TransparentColorValue = clBtnFace
@@ -24,7 +24,7 @@ object CameraForm: TCameraForm
   OnResize = FormResize
   DesignSize = (
     680
-    208)
+    231)
   PixelsPerInch = 96
   TextHeight = 13
   object lblCamSelector: TLabel
@@ -43,8 +43,8 @@ object CameraForm: TCameraForm
   end
   object lblLapseStatus: TLabel
     Left = 17
-    Top = 101
-    Width = 3
+    Top = 122
+    Width = 648
     Height = 13
     Caption = ' '
   end
@@ -55,12 +55,14 @@ object CameraForm: TCameraForm
     Height = 13
     Caption = #1042' '#1087#1072#1087#1082#1091':'
   end
-  object lblOpacity: TLabel
-    Left = 17
-    Top = 181
-    Width = 158
-    Height = 13
+  object chkOnionSkin: TCheckBox
+    Left = 10
+    Top = 200
+    Width = 176
+    Height = 17
     Caption = #1055#1088#1086#1079#1088#1072#1095#1085#1086#1089#1090#1100' '#1074#1080#1076#1077#1086' '#1089' '#1082#1072#1084#1077#1088#1099':'
+    TabOrder = 20
+    OnClick = chkOnionSkinClick
   end
   object btnMakePhoto: TButton
     Left = 14
@@ -84,7 +86,7 @@ object CameraForm: TCameraForm
   object btnNextCam: TButton
     Left = 612
     Top = 8
-    Width = 52
+    Width = 53
     Height = 25
     Anchors = [akTop, akRight]
     Caption = #1044#1088#1091#1075#1072#1103
@@ -104,7 +106,7 @@ object CameraForm: TCameraForm
   object btnPreferences: TButton
     Left = 570
     Top = 35
-    Width = 94
+    Width = 95
     Height = 25
     Anchors = [akTop, akRight]
     Caption = #1055#1072#1088#1072#1084#1077#1090#1088#1099
@@ -124,7 +126,7 @@ object CameraForm: TCameraForm
   object cbbUnit: TComboBox
     Left = 503
     Top = 69
-    Width = 59
+    Width = 49
     Height = 21
     ItemIndex = 1
     TabOrder = 7
@@ -172,7 +174,7 @@ object CameraForm: TCameraForm
   end
   object edtOverlay: TComboBox
     Left = 114
-    Top = 122
+    Top = 146
     Width = 450
     Height = 21
     Style = csDropDownList
@@ -189,8 +191,8 @@ object CameraForm: TCameraForm
       'pathToOverlay')
   end
   object btnSelectOverlay: TButton
-    Left = 570
-    Top = 120
+    Left = 565
+    Top = 144
     Width = 25
     Height = 25
     Hint = #1042#1099#1073#1088#1072#1090#1100' '#1092#1072#1081#1083' '#1080#1079#1086#1073#1088#1072#1078#1077#1085#1080#1103' '#1076#1083#1103' '#1088#1072#1079#1084#1077#1090#1082#1080' '#1082#1072#1076#1088#1072'...'
@@ -201,7 +203,7 @@ object CameraForm: TCameraForm
   end
   object chkOverlay: TCheckBox
     Left = 10
-    Top = 123
+    Top = 147
     Width = 98
     Height = 17
     Caption = #1056#1072#1079#1084#1077#1090#1082#1072' '#1082#1072#1076#1088#1072':'
@@ -217,9 +219,9 @@ object CameraForm: TCameraForm
     TabOrder = 16
   end
   object tbOpacity: TTrackBar
-    Left = 181
-    Top = 174
-    Width = 484
+    Left = 184
+    Top = 198
+    Width = 481
     Height = 45
     Anchors = [akLeft, akTop, akRight]
     LineSize = 8
@@ -232,8 +234,8 @@ object CameraForm: TCameraForm
     OnChange = tbOpacityChange
   end
   object btnReloadOverlay: TButton
-    Left = 593
-    Top = 120
+    Left = 590
+    Top = 144
     Width = 25
     Height = 25
     Hint = #1055#1077#1088#1077#1095#1080#1090#1072#1090#1100' '#1092#1072#1081#1083' '#1088#1072#1079#1084#1077#1090#1082#1080' '#1082#1072#1076#1088#1072
@@ -254,7 +256,7 @@ object CameraForm: TCameraForm
   end
   object btnNextOverlay: TButton
     Left = 640
-    Top = 120
+    Top = 144
     Width = 25
     Height = 25
     Hint = #1057#1083#1077#1076#1091#1102#1097#1080#1081' '#1092#1072#1081#1083' '#1088#1072#1079#1084#1077#1090#1082#1080' '#1082#1072#1076#1088#1072
@@ -265,8 +267,8 @@ object CameraForm: TCameraForm
     OnClick = btnNextOverlayClick
   end
   object btnPrevOverlay: TButton
-    Left = 617
-    Top = 120
+    Left = 615
+    Top = 144
     Width = 25
     Height = 25
     Hint = #1055#1088#1077#1076#1099#1076#1091#1097#1080#1081' '#1092#1072#1081#1083' '#1088#1072#1079#1084#1077#1090#1082#1080' '#1082#1072#1076#1088#1072
@@ -278,8 +280,8 @@ object CameraForm: TCameraForm
   end
   object chkAutoChangeOverlay: TCheckBox
     Left = 32
-    Top = 146
-    Width = 632
+    Top = 170
+    Width = 633
     Height = 17
     Caption = #1052#1077#1085#1103#1090#1100' '#1092#1072#1081#1083' '#1088#1072#1079#1084#1077#1090#1082#1080' '#1085#1072' '#1089#1083#1077#1076#1091#1102#1097#1080#1081' '#1087#1088#1080' '#1082#1072#1078#1076#1086#1084' '#1074#1079#1103#1090#1080#1080' '#1082#1072#1076#1088#1072
     TabOrder = 19

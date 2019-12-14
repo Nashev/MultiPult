@@ -75,6 +75,8 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <BT_BuildType>Debug</BT_BuildType>
         <DCC_DebugInfoInTds>true</DCC_DebugInfoInTds>
+        <VerInfo_Release>81</VerInfo_Release>
+        <VerInfo_Keys>CompanyName=МультиСтудия;FileVersion=0.9.81.0;InternalName=WebcamMultFrameCapture;LegalCopyright=МультиСтудия, Москва, 2019;OriginalFilename=WebcamMultFrameCapture.exe;ProductName=Получение кадров с веб-камеры (отдельно от МультиПульта);ProductVersion=0.9</VerInfo_Keys>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">

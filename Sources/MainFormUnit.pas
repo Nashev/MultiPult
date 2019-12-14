@@ -297,7 +297,11 @@ type
     mmiPrevFlag: TMenuItem;
     actNextFlag: TAction;
     mmiNextFlag: TMenuItem;
-    btnToggleCam: TSpeedButton;
+    btnWebCam: TToolButton;
+    btnWebCamSetttings: TToolButton;
+    btnOnionSkin: TToolButton;
+    actToggleOnionSkin: TAction;
+    mmiToggleOnionSkin: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -437,6 +441,9 @@ type
     procedure lvFramesetDblClick(Sender: TObject);
     procedure actPrevFlagUpdate(Sender: TObject);
     procedure actPrevFlagExecute(Sender: TObject);
+    procedure actToggleOnionSkinExecute(Sender: TObject);
+    procedure actToggleOnionSkinUpdate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -945,6 +952,11 @@ begin
   inherited Destroy;
 end;
 
+procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  CameraForm.Active := False;
+end;
+
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 resourcestring
   rs_SaveBeforeExit =
@@ -1037,7 +1049,6 @@ begin
   with btnNext         do ControlStyle := ControlStyle - [csClickEvents];
   with btnPlayBackward do ControlStyle := ControlStyle - [csClickEvents];
   with btnPlayForward  do ControlStyle := ControlStyle - [csClickEvents];
-  with btnToggleCam do Caption := '';
 //  DoubleBuffered := True;
   if ParamCount >= 1 then
     if DirectoryExists(ParamStr(1)) then
@@ -3017,6 +3028,17 @@ begin
     HaveLooperAfter := not HaveLooperAfter;
   pbWorkingSet.Repaint;
   Saved := False;
+end;
+
+procedure TMainForm.actToggleOnionSkinExecute(Sender: TObject);
+begin
+  CameraForm.OnionSkinEnabled := actToggleOnionSkin.Checked;
+end;
+
+procedure TMainForm.actToggleOnionSkinUpdate(Sender: TObject);
+begin
+  actToggleOnionSkin.Enabled := CameraForm.Active;
+  actToggleOnionSkin.Checked := CameraForm.OnionSkinEnabled;
 end;
 
 procedure TMainForm.actToggleTeleport0Execute(Sender: TObject);
