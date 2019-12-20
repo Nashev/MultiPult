@@ -10,8 +10,8 @@ uses
 
 type
   TGifPreviewForm = class(TForm)
-    rgPalette: TRadioGroup;
-    rgDithering: TRadioGroup;
+    edPalette: TComboBox;
+    edDithering: TComboBox;
     pbPalettePreview: TPaintBox;
     imgPreview: TImage;
     grpTransparency: TGroupBox;
@@ -30,6 +30,8 @@ type
     SaveToGIFDialog: TSaveDialog;
     dlgColor: TColorDialog;
     sb: TStatusBar;
+    lblDittering: TLabel;
+    lblPalette: TLabel;
     procedure ParamChanged(Sender: TObject);
     procedure ApplicationEvents1Idle(Sender: TObject; var Done: Boolean);
     procedure btnSaveClick(Sender: TObject);
@@ -184,8 +186,8 @@ end;
 procedure TGifPreviewForm.UpdatePreview;
 begin
   imgPreview.Picture.Graphic := nil;
-  if (rgDithering.ItemIndex = -1) or
-     (rgPalette.ItemIndex = -1) or
+  if (edDithering.ItemIndex = -1) or
+     (edPalette.ItemIndex = -1) or
      (not rbOpacy.Checked and not rbTransparent.Checked) or
      (seWidth.Value = 0) or
      (seHeight.Value = 0)
@@ -194,8 +196,8 @@ begin
   btnSave.Enabled := False;
   FreeAndNil(FGIF);
   FGIF := TGifImage.Create;
-  FGIF.DitherMode := TDitherMode(rgDithering.ItemIndex);
-  FGIF.ColorReduction := TColorReduction(rgPalette.ItemIndex + 1); // skip rmNnone
+  FGIF.DitherMode := TDitherMode(edDithering.ItemIndex);
+  FGIF.ColorReduction := TColorReduction(edPalette.ItemIndex + 1); // skip rmNnone
   FGIF.SetSize(seWidth.Value, seHeight.Value);
   FGIF.OnProgress := GifFrameProgresHandler;
   FGIF.AnimateLoop := glEnabled;

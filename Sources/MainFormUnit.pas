@@ -701,7 +701,7 @@ end;
 procedure TMainForm.actShowCameraControlUpdate(Sender: TObject);
 begin
   actShowCameraControl.Checked := CameraForm.Visible;
-  actShowCameraControl.Enabled := not Exporting and (PhotoFolder <> '');
+  actShowCameraControl.Enabled := CameraForm.Active and not Exporting and (PhotoFolder <> '');
 end;
 
 procedure TMainForm.actShowControllerFormExecute(Sender: TObject);
@@ -873,12 +873,12 @@ end;
 
 procedure TMainForm.actFillByAllFramesExecute(Sender: TObject);
 var
-  FrameInfoIndex, i: Integer;
+  i, k: Integer;
 begin
   actNew.Execute;
-  for FrameInfoIndex := 0 to FFrameInfoList.Count - 1 do
-    for i := 1 to CurrentSpeedInterval do
-      TRecordedFrame.Create(RecordedFrames, FrameInfoIndex);
+  for i := 0 to FWorkingSetFrames.Count - 1 do
+    for k := 1 to CurrentSpeedInterval do
+      TRecordedFrame.Create(RecordedFrames, FWorkingSetFrames[i].FrameInfoIndex);
   Saved := False;
   RepaintAll;
 end;
@@ -1863,6 +1863,7 @@ begin
                     begin
                       Image := FrameInfoList[DisplayedFrameIndex].ImageFromDisc;
                       R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+                      Bmp.Canvas.Brush.Color := clBlack;
                       Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
                       Bmp.Canvas.StretchDraw(R, Image);
                       Image.Free;
@@ -1889,6 +1890,7 @@ begin
             SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
             Image := AdvertisementFrameImage;
             R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+            Bmp.Canvas.Brush.Color := clBlack;
             Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
             Bmp.Canvas.StretchDraw(R, Image);
             Bmp.PixelFormat := pf24bit;
@@ -1959,8 +1961,10 @@ begin
     Screen.Cursor := Cursor;
   end;
   CameraForm.Active := CameraWasNonActive;
-  if FirstTime then
-    actShowCameraControl.Execute;
+  if not CameraForm.Active and CameraForm.Visible then
+    CameraForm.Visible := False;
+  if FirstTime and CameraForm.Active and not CameraForm.Visible then
+    CameraForm.Visible := True;
   RepaintAll;
 end;
 
@@ -2959,6 +2963,8 @@ begin
                 Preview.Width := 640;
                 Preview.Height := 480;
                 {$ENDIF}
+                Preview.Canvas.Brush.Color := clBlack;
+                Preview.Canvas.FillRect(Rect(0, 0, 640, 480));
                 Preview.Canvas.StretchDraw(R, Image);
               end
             else
@@ -2976,6 +2982,8 @@ begin
             Iconic.Width := 64;
             Iconic.Height := 48;
             {$ENDIF}
+            Iconic.Canvas.Brush.Color := clBlack;
+            Iconic.Canvas.FillRect(Rect(0, 0, 64, 48));
             Iconic.Canvas.StretchDraw(R, Image);
 
             ilFrameset.ReplaceMasked(AWorkingSetIndex, Iconic, 0);
@@ -3138,10 +3146,7 @@ begin
       actOpen.Execute
     else if (Button = mbLeft) then
       actSelectPhotoFolder.Execute;
-  end
-  else
-    if CameraForm.Active then
-      CameraForm.Visible := not CameraForm.Visible;
+  end;
 end;
 
 procedure TMainForm.pbDisplayDblClick(Sender: TObject);
@@ -3163,9 +3168,9 @@ var
 begin
 //   Image := nil;
   try
-    pbDisplay.Canvas.Brush.Color := clBlack;
+    pbDisplay.Canvas.Brush.Color := $222222;// clBlack;
     pbDisplay.Canvas.FillRect(pbDisplay.ClientRect);
-    pbDisplay.Canvas.Brush.Color := clBtnFace;
+    pbDisplay.Canvas.Brush.Color := clBlack;//clBtnFace;
 
     if PhotoFolder = '' then
       begin

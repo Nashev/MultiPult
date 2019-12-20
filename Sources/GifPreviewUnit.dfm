@@ -74,12 +74,31 @@ object GifPreviewForm: TGifPreviewForm
     MaxValue = 200
     Progress = 0
   end
-  object rgPalette: TRadioGroup
+  object lblDittering: TLabel
+    Left = 8
+    Top = 38
+    Width = 48
+    Height = 13
+    Caption = 'Dittering: '
+    FocusControl = edDithering
+  end
+  object lblPalette: TLabel
     Left = 8
     Top = 8
-    Width = 320
-    Height = 217
-    Caption = ' Palette '
+    Width = 41
+    Height = 13
+    Caption = 'Palette: '
+    FocusControl = edPalette
+  end
+  object edPalette: TComboBox
+    Left = 59
+    Top = 8
+    Width = 272
+    Height = 21
+    ItemIndex = 0
+    TabOrder = 0
+    Text = 'Windows 20 color'
+    OnClick = ParamChanged
     Items.Strings = (
       'Windows 20 color'
       'Windows 256 color halftone'
@@ -89,15 +108,16 @@ object GifPreviewForm: TGifPreviewForm
       'Netscape 216 color'
       'Optimal 2^n color'
       'Optimal 256 color windows')
-    TabOrder = 0
-    OnClick = ParamChanged
   end
-  object rgDithering: TRadioGroup
-    Left = 8
-    Top = 231
-    Width = 320
-    Height = 194
-    Caption = ' Dithering '
+  object edDithering: TComboBox
+    Left = 59
+    Top = 35
+    Width = 272
+    Height = 21
+    ItemIndex = 0
+    TabOrder = 1
+    Text = 'Nearest color matching w/o error correction'
+    OnClick = ParamChanged
     Items.Strings = (
       'Nearest color matching w/o error correction'
       'Floyd Steinberg'
@@ -106,8 +126,6 @@ object GifPreviewForm: TGifPreviewForm
       'Jarvis, Judice & Ninke'
       'Stevenson & Arche'
       'Burkes')
-    TabOrder = 1
-    OnClick = ParamChanged
   end
   object grpTransparency: TGroupBox
     Left = 8
@@ -176,7 +194,6 @@ object GifPreviewForm: TGifPreviewForm
     Enabled = False
     TabOrder = 5
     OnClick = btnSaveClick
-    ExplicitLeft = 716
   end
   object sb: TStatusBar
     Left = 0
@@ -184,14 +201,11 @@ object GifPreviewForm: TGifPreviewForm
     Width = 939
     Height = 19
     Panels = <>
-    ExplicitLeft = 480
-    ExplicitTop = 344
-    ExplicitWidth = 0
   end
   object ApplicationEvents1: TApplicationEvents
     OnIdle = ApplicationEvents1Idle
-    Left = 280
-    Top = 56
+    Left = 792
+    Top = 80
   end
   object SaveToGIFDialog: TSaveDialog
     DefaultExt = '.gif'

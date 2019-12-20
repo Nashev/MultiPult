@@ -44,9 +44,11 @@ object CameraForm: TCameraForm
   object lblLapseStatus: TLabel
     Left = 17
     Top = 122
-    Width = 648
+    Width = 315
     Height = 13
-    Caption = ' '
+    Caption = 
+      '- auto capture status: last file name and waiting till next capt' +
+      'ure -'
   end
   object lblFolder: TLabel
     Left = 17
