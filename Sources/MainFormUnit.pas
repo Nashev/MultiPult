@@ -257,6 +257,8 @@ type
     mmiOpenHelp: TMenuItem;
     mmiStopRecordingOnSoundtrackFinish: TMenuItem;
     lblWorkPath: TLabel;
+    mmiRemoveRecordedFrame: TMenuItem;
+    actRemoveRecordedFrame: TAction;
     N5: TMenuItem;
     actReplaceInMovie: TAction;
     mmiReplaceInMovie: TMenuItem;
@@ -441,13 +443,14 @@ type
     procedure lvFramesetDblClick(Sender: TObject);
     procedure actPrevFlagUpdate(Sender: TObject);
     procedure actPrevFlagExecute(Sender: TObject);
+    procedure actRemoveRecordedFrameExecute(Sender: TObject);
+    procedure actRemoveRecordedFrameUpdate(Sender: TObject);
     procedure actToggleOnionSkinExecute(Sender: TObject);
     procedure actToggleOnionSkinUpdate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
-    SettingsChanged: Boolean;
     ExportCancelled: Boolean;
     //CameraWaiting: Boolean; // TODO: сделать событие про отрисовку кадра с камеры и обработчик тут для него
     function NextControlAction: TControlAction;
@@ -588,6 +591,7 @@ type
 
 var
   MainForm: TMainForm;
+  SettingsChanged: Boolean;
 
 var
   FrameRate: byte = 25;
@@ -3125,7 +3129,10 @@ end;
 
 procedure TMainForm.actReplaceInMovieExecute(Sender: TObject);
 begin
-  RecordedFrames[CurrentRecordPosition].FrameInfoIndex := CurrentWorkingSetFrame.FrameInfoIndex;
+  if CurrentRecordPosition = RecordedFrames.Count then
+    TRecordedFrame.Create(RecordedFrames, CurrentWorkingSetFrame.FrameInfoIndex)
+  else
+    RecordedFrames[CurrentRecordPosition].FrameInfoIndex := CurrentWorkingSetFrame.FrameInfoIndex;
   ChangeCurrentRecordPosition(CurrentRecordPosition + 1, False);
   Saved := False;
   RepaintAll;
@@ -3134,7 +3141,7 @@ end;
 
 procedure TMainForm.actReplaceInMovieUpdate(Sender: TObject);
 begin
-  actReplaceInMovie.Enabled := not Exporting and not AdvertisementShowing and (CurrentRecordPosition <> -1) and (CurrentRecordPosition < RecordedFrames.Count) and Assigned(CurrentWorkingSetFrame)
+  actReplaceInMovie.Enabled := not Exporting and (CurrentRecordPosition <> -1) and (CurrentRecordPosition <= RecordedFrames.Count) and Assigned(CurrentWorkingSetFrame)
 end;
 
 procedure TMainForm.pbDisplayMouseUp(Sender: TObject; Button: TMouseButton;
@@ -4809,6 +4816,21 @@ begin
   FFrameInfoIndex := AFrameInfoIndex;
 end;
 
+procedure TMainForm.actRemoveRecordedFrameExecute(Sender: TObject);
+begin
+  RecordedFrames[RecordedFrames.Count - 1].Free;
+  if CurrentRecordPosition = RecordedFrames.Count then
+    ChangeCurrentRecordPosition(CurrentRecordPosition - 1, False);
+  Saved := False;
+  RepaintAll;
+  ShowTimes;
+end;
+
+procedure TMainForm.actRemoveRecordedFrameUpdate(Sender: TObject);
+begin
+  actRemoveRecordedFrame.Enabled := not Exporting and (RecordedFrames.Count > 0);
+end;
+
 procedure TMainForm.actSelectAudioFileUpdate(Sender: TObject);
 begin
   actSelectAudioFile.Enabled := not Exporting and (PhotoFolder <> '');
@@ -4913,6 +4935,7 @@ begin
     end;
     IniFile.WriteBool('LastUsed', 'MainWindowMaximized', WindowState = wsMaximized);
     IniFile.WriteInteger('LastUsed', 'RightPaneSize', RecordSplitter.Parent.ClientWidth - RecordSplitter.Left);
+    GifPreviewForm.SaveSettings(IniFile);
   finally
     IniFile.Free;
   end;
@@ -4934,6 +4957,7 @@ begin
     if IniFile.ReadBool('LastUsed', 'MainWindowMaximized', False) then
       WindowState := wsMaximized;
     RecordSplitter.Left  := RecordSplitter.Parent.ClientWidth - IniFile.ReadInteger('LastUsed', 'RightPaneSize', RecordSplitter.Parent.ClientWidth - RecordSplitter.Left);
+    GifPreviewForm.LoadSettings(IniFile);
   finally
     IniFile.Free;
   end;

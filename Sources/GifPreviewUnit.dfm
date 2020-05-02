@@ -13,6 +13,7 @@ object GifPreviewForm: TGifPreviewForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  ShowHint = True
   OnDestroy = FormDestroy
   DesignSize = (
     939
@@ -21,15 +22,15 @@ object GifPreviewForm: TGifPreviewForm
   TextHeight = 13
   object pbPalettePreview: TPaintBox
     Left = 8
-    Top = 503
-    Width = 320
+    Top = 128
+    Width = 324
     Height = 80
     OnPaint = pbPalettePreviewPaint
   end
   object imgPreview: TImage
-    Left = 334
+    Left = 338
     Top = 36
-    Width = 596
+    Width = 592
     Height = 547
     Anchors = [akLeft, akTop, akRight, akBottom]
     Center = True
@@ -37,22 +38,22 @@ object GifPreviewForm: TGifPreviewForm
     Stretch = True
   end
   object lblSize: TLabel
-    Left = 337
-    Top = 8
+    Left = 477
+    Top = 11
     Width = 19
     Height = 13
     Caption = 'Size'
   end
   object lblSizeX: TLabel
-    Left = 437
-    Top = 8
+    Left = 577
+    Top = 11
     Width = 6
     Height = 13
     Caption = 'x'
   end
   object lblSizePX: TLabel
-    Left = 520
-    Top = 8
+    Left = 660
+    Top = 11
     Width = 27
     Height = 13
     Caption = 'pixels'
@@ -90,6 +91,28 @@ object GifPreviewForm: TGifPreviewForm
     Caption = 'Palette: '
     FocusControl = edPalette
   end
+  object lblBits: TLabel
+    Left = 341
+    Top = 11
+    Width = 61
+    Height = 13
+    Caption = 'Bits per pixel'
+  end
+  object lblLoopCount: TLabel
+    Left = 733
+    Top = 11
+    Width = 58
+    Height = 13
+    Caption = 'Loops count'
+  end
+  object lblWarnings: TLabel
+    Left = 8
+    Top = 286
+    Width = 52
+    Height = 13
+    Caption = 'Warnings: '
+    FocusControl = edDithering
+  end
   object edPalette: TComboBox
     Left = 59
     Top = 8
@@ -110,7 +133,7 @@ object GifPreviewForm: TGifPreviewForm
       'Optimal 256 color windows')
   end
   object edDithering: TComboBox
-    Left = 59
+    Left = 60
     Top = 35
     Width = 272
     Height = 21
@@ -129,8 +152,8 @@ object GifPreviewForm: TGifPreviewForm
   end
   object grpTransparency: TGroupBox
     Left = 8
-    Top = 432
-    Width = 320
+    Top = 57
+    Width = 324
     Height = 65
     Caption = ' Transparency '
     TabOrder = 2
@@ -162,9 +185,9 @@ object GifPreviewForm: TGifPreviewForm
       OnClick = ParamChanged
     end
   end
-  object seWidth: TSpinEdit
-    Left = 362
-    Top = 5
+  object edWidth: TSpinEdit
+    Left = 502
+    Top = 8
     Width = 65
     Height = 22
     MaxValue = 100000
@@ -173,9 +196,9 @@ object GifPreviewForm: TGifPreviewForm
     Value = 0
     OnChange = ParamChanged
   end
-  object seHeight: TSpinEdit
-    Left = 449
-    Top = 5
+  object edHeight: TSpinEdit
+    Left = 589
+    Top = 8
     Width = 65
     Height = 22
     MaxValue = 100000
@@ -202,6 +225,41 @@ object GifPreviewForm: TGifPreviewForm
     Height = 19
     Panels = <>
   end
+  object mmoWarnings: TMemo
+    Left = 11
+    Top = 302
+    Width = 321
+    Height = 281
+    TabStop = False
+    Color = clBtnFace
+    ReadOnly = True
+    ScrollBars = ssBoth
+    TabOrder = 7
+    WordWrap = False
+  end
+  object edBits: TSpinEdit
+    Left = 406
+    Top = 8
+    Width = 35
+    Height = 22
+    MaxValue = 8
+    MinValue = 3
+    TabOrder = 8
+    Value = 8
+    OnChange = ParamChanged
+  end
+  object edLoopCount: TSpinEdit
+    Left = 798
+    Top = 8
+    Width = 35
+    Height = 22
+    Hint = 'Set 0 for infinite loop'
+    MaxValue = 1000000
+    MinValue = 0
+    TabOrder = 9
+    Value = 0
+    OnChange = ParamChanged
+  end
   object ApplicationEvents1: TApplicationEvents
     OnIdle = ApplicationEvents1Idle
     Left = 792
@@ -216,6 +274,6 @@ object GifPreviewForm: TGifPreviewForm
   end
   object dlgColor: TColorDialog
     Left = 136
-    Top = 432
+    Top = 68
   end
 end

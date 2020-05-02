@@ -8704,6 +8704,12 @@ object MainForm: TMainForm
       OnExecute = actToggleOnionSkinExecute
       OnUpdate = actToggleOnionSkinUpdate
     end
+    object actRemoveRecordedFrame: TAction
+      Caption = #1059#1076#1072#1083#1080#1090#1100' '#1087#1086#1089#1083#1077#1076#1085#1080#1081' '#1082#1072#1076#1088' '#1074' '#1079#1072#1087#1080#1089#1072#1085#1085#1086#1084' '#1084#1091#1083#1100#1090#1077
+      ShortCut = 46
+      OnExecute = actRemoveRecordedFrameExecute
+      OnUpdate = actRemoveRecordedFrameUpdate
+    end
   end
   object MainMenu: TMainMenu
     Images = ilActions
@@ -8959,6 +8965,9 @@ object MainForm: TMainForm
       end
       object mmiReplaceInMovie: TMenuItem
         Action = actReplaceInMovie
+      end
+      object mmiRemoveRecordedFrame: TMenuItem
+        Action = actRemoveRecordedFrame
       end
       object N5: TMenuItem
         Caption = '-'
