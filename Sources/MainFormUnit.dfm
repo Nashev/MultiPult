@@ -9112,6 +9112,10 @@ object MainForm: TMainForm
         Checked = True
         OnClick = mmiShowNeighbourFramesClick
       end
+      object mmiDisableAdvertisement: TMenuItem
+        Caption = #1053#1077' '#1074#1082#1083#1102#1095#1072#1090#1100' '#1074' '#1082#1086#1085#1094#1077' '#1082#1072#1076#1088' '#1087#1088#1086' '#1052#1091#1083#1100#1090#1080#1055#1091#1083#1100#1090' '#1074' '#1086#1095#1077#1088#1077#1076#1085#1086#1081' '#1101#1082#1089#1087#1086#1088#1090
+        OnClick = mmiDisableAdvertisementClick
+      end
       object mmiShowControllerForm: TMenuItem
         Action = actShowControllerForm
         AutoCheck = True

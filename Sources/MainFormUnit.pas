@@ -304,6 +304,7 @@ type
     btnOnionSkin: TToolButton;
     actToggleOnionSkin: TAction;
     mmiToggleOnionSkin: TMenuItem;
+    mmiDisableAdvertisement: TMenuItem;
     procedure actSelectPhotoFolderClick(Sender: TObject);
     procedure actStepNextExecute(Sender: TObject);
     procedure actStepPrevExecute(Sender: TObject);
@@ -448,6 +449,7 @@ type
     procedure actToggleOnionSkinExecute(Sender: TObject);
     procedure actToggleOnionSkinUpdate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure mmiDisableAdvertisementClick(Sender: TObject);
   private
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
@@ -566,6 +568,7 @@ type
   public
     AdvertisementFrameImagePreview: TBitmap;
     AdvertisementShowing: Boolean;
+    AdvertisementEnabled: Boolean;
     AdvertisementDuration: Integer;
     ExportSize: TSize;
     AutoMovementStopped: Boolean;
@@ -768,6 +771,7 @@ begin
   inherited Create(AOwner);
   CurrentSpeedInterval := 3;
   AdvertisementDuration := 2000; // msec
+  AdvertisementEnabled := True;
   Saved := True;
   FFrameInfoList := TObjectList.Create(True);
   FRecordedFrames := TRecordedFrameList.Create;
@@ -937,6 +941,15 @@ begin
   pbWorkingSet.Repaint;
 end;
 
+procedure TMainForm.mmiDisableAdvertisementClick(Sender: TObject);
+begin
+  AdvertisementEnabled := False;
+  if AdvertisementShowing then
+    ChangeCurrentRecordPosition(RecordedFrames.Count - 1)
+  else
+    pbRecord.Repaint;
+end;
+
 function TMainForm.NextControlAction: TControlAction;
 begin
   if NextControlActionStackPosition >= 1 then
@@ -1019,8 +1032,8 @@ begin
   // на случай, если что-то пойдёт не так
   VersionNameString := '0.9.???';
   VersionCopyrightString := 'МультиСтудия, Москва, 20??';
-
   TakeVersionInfo;
+
   for i := Low(Bookmarks) to High(Bookmarks) do
     AppendBookmarkMenu(i);
 
@@ -1134,8 +1147,14 @@ end;
 
 procedure TMainForm.ChangeCurrentRecordPosition(ANewRecordPosition: Integer; AChangeDisplayedFrame: Boolean = True);
 begin
-  if ANewRecordPosition > RecordedFrames.Count then
-    ANewRecordPosition := RecordedFrames.Count;
+  if AdvertisementEnabled then
+  begin
+    if ANewRecordPosition > RecordedFrames.Count then
+      ANewRecordPosition := RecordedFrames.Count;
+  end else begin
+    if ANewRecordPosition >= RecordedFrames.Count then
+      ANewRecordPosition := RecordedFrames.Count - 1;
+  end;
   if ANewRecordPosition < 0 then
     ANewRecordPosition := 0;
 
@@ -1747,7 +1766,9 @@ begin
         AdvertisementShowing := True;
         RepaintAll;
         Application.ProcessMessages;
-        AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.bmp', [RecordedFrames.Count]));
+        if AdvertisementEnabled then
+          AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.bmp', [RecordedFrames.Count]));
+        AdvertisementEnabled := True;
         InfoMsg('Экспорт завершён.');
       finally
         Exporting := False;
@@ -1891,27 +1912,31 @@ begin
                     end;
                 end;
               end;
-            SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
-            Image := AdvertisementFrameImage;
-            R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
-            Bmp.Canvas.Brush.Color := clBlack;
-            Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
-            Bmp.Canvas.StretchDraw(R, Image);
-            Bmp.PixelFormat := pf24bit;
-            CurrentRecordPosition := RecordedFrames.Count;
-            pbRecord.Repaint;
-            SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
-            Application.ProcessMessages;
-            if ExportCancelled then
-              Abort;
-            for i := 1 to AdvertisementDuration div FrameRate do
+            if AdvertisementEnabled then
             begin
-              SetProgress(RecordedFrames.Count + i, RecordedFrames.Count + AdvertisementDuration div FrameRate);
-              CheckAVIError(Compressor.WriteFrame(Bmp));
+              SetProgress(RecordedFrames.Count, RecordedFrames.Count + AdvertisementDuration div FrameRate);
+              Image := AdvertisementFrameImage;
+              R := StretchSize(Image.Width, Image.Height, Bmp.Width, Bmp.Height);
+              Bmp.Canvas.Brush.Color := clBlack;
+              Bmp.Canvas.FillRect(Bmp.Canvas.ClipRect);
+              Bmp.Canvas.StretchDraw(R, Image);
+              Bmp.PixelFormat := pf24bit;
+              CurrentRecordPosition := RecordedFrames.Count;
+              pbRecord.Repaint;
+              SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
               Application.ProcessMessages;
               if ExportCancelled then
                 Abort;
+              for i := 1 to AdvertisementDuration div FrameRate do
+              begin
+                SetProgress(RecordedFrames.Count + i, RecordedFrames.Count + AdvertisementDuration div FrameRate);
+                CheckAVIError(Compressor.WriteFrame(Bmp));
+                Application.ProcessMessages;
+                if ExportCancelled then
+                  Abort;
+              end;
             end;
+            AdvertisementEnabled := True;
           finally
             Bmp.Free;
           end;
@@ -3637,34 +3662,37 @@ begin
     ) do
       pbRecord.Canvas.Ellipse(x-2, y-2, x+3, y+3);
 
-  // border of advertisement frames
-  R.Left   := R.Left   - FramesBorderSize;
-  R.Right  := R.Right  + FramesBorderSize;
-  R.Top := R.Bottom + FramesBorderSize + FragmentsGap;
-  R.Bottom := R.Top + imgAdvertisementThumbnail.Height + FramesBorderSize + FramesBorderSize;
-  pbRecord.Canvas.Pen.Color := clBlack;
+  if AdvertisementEnabled then
+  begin
+    // border of advertisement frames
+    R.Left   := R.Left   - FramesBorderSize;
+    R.Right  := R.Right  + FramesBorderSize;
+    R.Top := R.Bottom + FramesBorderSize + FragmentsGap;
+    R.Bottom := R.Top + imgAdvertisementThumbnail.Height + FramesBorderSize + FramesBorderSize;
+    pbRecord.Canvas.Pen.Color := clBlack;
 
-  if AdvertisementShowing then
-    pbRecord.Canvas.Pen.Width := 2
-  else
-    pbRecord.Canvas.Pen.Width := 1;
+    if AdvertisementShowing then
+      pbRecord.Canvas.Pen.Width := 2
+    else
+      pbRecord.Canvas.Pen.Width := 1;
 
-  pbRecord.Canvas.Pen.Style := psSolid;
-  pbRecord.Canvas.Brush.Color := clBtnFace;
-  // Inc(TopOfMainRecord, R.Height);
-  pbRecord.Canvas.RoundRect(R.Left + pbRecord.Canvas.Pen.Width div 2, R.Top + pbRecord.Canvas.Pen.Width div 2, R.Right, R.Bottom, FramesBorderSize, FramesBorderSize);
-  R.Left   := R.Left   + FramesBorderSize;
-  R.Top    := R.Top    + FramesBorderSize;
-  R.Right  := R.Right  - FramesBorderSize;
-  R.Bottom := R.Bottom - FramesBorderSize;
-  AdvertisementFrameBottom := R.Bottom;
-  pbRecord.Canvas.Brush.Color := clWindow;
-  pbRecord.Canvas.FillRect(R);
-  pbRecord.Canvas.Draw(
-    R.Left + Max(0, (DataWidth - imgAdvertisementThumbnail.Width) div 2),
-    R.Top + 1,
-    imgAdvertisementThumbnail.Picture.Graphic
-  );
+    pbRecord.Canvas.Pen.Style := psSolid;
+    pbRecord.Canvas.Brush.Color := clBtnFace;
+    // Inc(TopOfMainRecord, R.Height);
+    pbRecord.Canvas.RoundRect(R.Left + pbRecord.Canvas.Pen.Width div 2, R.Top + pbRecord.Canvas.Pen.Width div 2, R.Right, R.Bottom, FramesBorderSize, FramesBorderSize);
+    R.Left   := R.Left   + FramesBorderSize;
+    R.Top    := R.Top    + FramesBorderSize;
+    R.Right  := R.Right  - FramesBorderSize;
+    R.Bottom := R.Bottom - FramesBorderSize;
+    AdvertisementFrameBottom := R.Bottom;
+    pbRecord.Canvas.Brush.Color := clWindow;
+    pbRecord.Canvas.FillRect(R);
+    pbRecord.Canvas.Draw(
+      R.Left + Max(0, (DataWidth - imgAdvertisementThumbnail.Width) div 2),
+      R.Top + 1,
+      imgAdvertisementThumbnail.Picture.Graphic
+    );
+  end;
 
   // Tail of sound
   pbRecord.Canvas.Pen.Color := clMoneyGreen;
