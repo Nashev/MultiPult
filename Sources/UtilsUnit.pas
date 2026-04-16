@@ -1,4 +1,4 @@
-unit UtilsUnit;
+п»їunit UtilsUnit;
 
 interface
 
@@ -15,9 +15,9 @@ implementation
 uses Windows, SysUtils, Forms, Classes;
 
 resourcestring
-  rs_Byte1 = ' байт';
-  rs_Byte2 = ' байта';
-  rs_Byte5 = ' байт';
+  rs_Byte1 = ' Р±Р°Р№С‚';
+  rs_Byte2 = ' Р±Р°Р№С‚Р°';
+  rs_Byte5 = ' Р±Р°Р№С‚';
 
 function FormatFileSize(ASize: Int64; AShowUnits: Boolean = True): string;
 var
@@ -25,9 +25,9 @@ var
 begin
   Result := IntToStr(ASize);
 
-  // расставляем разделители тысячных разрядов
-  // трюк: последние три считать по одному не надо (можно пропустить сразу),
-  // и перед первым пробел не нужен
+  // СЂР°СЃСЃС‚Р°РІР»СЏРµРј СЂР°Р·РґРµР»РёС‚РµР»Рё С‚С‹СЃСЏС‡РЅС‹С… СЂР°Р·СЂСЏРґРѕРІ
+  // С‚СЂСЋРє: РїРѕСЃР»РµРґРЅРёРµ С‚СЂРё СЃС‡РёС‚Р°С‚СЊ РїРѕ РѕРґРЅРѕРјСѓ РЅРµ РЅР°РґРѕ (РјРѕР¶РЅРѕ РїСЂРѕРїСѓСЃС‚РёС‚СЊ СЃСЂР°Р·Сѓ),
+  // Рё РїРµСЂРµРґ РїРµСЂРІС‹Рј РїСЂРѕР±РµР» РЅРµ РЅСѓР¶РµРЅ
   j := 3;
   for i := Length(Result) - 2 downto 2 do
     if j < 3 then
@@ -40,7 +40,7 @@ begin
   if not AShowUnits then
     Exit;
 
-  if (Length(Result) > 1) and (Result[Length(Result) - 1] = '1') then // *11..*19 байт
+  if (Length(Result) > 1) and (Result[Length(Result) - 1] = '1') then // *11..*19 Р±Р°Р№С‚
     Result := Result + rs_Byte5
   else
     case Ord(Result[Length(Result)]) - Ord('1') + 1 of
@@ -95,7 +95,7 @@ var
   Copyright: Pointer;
 begin
   VersionInfoBuffer := nil;
-  // пробуем получить от файла:
+  // РїСЂРѕР±СѓРµРј РїРѕР»СѓС‡РёС‚СЊ РѕС‚ С„Р°Р№Р»Р°:
   FileName := AppFileName;
   VersionInfoSize := GetFileVersionInfoSize(PWideChar(FileName), VersionInfoHandle);
   if VersionInfoSize > 0 then

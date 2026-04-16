@@ -1,4 +1,4 @@
-program MultiPult;
+ï»¿program MultiPult;
 
 {$IFDEF FPC}
   {$MODE Delphi}
@@ -43,7 +43,7 @@ uses
 {$R *.res}
 
 resourcestring
-  rs_AppCaption = 'ÌóëüòèÏóëüò';
+  rs_AppCaption = 'ĞœÑƒĞ»ÑŒÑ‚Ğ¸ĞŸÑƒĞ»ÑŒÑ‚';
 
 begin
   Application.Initialize;

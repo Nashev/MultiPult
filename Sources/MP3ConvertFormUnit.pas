@@ -1,4 +1,4 @@
-unit MP3ConvertFormUnit;
+п»їunit MP3ConvertFormUnit;
 
 interface
 
@@ -38,7 +38,7 @@ end;
 
 class function TMP3ConvertForm.Execute(AMP3FileName, AWavFileName: string): Boolean;
 resourcestring
-   rs_MP3toWAVconvert = 'Конвертация выбранного MP3 в WAV в папку с фотографиями:';
+   rs_MP3toWAVconvert = 'РљРѕРЅРІРµСЂС‚Р°С†РёСЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ MP3 РІ WAV РІ РїР°РїРєСѓ СЃ С„РѕС‚РѕРіСЂР°С„РёСЏРјРё:';
 begin
   with Create(rs_MP3toWAVconvert, AMP3FileName, AWavFileName, nil) do
     try

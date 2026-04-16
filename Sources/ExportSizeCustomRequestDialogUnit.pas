@@ -1,4 +1,4 @@
-unit ExportSizeCustomRequestDialogUnit;
+п»їunit ExportSizeCustomRequestDialogUnit;
 
 interface
 
@@ -74,7 +74,7 @@ end;
 procedure TExportSizeCustomRequestDialog.seKeyDown(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
-  // само у кнопок по Default и Cancel выславленным в True не работает. Видимо, SpinEdit перехватывает (
+  // СЃР°РјРѕ Сѓ РєРЅРѕРїРѕРє РїРѕ Default Рё Cancel РІС‹СЃС‚Р°РІР»РµРЅРЅС‹Рј РІ True РЅРµ СЂР°Р±РѕС‚Р°РµС‚. Р’РёРґРёРјРѕ, SpinEdit РїРµСЂРµС…РІР°С‚С‹РІР°РµС‚ (
   if (Key = VK_RETURN) then
     ModalResult := mrOk
   else if (Key = VK_ESCAPE) then

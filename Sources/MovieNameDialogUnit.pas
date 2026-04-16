@@ -1,4 +1,4 @@
-unit MovieNameDialogUnit;
+п»їunit MovieNameDialogUnit;
 
 interface
 
@@ -119,7 +119,7 @@ end;
 
 procedure TMovieNameDialog.mmiDeleteClick(Sender: TObject);
 resourcestring
-  rs_DoYouWantDeleteMovies = 'Удалить выделенные мульты (%d шт)?';
+  rs_DoYouWantDeleteMovies = 'РЈРґР°Р»РёС‚СЊ РІС‹РґРµР»РµРЅРЅС‹Рµ РјСѓР»СЊС‚С‹ (%d С€С‚)?';
 var
   Op: TSHFileOpStruct;
   s: string;

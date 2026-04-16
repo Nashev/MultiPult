@@ -1,4 +1,4 @@
-unit ScreenFormUnit;
+п»їunit ScreenFormUnit;
 
 interface
 
@@ -191,19 +191,19 @@ end;
 procedure TScreenForm.btnAboutClick(Sender: TObject);
 resourcestring
   rs_AboutText =
-    'Версия %s'#13#10 +
-    'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
-    'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
-    'в лице Евгения Генриховича Кабакова'#13#10 +
+    'Р’РµСЂСЃРёСЏ %s'#13#10 +
+    'РђРІС‚РѕСЂ: РР»СЊСЏ РќРµРЅР°С€РµРІ (http://innenashev.narod.ru)'#13#10 +
+    'РїРѕ Р·Р°РєР°Р·Сѓ РњСѓР»СЊС‚РёРЎС‚СѓРґРёРё (http://multistudia.ru)'#13#10 +
+    'РІ Р»РёС†Рµ Р•РІРіРµРЅРёСЏ Р“РµРЅСЂРёС…РѕРІРёС‡Р° РљР°Р±Р°РєРѕРІР°'#13#10 +
     ''#13#10 +
-    'Исходный код программы доступен для просмотра и доработок'#13#10 +
-    'по адресу https://github.com/Nashev/MultiPult'#13#10 +
+    'РСЃС…РѕРґРЅС‹Р№ РєРѕРґ РїСЂРѕРіСЂР°РјРјС‹ РґРѕСЃС‚СѓРїРµРЅ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° Рё РґРѕСЂР°Р±РѕС‚РѕРє'#13#10 +
+    'РїРѕ Р°РґСЂРµСЃСѓ https://github.com/Nashev/MultiPult'#13#10 +
     ''#13#10 +
-    'Неочевидное: создание в папке для фоток файла с именем grab приводит к съёму очередного кадра, и файл grab сразу удаляется.'#13#10 +
-    'Если в файле grab записана строчка, то она берётся как имя для снятого кадра. Иначе - кадр записывается в Grabbed.png'#13#10 +
-    'Поддерживаются подстановки %%timestamp%% и %%unique%%.'#13#10 +
+    'РќРµРѕС‡РµРІРёРґРЅРѕРµ: СЃРѕР·РґР°РЅРёРµ РІ РїР°РїРєРµ РґР»СЏ С„РѕС‚РѕРє С„Р°Р№Р»Р° СЃ РёРјРµРЅРµРј grab РїСЂРёРІРѕРґРёС‚ Рє СЃСЉС‘РјСѓ РѕС‡РµСЂРµРґРЅРѕРіРѕ РєР°РґСЂР°, Рё С„Р°Р№Р» grab СЃСЂР°Р·Сѓ СѓРґР°Р»СЏРµС‚СЃСЏ.'#13#10 +
+    'Р•СЃР»Рё РІ С„Р°Р№Р»Рµ grab Р·Р°РїРёСЃР°РЅР° СЃС‚СЂРѕС‡РєР°, С‚Рѕ РѕРЅР° Р±РµСЂС‘С‚СЃСЏ РєР°Рє РёРјСЏ РґР»СЏ СЃРЅСЏС‚РѕРіРѕ РєР°РґСЂР°. РРЅР°С‡Рµ - РєР°РґСЂ Р·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РІ Grabbed.png'#13#10 +
+    'РџРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ РїРѕРґСЃС‚Р°РЅРѕРІРєРё %%timestamp%% Рё %%unique%%.'#13#10 +
     ''#13#10 +
-    '(А Вы знаете, что Ctrl+C в подобных окошках работает?)';
+    '(Рђ Р’С‹ Р·РЅР°РµС‚Рµ, С‡С‚Рѕ Ctrl+C РІ РїРѕРґРѕР±РЅС‹С… РѕРєРѕС€РєР°С… СЂР°Р±РѕС‚Р°РµС‚?)';
 begin
   InfoMsg(
     Application.Title + #13#10 +
@@ -219,7 +219,7 @@ end;
 procedure TScreenForm.DoCloseQueryScreenForm(Sender: TObject;
   var CanClose: Boolean);
 resourcestring
-  rs_DoYouWantCloseGrabber = 'Закрыть программу?';
+  rs_DoYouWantCloseGrabber = 'Р—Р°РєСЂС‹С‚СЊ РїСЂРѕРіСЂР°РјРјСѓ?';
 begin
   CanClose := MessageBox(
     0,
@@ -279,7 +279,7 @@ begin
       Self.Canvas.FillRect(Rect(0,       0,        Self.ClientWidth, R.Top            ));
       Self.Canvas.FillRect(Rect(0,       R.Bottom, Self.ClientWidth, Self.ClientHeight));
     except
-      ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
+      ; // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РіР»СѓС€РёРј РѕС€РёР±РєРё СЂРёСЃРѕРІР°РЅРёСЏ, РїРѕС‚РѕРјСѓ С‡С‚Рѕ РѕРЅРё РЅРµРїРѕРЅСЏС‚РЅРѕ РѕС‚РєСѓРґР° Р»РµР·СѓС‚
     end
   else
     begin
@@ -372,7 +372,7 @@ begin
 
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
-    if (WindowState = wsNormal) and not FullScreen then // развёрнутый размер не интересен для сохранения
+    if (WindowState = wsNormal) and not FullScreen then // СЂР°Р·РІС‘СЂРЅСѓС‚С‹Р№ СЂР°Р·РјРµСЂ РЅРµ РёРЅС‚РµСЂРµСЃРµРЅ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ
     begin
       IniFile.WriteInteger('LastUsed', 'ScreenWindowLeft', Left);
       IniFile.WriteInteger('LastUsed', 'ScreenWindowTop', Top);

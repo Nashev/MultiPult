@@ -1,4 +1,4 @@
-unit MainFormUnit;
+п»їunit MainFormUnit;
 
 {$IFDEF FPC}
   {$MODE Delphi}
@@ -454,7 +454,7 @@ type
     NextControlActionStack: array [1..ControlActionStackDeep] of TControlAction;
     NextControlActionStackPosition: Integer;
     ExportCancelled: Boolean;
-    //CameraWaiting: Boolean; // TODO: сделать событие про отрисовку кадра с камеры и обработчик тут для него
+    //CameraWaiting: Boolean; // TODO: СЃРґРµР»Р°С‚СЊ СЃРѕР±С‹С‚РёРµ РїСЂРѕ РѕС‚СЂРёСЃРѕРІРєСѓ РєР°РґСЂР° СЃ РєР°РјРµСЂС‹ Рё РѕР±СЂР°Р±РѕС‚С‡РёРє С‚СѓС‚ РґР»СЏ РЅРµРіРѕ
     function NextControlAction: TControlAction;
     procedure PopControlAction;
     procedure PushControlAction(Value: TControlAction);
@@ -486,18 +486,18 @@ type
       );
   private
     Bookmarks: array [0..19] of Integer; // TODO: move to TRecordedFrame(List) (?)
-     // RecordedAudioCopy - рисуемая копия звука. По мере записи мульта пополняется из AudioRecorder
-     // копиями очередных порций записываемого им себе звука.
-     // При открытии старой записи инициализируется копией загруженного в WaveStorage звука.
-     // По завершении записи в WaveStorage копируется звук, записанный
-     // в AudioRecorder-е и так WaveStorage догоняет RecordedAudioCopy.
-     // При воспроизведении проигрывается WaveStorage при помощи StockAudioPlayer
-     // Паралельно всему этому всё время работает LiveAudioRecorder
-     // на отображение уровня звука в статусе.
+     // RecordedAudioCopy - СЂРёСЃСѓРµРјР°СЏ РєРѕРїРёСЏ Р·РІСѓРєР°. РџРѕ РјРµСЂРµ Р·Р°РїРёСЃРё РјСѓР»СЊС‚Р° РїРѕРїРѕР»РЅСЏРµС‚СЃСЏ РёР· AudioRecorder
+     // РєРѕРїРёСЏРјРё РѕС‡РµСЂРµРґРЅС‹С… РїРѕСЂС†РёР№ Р·Р°РїРёСЃС‹РІР°РµРјРѕРіРѕ РёРј СЃРµР±Рµ Р·РІСѓРєР°.
+     // РџСЂРё РѕС‚РєСЂС‹С‚РёРё СЃС‚Р°СЂРѕР№ Р·Р°РїРёСЃРё РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚СЃСЏ РєРѕРїРёРµР№ Р·Р°РіСЂСѓР¶РµРЅРЅРѕРіРѕ РІ WaveStorage Р·РІСѓРєР°.
+     // РџРѕ Р·Р°РІРµСЂС€РµРЅРёРё Р·Р°РїРёСЃРё РІ WaveStorage РєРѕРїРёСЂСѓРµС‚СЃСЏ Р·РІСѓРє, Р·Р°РїРёСЃР°РЅРЅС‹Р№
+     // РІ AudioRecorder-Рµ Рё С‚Р°Рє WaveStorage РґРѕРіРѕРЅСЏРµС‚ RecordedAudioCopy.
+     // РџСЂРё РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРё РїСЂРѕРёРіСЂС‹РІР°РµС‚СЃСЏ WaveStorage РїСЂРё РїРѕРјРѕС‰Рё StockAudioPlayer
+     // РџР°СЂР°Р»РµР»СЊРЅРѕ РІСЃРµРјСѓ СЌС‚РѕРјСѓ РІСЃС‘ РІСЂРµРјСЏ СЂР°Р±РѕС‚Р°РµС‚ LiveAudioRecorder
+     // РЅР° РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ СѓСЂРѕРІРЅСЏ Р·РІСѓРєР° РІ СЃС‚Р°С‚СѓСЃРµ.
     RecordedAudioCopy: TMemoryStream;
-    // Посчитанные относительно заранее ширины полосочек для рисуемого звука.
-    // Это как RecordedAudioCopy, только уже усреднённое по отрезкам времени,
-    // готовое для отрисовки
+    // РџРѕСЃС‡РёС‚Р°РЅРЅС‹Рµ РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ Р·Р°СЂР°РЅРµРµ С€РёСЂРёРЅС‹ РїРѕР»РѕСЃРѕС‡РµРє РґР»СЏ СЂРёСЃСѓРµРјРѕРіРѕ Р·РІСѓРєР°.
+    // Р­С‚Рѕ РєР°Рє RecordedAudioCopy, С‚РѕР»СЊРєРѕ СѓР¶Рµ СѓСЃСЂРµРґРЅС‘РЅРЅРѕРµ РїРѕ РѕС‚СЂРµР·РєР°Рј РІСЂРµРјРµРЅРё,
+    // РіРѕС‚РѕРІРѕРµ РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё
     RecordedAudioLines: TList<Integer>;
     pbRecordOffset: Integer;
     OutOfMemoryRaised: Boolean;
@@ -615,7 +615,7 @@ end;
 
 function TMainForm.CheckBeforeOpenAudio: Boolean;
 resourcestring
-  rs_SaveAudioBeforeOpenRequest = 'Хотите сохранить записанную озвучку перед подключением готовой?';
+  rs_SaveAudioBeforeOpenRequest = 'РҐРѕС‚РёС‚Рµ СЃРѕС…СЂР°РЅРёС‚СЊ Р·Р°РїРёСЃР°РЅРЅСѓСЋ РѕР·РІСѓС‡РєСѓ РїРµСЂРµРґ РїРѕРґРєР»СЋС‡РµРЅРёРµРј РіРѕС‚РѕРІРѕР№?';
 begin
   Stop;
   Result := True;
@@ -647,7 +647,7 @@ end;
 
 procedure TMainForm.SaveBeforeClose(const APurpose: string);
 resourcestring
-  rs_SaveMovieBeforeSomethingRequest = 'Хотите сохранить текущий мульт перед ';
+  rs_SaveMovieBeforeSomethingRequest = 'РҐРѕС‚РёС‚Рµ СЃРѕС…СЂР°РЅРёС‚СЊ С‚РµРєСѓС‰РёР№ РјСѓР»СЊС‚ РїРµСЂРµРґ ';
 begin
   if (RecordedFrames.Count > 0) and not Saved then
     case MessageDlg(
@@ -671,8 +671,8 @@ var
   NewPhotoFolder: string;
   Directories: TArray<string>;
 resourcestring
-  rs_SelectPhotoFolderCaption = 'В какой папке хранить мульт, озвучку и искать/сохранять кадры?';
-  rs_SaveBeforeChooseFolderRequest = 'созданием нового';
+  rs_SelectPhotoFolderCaption = 'Р’ РєР°РєРѕР№ РїР°РїРєРµ С…СЂР°РЅРёС‚СЊ РјСѓР»СЊС‚, РѕР·РІСѓС‡РєСѓ Рё РёСЃРєР°С‚СЊ/СЃРѕС…СЂР°РЅСЏС‚СЊ РєР°РґСЂС‹?';
+  rs_SaveBeforeChooseFolderRequest = 'СЃРѕР·РґР°РЅРёРµРј РЅРѕРІРѕРіРѕ';
 begin
   Stop;
   SaveBeforeClose(rs_SaveBeforeChooseFolderRequest);
@@ -757,7 +757,7 @@ begin
   if FileExists(FileName) then
     SafeShellExecute(HWND(nil), 'open', 'explorer', '/select,"' + FileName + '"', '', SW_SHOW)
   else
-    InfoMsg('Файл "' + FileName + '" не существует.');
+    InfoMsg('Р¤Р°Р№Р» "' + FileName + '" РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.');
 end;
 
 procedure TMainForm.actShowFrameInExplorerExecute(Sender: TObject);
@@ -802,9 +802,9 @@ end;
 procedure TMainForm.CreateAdvertisementFrame;
 
 resourcestring
-  rs_AdFrame1 = 'Фильм собран из отдельных кадров и озвучен';
-  rs_AdFrame2 = 'при помощи общедоступной программы МультиПульт';
-  rs_AdFrame3 = 'версии %s (%s)';
+  rs_AdFrame1 = 'Р¤РёР»СЊРј СЃРѕР±СЂР°РЅ РёР· РѕС‚РґРµР»СЊРЅС‹С… РєР°РґСЂРѕРІ Рё РѕР·РІСѓС‡РµРЅ';
+  rs_AdFrame2 = 'РїСЂРё РїРѕРјРѕС‰Рё РѕР±С‰РµРґРѕСЃС‚СѓРїРЅРѕР№ РїСЂРѕРіСЂР°РјРјС‹ РњСѓР»СЊС‚РёРџСѓР»СЊС‚';
+  rs_AdFrame3 = 'РІРµСЂСЃРёРё %s (%s)';
   rs_AdFrame4 = 'http://MultiStudia.ru';
 
 var
@@ -977,9 +977,9 @@ end;
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 resourcestring
   rs_SaveBeforeExit =
-    'Вы закрываете программу, в то время как записанный Вами мультик ещё не сохранён.'#13#10+
-    'Если его не сохранить сейчас, то он пропадёт.'#13#10+
-    'Желаете его сохранить, прежде чем закрыть программу?';
+    'Р’С‹ Р·Р°РєСЂС‹РІР°РµС‚Рµ РїСЂРѕРіСЂР°РјРјСѓ, РІ С‚Рѕ РІСЂРµРјСЏ РєР°Рє Р·Р°РїРёСЃР°РЅРЅС‹Р№ Р’Р°РјРё РјСѓР»СЊС‚РёРє РµС‰С‘ РЅРµ СЃРѕС…СЂР°РЅС‘РЅ.'#13#10+
+    'Р•СЃР»Рё РµРіРѕ РЅРµ СЃРѕС…СЂР°РЅРёС‚СЊ СЃРµР№С‡Р°СЃ, С‚Рѕ РѕРЅ РїСЂРѕРїР°РґС‘С‚.'#13#10+
+    'Р–РµР»Р°РµС‚Рµ РµРіРѕ СЃРѕС…СЂР°РЅРёС‚СЊ, РїСЂРµР¶РґРµ С‡РµРј Р·Р°РєСЂС‹С‚СЊ РїСЂРѕРіСЂР°РјРјСѓ?';
 begin
   Stop;
 
@@ -1029,9 +1029,9 @@ var
   end;
 
 begin
-  // на случай, если что-то пойдёт не так
+  // РЅР° СЃР»СѓС‡Р°Р№, РµСЃР»Рё С‡С‚Рѕ-С‚Рѕ РїРѕР№РґС‘С‚ РЅРµ С‚Р°Рє
   VersionNameString := '0.9.???';
-  VersionCopyrightString := 'МультиСтудия, Москва, 20??';
+  VersionCopyrightString := 'РњСѓР»СЊС‚РёРЎС‚СѓРґРёСЏ, РњРѕСЃРєРІР°, 20??';
   TakeVersionInfo;
 
   for i := Low(Bookmarks) to High(Bookmarks) do
@@ -1045,7 +1045,7 @@ begin
     LiveAudioRecorder.Active := True;
     LiveAudioRecorder.WaitForStart;
   except
-    // глушим ошибку, если микрофона нет
+    // РіР»СѓС€РёРј РѕС€РёР±РєСѓ, РµСЃР»Рё РјРёРєСЂРѕС„РѕРЅР° РЅРµС‚
   end;
 
   pnlDisplay.DoubleBuffered := True;
@@ -1073,7 +1073,7 @@ begin
     else
       OpenMovie(ParamStr(1));
   imgCamPreview.Picture.Graphic.Width := 1;
-  // инициализируем разрешение при экспорте по умолчанию.
+  // РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЂР°Р·СЂРµС€РµРЅРёРµ РїСЂРё СЌРєСЃРїРѕСЂС‚Рµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.
   mmiExportResolutionVGA.Click;
   Saved := True;
 end;
@@ -1102,8 +1102,8 @@ var
   FileCount: Integer;
   FileName: array [0..MAX_PATH] of Char;
 resourcestring
-  rs_SaveBeforeChooseFolderRequest = 'созданием нового в другой папке кадров';
-  rs_SaveBeforeOpenRequest = 'открытием другого';
+  rs_SaveBeforeChooseFolderRequest = 'СЃРѕР·РґР°РЅРёРµРј РЅРѕРІРѕРіРѕ РІ РґСЂСѓРіРѕР№ РїР°РїРєРµ РєР°РґСЂРѕРІ';
+  rs_SaveBeforeOpenRequest = 'РѕС‚РєСЂС‹С‚РёРµРј РґСЂСѓРіРѕРіРѕ';
 begin
   Stop;
 
@@ -1192,8 +1192,8 @@ begin
       case Key of
         vk_Left:   begin PushControlAction(caStepBackward); KeyPressBlocked := True; end;
         vk_Right:  begin PushControlAction(caStepForward); KeyPressBlocked := True; end;
-        VK_ESCAPE: if actFullScreenMode.Checked then actFullScreenMode.Execute; // TODO: что ещё тут стоит прерывать эскейпом?
-        VK_SHIFT, VK_CAPITAL:  pbWorkingSet.Repaint; // телепорты выключаются
+        VK_ESCAPE: if actFullScreenMode.Checked then actFullScreenMode.Execute; // TODO: С‡С‚Рѕ РµС‰С‘ С‚СѓС‚ СЃС‚РѕРёС‚ РїСЂРµСЂС‹РІР°С‚СЊ СЌСЃРєРµР№РїРѕРј?
+        VK_SHIFT, VK_CAPITAL:  pbWorkingSet.Repaint; // С‚РµР»РµРїРѕСЂС‚С‹ РІС‹РєР»СЋС‡Р°СЋС‚СЃСЏ
       end;
 
   UpdatePlayActions;
@@ -1203,9 +1203,9 @@ end;
 procedure TMainForm.FormKeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  KeyPressBlocked := False; // Отпускаем блокировку обработку автоповтора зажатой клавиши. TODO: разблокировать не любую клавишу, а ту, что блокировали. Чтоб не разблокировать, например, шаг вправо при отпускании чего-то другого.
+  KeyPressBlocked := False; // РћС‚РїСѓСЃРєР°РµРј Р±Р»РѕРєРёСЂРѕРІРєСѓ РѕР±СЂР°Р±РѕС‚РєСѓ Р°РІС‚РѕРїРѕРІС‚РѕСЂР° Р·Р°Р¶Р°С‚РѕР№ РєР»Р°РІРёС€Рё. TODO: СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РЅРµ Р»СЋР±СѓСЋ РєР»Р°РІРёС€Сѓ, Р° С‚Сѓ, С‡С‚Рѕ Р±Р»РѕРєРёСЂРѕРІР°Р»Рё. Р§С‚РѕР± РЅРµ СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ, РЅР°РїСЂРёРјРµСЂ, С€Р°Рі РІРїСЂР°РІРѕ РїСЂРё РѕС‚РїСѓСЃРєР°РЅРёРё С‡РµРіРѕ-С‚Рѕ РґСЂСѓРіРѕРіРѕ.
   case Key of
-    VK_SHIFT, VK_CAPITAL: pbWorkingSet.Repaint; // телепорты включаются
+    VK_SHIFT, VK_CAPITAL: pbWorkingSet.Repaint; // С‚РµР»РµРїРѕСЂС‚С‹ РІРєР»СЋС‡Р°СЋС‚СЃСЏ
   end;
 //  pbIndicator.Refresh;
 end;
@@ -1337,27 +1337,27 @@ function CompareFramesFileName(Item1, Item2: Pointer): Integer;
     i := 1;
     while (s1[i] <> #0) and (s2[i] <> #0) do
       begin
-        // останавливаемся на первом не одинаковом символе
+        // РѕСЃС‚Р°РЅР°РІР»РёРІР°РµРјСЃСЏ РЅР° РїРµСЂРІРѕРј РЅРµ РѕРґРёРЅР°РєРѕРІРѕРј СЃРёРјРІРѕР»Рµ
         if (s1[i] <> s2[i]) then
           begin
             PosDif := i;
-            // Если хоть один из отличающихся символов - цифра, значит возможно попали в число, и ситуация не однозначна
+            // Р•СЃР»Рё С…РѕС‚СЊ РѕРґРёРЅ РёР· РѕС‚Р»РёС‡Р°СЋС‰РёС…СЃСЏ СЃРёРјРІРѕР»РѕРІ - С†РёС„СЂР°, Р·РЅР°С‡РёС‚ РІРѕР·РјРѕР¶РЅРѕ РїРѕРїР°Р»Рё РІ С‡РёСЃР»Рѕ, Рё СЃРёС‚СѓР°С†РёСЏ РЅРµ РѕРґРЅРѕР·РЅР°С‡РЅР°
             if CharInSet(s1[PosDif], ['0'..'9']) or CharInSet(s2[PosDif], ['0'..'9']) then
-              // Если предыдущие одинаковые символы были цифры - откатываемся к началу этого блока цифр
-              // то есть, к началу первого встреченного неодинакового числа.
-              // Раньше по тексту могли быть другие, одинаковые, числа, но они в этом сравнении роли не сыграют.
-              // Сложные случаи:
-              //   img1001.jpg > img101.jpg отличается 3-й знак числа, у первого он меньше, но меньше второе число
-              //   img0002.jpg > img001.jpg отличается 3-й знак числа, у первого он меньше, но меньше второе число
-              //   img1012.jpg > img101.jpg отличается 4-й знак числа, у второго имени на этом месте не цифра
-              //   img10a.jpg > img10b.jpg цифры не отличаются, но отличается дальнейший текст
-              //   img010a.jpg > img10b.jpg числа по значению не отличаются, но отличается дальнейший текст
-              //   img010a1.jpg > img10a02.jpg первые числа по отличаются по сути, но не по значению, а в дальнейшем тексте отличаются числа.
-              //   img010.jpg > img10.jpg числа по значению не отличаются, и не отличается дальнейший текст, но порядок задать надо бы хоть как-то, но стабильно и однозначно
-              // Из-за варианта fld010\img1.jpg > fld10\img02.jpg, где первые числа
-              // отличаются по сути, но не по значению, а в дальнейшем тексте отличаются числа,
-              // но папки уже разные, и смешивать их содержимое не надо бы,
-              // ниже сравниваем папки без имён их содержимого, отрезав его через CopyTillSlash.
+              // Р•СЃР»Рё РїСЂРµРґС‹РґСѓС‰РёРµ РѕРґРёРЅР°РєРѕРІС‹Рµ СЃРёРјРІРѕР»С‹ Р±С‹Р»Рё С†РёС„СЂС‹ - РѕС‚РєР°С‚С‹РІР°РµРјСЃСЏ Рє РЅР°С‡Р°Р»Сѓ СЌС‚РѕРіРѕ Р±Р»РѕРєР° С†РёС„СЂ
+              // С‚Рѕ РµСЃС‚СЊ, Рє РЅР°С‡Р°Р»Сѓ РїРµСЂРІРѕРіРѕ РІСЃС‚СЂРµС‡РµРЅРЅРѕРіРѕ РЅРµРѕРґРёРЅР°РєРѕРІРѕРіРѕ С‡РёСЃР»Р°.
+              // Р Р°РЅСЊС€Рµ РїРѕ С‚РµРєСЃС‚Сѓ РјРѕРіР»Рё Р±С‹С‚СЊ РґСЂСѓРіРёРµ, РѕРґРёРЅР°РєРѕРІС‹Рµ, С‡РёСЃР»Р°, РЅРѕ РѕРЅРё РІ СЌС‚РѕРј СЃСЂР°РІРЅРµРЅРёРё СЂРѕР»Рё РЅРµ СЃС‹РіСЂР°СЋС‚.
+              // РЎР»РѕР¶РЅС‹Рµ СЃР»СѓС‡Р°Рё:
+              //   img1001.jpg > img101.jpg РѕС‚Р»РёС‡Р°РµС‚СЃСЏ 3-Р№ Р·РЅР°Рє С‡РёСЃР»Р°, Сѓ РїРµСЂРІРѕРіРѕ РѕРЅ РјРµРЅСЊС€Рµ, РЅРѕ РјРµРЅСЊС€Рµ РІС‚РѕСЂРѕРµ С‡РёСЃР»Рѕ
+              //   img0002.jpg > img001.jpg РѕС‚Р»РёС‡Р°РµС‚СЃСЏ 3-Р№ Р·РЅР°Рє С‡РёСЃР»Р°, Сѓ РїРµСЂРІРѕРіРѕ РѕРЅ РјРµРЅСЊС€Рµ, РЅРѕ РјРµРЅСЊС€Рµ РІС‚РѕСЂРѕРµ С‡РёСЃР»Рѕ
+              //   img1012.jpg > img101.jpg РѕС‚Р»РёС‡Р°РµС‚СЃСЏ 4-Р№ Р·РЅР°Рє С‡РёСЃР»Р°, Сѓ РІС‚РѕСЂРѕРіРѕ РёРјРµРЅРё РЅР° СЌС‚РѕРј РјРµСЃС‚Рµ РЅРµ С†РёС„СЂР°
+              //   img10a.jpg > img10b.jpg С†РёС„СЂС‹ РЅРµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ, РЅРѕ РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РґР°Р»СЊРЅРµР№С€РёР№ С‚РµРєСЃС‚
+              //   img010a.jpg > img10b.jpg С‡РёСЃР»Р° РїРѕ Р·РЅР°С‡РµРЅРёСЋ РЅРµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ, РЅРѕ РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РґР°Р»СЊРЅРµР№С€РёР№ С‚РµРєСЃС‚
+              //   img010a1.jpg > img10a02.jpg РїРµСЂРІС‹Рµ С‡РёСЃР»Р° РїРѕ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ РїРѕ СЃСѓС‚Рё, РЅРѕ РЅРµ РїРѕ Р·РЅР°С‡РµРЅРёСЋ, Р° РІ РґР°Р»СЊРЅРµР№С€РµРј С‚РµРєСЃС‚Рµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ С‡РёСЃР»Р°.
+              //   img010.jpg > img10.jpg С‡РёСЃР»Р° РїРѕ Р·РЅР°С‡РµРЅРёСЋ РЅРµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ, Рё РЅРµ РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РґР°Р»СЊРЅРµР№С€РёР№ С‚РµРєСЃС‚, РЅРѕ РїРѕСЂСЏРґРѕРє Р·Р°РґР°С‚СЊ РЅР°РґРѕ Р±С‹ С…РѕС‚СЊ РєР°Рє-С‚Рѕ, РЅРѕ СЃС‚Р°Р±РёР»СЊРЅРѕ Рё РѕРґРЅРѕР·РЅР°С‡РЅРѕ
+              // РР·-Р·Р° РІР°СЂРёР°РЅС‚Р° fld010\img1.jpg > fld10\img02.jpg, РіРґРµ РїРµСЂРІС‹Рµ С‡РёСЃР»Р°
+              // РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ РїРѕ СЃСѓС‚Рё, РЅРѕ РЅРµ РїРѕ Р·РЅР°С‡РµРЅРёСЋ, Р° РІ РґР°Р»СЊРЅРµР№С€РµРј С‚РµРєСЃС‚Рµ РѕС‚Р»РёС‡Р°СЋС‚СЃСЏ С‡РёСЃР»Р°,
+              // РЅРѕ РїР°РїРєРё СѓР¶Рµ СЂР°Р·РЅС‹Рµ, Рё СЃРјРµС€РёРІР°С‚СЊ РёС… СЃРѕРґРµСЂР¶РёРјРѕРµ РЅРµ РЅР°РґРѕ Р±С‹,
+              // РЅРёР¶Рµ СЃСЂР°РІРЅРёРІР°РµРј РїР°РїРєРё Р±РµР· РёРјС‘РЅ РёС… СЃРѕРґРµСЂР¶РёРјРѕРіРѕ, РѕС‚СЂРµР·Р°РІ РµРіРѕ С‡РµСЂРµР· CopyTillSlash.
               while (PosDif > 1) and CharInSet(s1[PosDif - 1], ['0'..'9']) do
                 dec(PosDif);
             Break;
@@ -1366,34 +1366,34 @@ function CompareFramesFileName(Item1, Item2: Pointer): Integer;
           Inc(i);
       end;
 
-    // если до конца одной из строк не нашлось различий, то PosDif остался 0.
+    // РµСЃР»Рё РґРѕ РєРѕРЅС†Р° РѕРґРЅРѕР№ РёР· СЃС‚СЂРѕРє РЅРµ РЅР°С€Р»РѕСЃСЊ СЂР°Р·Р»РёС‡РёР№, С‚Рѕ PosDif РѕСЃС‚Р°Р»СЃСЏ 0.
     if PosDif = 0 then
     begin
-      if (s1[i] = #0) and (s2[i] = #0) then // кончились обе одновременно - значит, равны
+      if (s1[i] = #0) and (s2[i] = #0) then // РєРѕРЅС‡РёР»РёСЃСЊ РѕР±Рµ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ - Р·РЅР°С‡РёС‚, СЂР°РІРЅС‹
         Exit(0)
-      else if s1[i] = #0 then // кончилась первая, вторая ещё нет, значит вторая больше
+      else if s1[i] = #0 then // РєРѕРЅС‡РёР»Р°СЃСЊ РїРµСЂРІР°СЏ, РІС‚РѕСЂР°СЏ РµС‰С‘ РЅРµС‚, Р·РЅР°С‡РёС‚ РІС‚РѕСЂР°СЏ Р±РѕР»СЊС€Рµ
         Exit(-1)
       else
-        Exit(1); // кончилась вторая, значит первая больше.
+        Exit(1); // РєРѕРЅС‡РёР»Р°СЃСЊ РІС‚РѕСЂР°СЏ, Р·РЅР°С‡РёС‚ РїРµСЂРІР°СЏ Р±РѕР»СЊС€Рµ.
     end;
 
-    // если хоть куда-то ушагали и где-то остановились, то смотрим, не числа ли оттуда начались
+    // РµСЃР»Рё С…РѕС‚СЊ РєСѓРґР°-С‚Рѕ СѓС€Р°РіР°Р»Рё Рё РіРґРµ-С‚Рѕ РѕСЃС‚Р°РЅРѕРІРёР»РёСЃСЊ, С‚Рѕ СЃРјРѕС‚СЂРёРј, РЅРµ С‡РёСЃР»Р° Р»Рё РѕС‚С‚СѓРґР° РЅР°С‡Р°Р»РёСЃСЊ
     if CharInSet(s1[PosDif], ['0'..'9']) and CharInSet(s2[PosDif], ['0'..'9']) then
       begin
         PosDif1 := PosDif;
         PosDif2 := PosDif;
         Result := ExtractInt(s1, PosDif1) - ExtractInt(s2, PosDif2);
-        // Числа могут оказаться одинаковые, но по-разному написанные,
-        // например, с разным количеством ведущих нулей.
-        // В этом случае нужно сравнить остаток строки (до ближайшего '\', если он есть
-        //   - см. ниже пример про fld010\img1.jpg > fld10\img02.jpg!),
-        // а если там отличия не надётся, то пытаться найти более тонкое отличие в найденных числах.
-        // Можно сравнить в них количество знаков, для начала.
-        // Порядок получается такой:
-        // 1аа
-        // 01аа // число как у 1аа, конец не различается, но больше знаков в числе
-        // 1ав  // число как у 1аа и 01аа, но строка дальше - больше, чем аа
-        // 01вв // число как у всех, а строка - ещё больше, чем у всех.
+        // Р§РёСЃР»Р° РјРѕРіСѓС‚ РѕРєР°Р·Р°С‚СЊСЃСЏ РѕРґРёРЅР°РєРѕРІС‹Рµ, РЅРѕ РїРѕ-СЂР°Р·РЅРѕРјСѓ РЅР°РїРёСЃР°РЅРЅС‹Рµ,
+        // РЅР°РїСЂРёРјРµСЂ, СЃ СЂР°Р·РЅС‹Рј РєРѕР»РёС‡РµСЃС‚РІРѕРј РІРµРґСѓС‰РёС… РЅСѓР»РµР№.
+        // Р’ СЌС‚РѕРј СЃР»СѓС‡Р°Рµ РЅСѓР¶РЅРѕ СЃСЂР°РІРЅРёС‚СЊ РѕСЃС‚Р°С‚РѕРє СЃС‚СЂРѕРєРё (РґРѕ Р±Р»РёР¶Р°Р№С€РµРіРѕ '\', РµСЃР»Рё РѕРЅ РµСЃС‚СЊ
+        //   - СЃРј. РЅРёР¶Рµ РїСЂРёРјРµСЂ РїСЂРѕ fld010\img1.jpg > fld10\img02.jpg!),
+        // Р° РµСЃР»Рё С‚Р°Рј РѕС‚Р»РёС‡РёСЏ РЅРµ РЅР°РґС‘С‚СЃСЏ, С‚Рѕ РїС‹С‚Р°С‚СЊСЃСЏ РЅР°Р№С‚Рё Р±РѕР»РµРµ С‚РѕРЅРєРѕРµ РѕС‚Р»РёС‡РёРµ РІ РЅР°Р№РґРµРЅРЅС‹С… С‡РёСЃР»Р°С….
+        // РњРѕР¶РЅРѕ СЃСЂР°РІРЅРёС‚СЊ РІ РЅРёС… РєРѕР»РёС‡РµСЃС‚РІРѕ Р·РЅР°РєРѕРІ, РґР»СЏ РЅР°С‡Р°Р»Р°.
+        // РџРѕСЂСЏРґРѕРє РїРѕР»СѓС‡Р°РµС‚СЃСЏ С‚Р°РєРѕР№:
+        // 1Р°Р°
+        // 01Р°Р° // С‡РёСЃР»Рѕ РєР°Рє Сѓ 1Р°Р°, РєРѕРЅРµС† РЅРµ СЂР°Р·Р»РёС‡Р°РµС‚СЃСЏ, РЅРѕ Р±РѕР»СЊС€Рµ Р·РЅР°РєРѕРІ РІ С‡РёСЃР»Рµ
+        // 1Р°РІ  // С‡РёСЃР»Рѕ РєР°Рє Сѓ 1Р°Р° Рё 01Р°Р°, РЅРѕ СЃС‚СЂРѕРєР° РґР°Р»СЊС€Рµ - Р±РѕР»СЊС€Рµ, С‡РµРј Р°Р°
+        // 01РІРІ // С‡РёСЃР»Рѕ РєР°Рє Сѓ РІСЃРµС…, Р° СЃС‚СЂРѕРєР° - РµС‰С‘ Р±РѕР»СЊС€Рµ, С‡РµРј Сѓ РІСЃРµС….
         if Result = 0 then
           Result := CompareStringWithInt(CopyTillSlash(s1, PosDif1), CopyTillSlash(s2, PosDif2));
         if Result = 0 then
@@ -1401,13 +1401,13 @@ function CompareFramesFileName(Item1, Item2: Pointer): Integer;
         Assert(Result <> 0, 'Need to find more differences in "' + s1 + '" and "' + s2 + '"');
       end
     else
-      // если хоть одно не число, то сравню как строки, по правилам сравнения
-      // имён файлов, с учётом текущей кодовой страницы (но без региональной регистрозависимости,
-      // так как уже на входе был применён AnsUpperCase)
-      // и можно с начала строк, до отличия функция и сама доберётся быстрее,
-      // чем если тут одинаковое начало отрезать у двух строк
-      // однако, разделители папок в пути должны иметь приоритет перед любыми
-      // символами, типа пробелов, например, поэтому меняю их на 1-ый символ.
+      // РµСЃР»Рё С…РѕС‚СЊ РѕРґРЅРѕ РЅРµ С‡РёСЃР»Рѕ, С‚Рѕ СЃСЂР°РІРЅСЋ РєР°Рє СЃС‚СЂРѕРєРё, РїРѕ РїСЂР°РІРёР»Р°Рј СЃСЂР°РІРЅРµРЅРёСЏ
+      // РёРјС‘РЅ С„Р°Р№Р»РѕРІ, СЃ СѓС‡С‘С‚РѕРј С‚РµРєСѓС‰РµР№ РєРѕРґРѕРІРѕР№ СЃС‚СЂР°РЅРёС†С‹ (РЅРѕ Р±РµР· СЂРµРіРёРѕРЅР°Р»СЊРЅРѕР№ СЂРµРіРёСЃС‚СЂРѕР·Р°РІРёСЃРёРјРѕСЃС‚Рё,
+      // С‚Р°Рє РєР°Рє СѓР¶Рµ РЅР° РІС…РѕРґРµ Р±С‹Р» РїСЂРёРјРµРЅС‘РЅ AnsUpperCase)
+      // Рё РјРѕР¶РЅРѕ СЃ РЅР°С‡Р°Р»Р° СЃС‚СЂРѕРє, РґРѕ РѕС‚Р»РёС‡РёСЏ С„СѓРЅРєС†РёСЏ Рё СЃР°РјР° РґРѕР±РµСЂС‘С‚СЃСЏ Р±С‹СЃС‚СЂРµРµ,
+      // С‡РµРј РµСЃР»Рё С‚СѓС‚ РѕРґРёРЅР°РєРѕРІРѕРµ РЅР°С‡Р°Р»Рѕ РѕС‚СЂРµР·Р°С‚СЊ Сѓ РґРІСѓС… СЃС‚СЂРѕРє
+      // РѕРґРЅР°РєРѕ, СЂР°Р·РґРµР»РёС‚РµР»Рё РїР°РїРѕРє РІ РїСѓС‚Рё РґРѕР»Р¶РЅС‹ РёРјРµС‚СЊ РїСЂРёРѕСЂРёС‚РµС‚ РїРµСЂРµРґ Р»СЋР±С‹РјРё
+      // СЃРёРјРІРѕР»Р°РјРё, С‚РёРїР° РїСЂРѕР±РµР»РѕРІ, РЅР°РїСЂРёРјРµСЂ, РїРѕСЌС‚РѕРјСѓ РјРµРЅСЏСЋ РёС… РЅР° 1-С‹Р№ СЃРёРјРІРѕР».
       Result := AnsiCompareFileName(StringReplace(s1, '\', #1, [rfReplaceAll]), StringReplace(s2, '\', #1, [rfReplaceAll]));
   end;
 
@@ -1432,7 +1432,7 @@ end;
 procedure TMainForm.LoadPhotoFolder;
 
 resourcestring
-  rs_ScaningStatus = 'Чтение папки: ';
+  rs_ScaningStatus = 'Р§С‚РµРЅРёРµ РїР°РїРєРё: ';
 
   procedure InternalLoadDirectory(ARelativePath: string);
   var
@@ -1454,7 +1454,7 @@ resourcestring
              (ext = '.emf')
           then
             begin
-              if FindFrameInfo(ARelativePath, Rec.Name) = -1 then // это для перезагрузки папки актуально
+              if FindFrameInfo(ARelativePath, Rec.Name) = -1 then // СЌС‚Рѕ РґР»СЏ РїРµСЂРµР·Р°РіСЂСѓР·РєРё РїР°РїРєРё Р°РєС‚СѓР°Р»СЊРЅРѕ
                 FFrameInfoList.Add(TFrameInfo.Create(ARelativePath, Rec.Name));
             end;
           if ((Rec.Attr and faDirectory) <> 0) and (Rec.Name <> '.') and (Rec.Name <> '..') then
@@ -1520,9 +1520,9 @@ end;
 procedure TMainForm.actReloadPhotoFolderExecute(Sender: TObject);
 resourcestring
   rs_RelopadPhotoFolder =
-    'При перезагрузке кадры будут упорядочены по именам файлов,'+#13#10+
-    'а закладки будут поставлены на первые кадрах дочерних папок.'+#13#10+
-    'Перезагрузить?';
+    'РџСЂРё РїРµСЂРµР·Р°РіСЂСѓР·РєРµ РєР°РґСЂС‹ Р±СѓРґСѓС‚ СѓРїРѕСЂСЏРґРѕС‡РµРЅС‹ РїРѕ РёРјРµРЅР°Рј С„Р°Р№Р»РѕРІ,'+#13#10+
+    'Р° Р·Р°РєР»Р°РґРєРё Р±СѓРґСѓС‚ РїРѕСЃС‚Р°РІР»РµРЅС‹ РЅР° РїРµСЂРІС‹Рµ РєР°РґСЂР°С… РґРѕС‡РµСЂРЅРёС… РїР°РїРѕРє.'+#13#10+
+    'РџРµСЂРµР·Р°РіСЂСѓР·РёС‚СЊ?';
 begin
   Stop;
   case MessageDlg(rs_RelopadPhotoFolder, mtConfirmation, [mbOk, mbCancel], 0) of
@@ -1545,16 +1545,16 @@ end;
 procedure TMainForm.actAboutExecute(Sender: TObject);
 resourcestring
   rs_AboutText =
-    'Программа для съёмки, сборки и озвучки мультиков. Монтаж в реальном времени!'#13#10 +
-    'Версия %s'#13#10 +
-    'Автор: Илья Ненашев (http://innenashev.narod.ru)'#13#10 +
-    'по заказу МультиСтудии (http://multistudia.ru)'#13#10 +
-    'в лице Евгения Генриховича Кабакова'#13#10 +
+    'РџСЂРѕРіСЂР°РјРјР° РґР»СЏ СЃСЉС‘РјРєРё, СЃР±РѕСЂРєРё Рё РѕР·РІСѓС‡РєРё РјСѓР»СЊС‚РёРєРѕРІ. РњРѕРЅС‚Р°Р¶ РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё!'#13#10 +
+    'Р’РµСЂСЃРёСЏ %s'#13#10 +
+    'РђРІС‚РѕСЂ: РР»СЊСЏ РќРµРЅР°С€РµРІ (http://innenashev.narod.ru)'#13#10 +
+    'РїРѕ Р·Р°РєР°Р·Сѓ РњСѓР»СЊС‚РёРЎС‚СѓРґРёРё (http://multistudia.ru)'#13#10 +
+    'РІ Р»РёС†Рµ Р•РІРіРµРЅРёСЏ Р“РµРЅСЂРёС…РѕРІРёС‡Р° РљР°Р±Р°РєРѕРІР°'#13#10 +
     ''#13#10 +
-    'Исходный код программы доступен для просмотра и доработок'#13#10 +
-    'по адресу https://github.com/Nashev/MultiPult'#13#10 +
+    'РСЃС…РѕРґРЅС‹Р№ РєРѕРґ РїСЂРѕРіСЂР°РјРјС‹ РґРѕСЃС‚СѓРїРµРЅ РґР»СЏ РїСЂРѕСЃРјРѕС‚СЂР° Рё РґРѕСЂР°Р±РѕС‚РѕРє'#13#10 +
+    'РїРѕ Р°РґСЂРµСЃСѓ https://github.com/Nashev/MultiPult'#13#10 +
     ''#13#10 +
-    '(А Вы знаете, что Ctrl+C в подобных окошках работает?)';
+    '(Рђ Р’С‹ Р·РЅР°РµС‚Рµ, С‡С‚Рѕ Ctrl+C РІ РїРѕРґРѕР±РЅС‹С… РѕРєРѕС€РєР°С… СЂР°Р±РѕС‚Р°РµС‚?)';
 begin
   InfoMsg(
     Application.Title + #13#10 +
@@ -1579,7 +1579,7 @@ procedure TMainForm.mmiNewBookmarkClick(Sender: TObject);
 var
   i: Integer;
 begin
-  // сначала попробуем снять закладку, если она тут уже есть. Пусть Enter тоже выключателем работает
+  // СЃРЅР°С‡Р°Р»Р° РїРѕРїСЂРѕР±СѓРµРј СЃРЅСЏС‚СЊ Р·Р°РєР»Р°РґРєСѓ, РµСЃР»Рё РѕРЅР° С‚СѓС‚ СѓР¶Рµ РµСЃС‚СЊ. РџСѓСЃС‚СЊ Enter С‚РѕР¶Рµ РІС‹РєР»СЋС‡Р°С‚РµР»РµРј СЂР°Р±РѕС‚Р°РµС‚
   for i := Low(Bookmarks) to High(Bookmarks) do
     if Bookmarks[i] = DisplayedFrameIndex then
       begin
@@ -1589,7 +1589,7 @@ begin
         Exit;
       end;
 
-  // если не было закладки - то ставим первую свободную
+  // РµСЃР»Рё РЅРµ Р±С‹Р»Рѕ Р·Р°РєР»Р°РґРєРё - С‚Рѕ СЃС‚Р°РІРёРј РїРµСЂРІСѓСЋ СЃРІРѕР±РѕРґРЅСѓСЋ
   for i := Low(Bookmarks) to High(Bookmarks) do
     if Bookmarks[i] = -1 then
       begin
@@ -1599,7 +1599,7 @@ begin
         Exit;
       end;
 
-  Beep; // если свободных закладок не нашлось - гудим.
+  Beep; // РµСЃР»Рё СЃРІРѕР±РѕРґРЅС‹С… Р·Р°РєР»Р°РґРѕРє РЅРµ РЅР°С€Р»РѕСЃСЊ - РіСѓРґРёРј.
 end;
 
 procedure TMainForm.mmiUseMicrophoneClick(Sender: TObject);
@@ -1610,7 +1610,7 @@ end;
 
 procedure TMainForm.SwitchToMicrophoneUsage(AKeepOpenedWave: Boolean);
 resourcestring
-  rs_MicInitError = 'Не удалось включить микрофон';
+  rs_MicInitError = 'РќРµ СѓРґР°Р»РѕСЃСЊ РІРєР»СЋС‡РёС‚СЊ РјРёРєСЂРѕС„РѕРЅ';
 begin
   if not AKeepOpenedWave then
     begin
@@ -1629,7 +1629,7 @@ begin
     pbRecord.Repaint;
     ShowTimes;
   except
-    InfoMsg(rs_MicInitError)// глушим ошибку, если микрофона нет
+    InfoMsg(rs_MicInitError)// РіР»СѓС€РёРј РѕС€РёР±РєСѓ, РµСЃР»Рё РјРёРєСЂРѕС„РѕРЅР° РЅРµС‚
   end;
 end;
 
@@ -1642,12 +1642,12 @@ end;
 procedure TMainForm.actDoubleFramerateExecute(Sender: TObject);
 resourcestring
   rs_ConfirmNewBeforeChangeFramerate =
-    'Вы меняете базовую частоту кадров. Наиграть запись придётся с чистого листа.'#13#10+
-    'Поменять базовую частоту кадров и начать новый мульт?';
+    'Р’С‹ РјРµРЅСЏРµС‚Рµ Р±Р°Р·РѕРІСѓСЋ С‡Р°СЃС‚РѕС‚Сѓ РєР°РґСЂРѕРІ. РќР°РёРіСЂР°С‚СЊ Р·Р°РїРёСЃСЊ РїСЂРёРґС‘С‚СЃСЏ СЃ С‡РёСЃС‚РѕРіРѕ Р»РёСЃС‚Р°.'#13#10+
+    'РџРѕРјРµРЅСЏС‚СЊ Р±Р°Р·РѕРІСѓСЋ С‡Р°СЃС‚РѕС‚Сѓ РєР°РґСЂРѕРІ Рё РЅР°С‡Р°С‚СЊ РЅРѕРІС‹Р№ РјСѓР»СЊС‚?';
 begin
   Stop;
   actSaveAs.Update;
-  if actSaveAs.Enabled and Saved then // на случай not saved спросит actNew.Execute
+  if actSaveAs.Enabled and Saved then // РЅР° СЃР»СѓС‡Р°Р№ not saved СЃРїСЂРѕСЃРёС‚ actNew.Execute
     case MessageDlg(rs_ConfirmNewBeforeChangeFramerate, mtConfirmation, [mbOk, mbCancel], 0) of
       mrCANCEL: Exit;
     end;
@@ -1694,7 +1694,7 @@ function CopyProgressHandler(
   lpData: LPVOID
 ): Integer; stdcall;
 begin
-//  TMainForm(lpData).SetStatus('Копирование кадра: ' + FloatToStrF(TotalBytesTransferred / TotalFileSizeTotalFileSize) * 100, ffFixed, 0, 2) + '%';
+//  TMainForm(lpData).SetStatus('РљРѕРїРёСЂРѕРІР°РЅРёРµ РєР°РґСЂР°: ' + FloatToStrF(TotalBytesTransferred / TotalFileSizeTotalFileSize) * 100, ffFixed, 0, 2) + '%';
   Result := PROGRESS_CONTINUE;
 end;
 
@@ -1722,8 +1722,8 @@ var
   Cancel: BOOL;
   NewFileName: string;
 resourcestring
-  rs_ExportSelectFolderCaption = 'Выберите папку для экспорта';
-  rs_FramesExportingCaption = 'Экспорт. Копирование кадра %0:d из %1:d';
+  rs_ExportSelectFolderCaption = 'Р’С‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ РґР»СЏ СЌРєСЃРїРѕСЂС‚Р°';
+  rs_FramesExportingCaption = 'Р­РєСЃРїРѕСЂС‚. РљРѕРїРёСЂРѕРІР°РЅРёРµ РєР°РґСЂР° %0:d РёР· %1:d';
 begin
   Stop;
   Dir := GetCurrentDir;
@@ -1769,7 +1769,7 @@ begin
         if AdvertisementEnabled then
           AdvertisementFrameImage.SaveToFile(Dir + Format('Frame%.5d.bmp', [RecordedFrames.Count]));
         AdvertisementEnabled := True;
-        InfoMsg('Экспорт завершён.');
+        InfoMsg('Р­РєСЃРїРѕСЂС‚ Р·Р°РІРµСЂС€С‘РЅ.');
       finally
         Exporting := False;
       end;
@@ -1798,12 +1798,12 @@ var
 //  Cancel: BOOL;
   R: TRect;
 resourcestring
-  rs_AVIExporting = 'Экспорт в AVI';
-  rs_AVIExportingAudioStore = 'Сохранение звука.';
-  rs_AVIExportingCompressorInit = 'Инициализация экспорта видео.';
-  rs_AVIExportingCaption = 'Запись кадра %0:s (%1:s, %2:d из %3:d).';
-  rs_AVIExportingAudioMerge = 'Объединение со звуком.';
-  rs_ExportFinished = 'Открыть созданый файл?';
+  rs_AVIExporting = 'Р­РєСЃРїРѕСЂС‚ РІ AVI';
+  rs_AVIExportingAudioStore = 'РЎРѕС…СЂР°РЅРµРЅРёРµ Р·РІСѓРєР°.';
+  rs_AVIExportingCompressorInit = 'РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЌРєСЃРїРѕСЂС‚Р° РІРёРґРµРѕ.';
+  rs_AVIExportingCaption = 'Р—Р°РїРёСЃСЊ РєР°РґСЂР° %0:s (%1:s, %2:d РёР· %3:d).';
+  rs_AVIExportingAudioMerge = 'РћР±СЉРµРґРёРЅРµРЅРёРµ СЃРѕ Р·РІСѓРєРѕРј.';
+  rs_ExportFinished = 'РћС‚РєСЂС‹С‚СЊ СЃРѕР·РґР°РЅС‹Р№ С„Р°Р№Р»?';
 
 begin
   Stop;
@@ -1845,14 +1845,14 @@ begin
           Compressor := TAVICompressor.Create;
         if not OptionsInitialized then begin
           Options.Init;
-          Options.Handler := 'DIB '; // по умолчанию - без компрессии
+          Options.Handler := 'DIB '; // РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - Р±РµР· РєРѕРјРїСЂРµСЃСЃРёРё
           OptionsInitialized := True;
           Compressor.LoadOptionsFromFile(Application.ExeName + '.AviParam');
         end;
         Options.FrameRate := FrameRate;
         Options.Width := ExportSize.cx;
         Options.Height := ExportSize.cy;
-        Hide; // progress form на время выбора настроек кодека
+        Hide; // progress form РЅР° РІСЂРµРјСЏ РІС‹Р±РѕСЂР° РЅР°СЃС‚СЂРѕРµРє РєРѕРґРµРєР°
         CheckAVIError(Compressor.Open(Dir + '~Video.avi', False, Options));
         Compressor.SaveOptionsToFile(Application.ExeName + '.AviParam');
         Show; // progress form
@@ -1923,7 +1923,7 @@ begin
               Bmp.PixelFormat := pf24bit;
               CurrentRecordPosition := RecordedFrames.Count;
               pbRecord.Repaint;
-              SetProgressStatus(Format(rs_AVIExportingCaption, ['Последний кадр', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
+              SetProgressStatus(Format(rs_AVIExportingCaption, ['РџРѕСЃР»РµРґРЅРёР№ РєР°РґСЂ', FrameIndexToTimeStamp(CurrentRecordPosition), RecordedFrames.Count, RecordedFrames.Count]));
               Application.ProcessMessages;
               if ExportCancelled then
                 Abort;
@@ -1999,8 +1999,8 @@ end;
 
 procedure TMainForm.CameraFormActiveChanged(Sender: TObject);
 resourcestring
-  rsStartRecording = 'Запись';
-  rsMakeCameraFrame = 'Записать кадр с камеры в папку мульта';
+  rsStartRecording = 'Р—Р°РїРёСЃСЊ';
+  rsMakeCameraFrame = 'Р—Р°РїРёСЃР°С‚СЊ РєР°РґСЂ СЃ РєР°РјРµСЂС‹ РІ РїР°РїРєСѓ РјСѓР»СЊС‚Р°';
 begin
   Stop;
   if CameraForm.Active then
@@ -2061,7 +2061,7 @@ end;
 
 procedure TMainForm.actNewExecute(Sender: TObject);
 resourcestring
-  rs_SaveBeforeOpenRequest = 'созданием нового';
+  rs_SaveBeforeOpenRequest = 'СЃРѕР·РґР°РЅРёРµРј РЅРѕРІРѕРіРѕ';
 begin
   Stop;
   SaveBeforeClose(rs_SaveBeforeOpenRequest);
@@ -2086,7 +2086,7 @@ const // do not localise
   StopperSectionStart    = '------------------- Stoppers: --------------------';
 
 resourcestring
-  rs_CustomSize = 'Свой (%d, %d)';
+  rs_CustomSize = 'РЎРІРѕР№ (%d, %d)';
 
 procedure TMainForm.OpenAudio(AFileName: string);
 begin
@@ -2142,8 +2142,8 @@ var
     FrameInfoIndex := StrToInt(Trim(Copy(s, 1, SeparatorPos-1)));
     TargetBookmarkIndex := StrToInt(Trim(Copy(s, SeparatorPos+1, Length(s))));
     FrameInfoList[FrameInfoIndex].TeleportTargetBookmark := TargetBookmarkIndex;
-    // В тех файлах телепорты стояли на кадре, а теперь стали между кадрами и поэтому,
-    // для имитации прежнего поведения, должны быть до него и после него
+    // Р’ С‚РµС… С„Р°Р№Р»Р°С… С‚РµР»РµРїРѕСЂС‚С‹ СЃС‚РѕСЏР»Рё РЅР° РєР°РґСЂРµ, Р° С‚РµРїРµСЂСЊ СЃС‚Р°Р»Рё РјРµР¶РґСѓ РєР°РґСЂР°РјРё Рё РїРѕСЌС‚РѕРјСѓ,
+    // РґР»СЏ РёРјРёС‚Р°С†РёРё РїСЂРµР¶РЅРµРіРѕ РїРѕРІРµРґРµРЅРёСЏ, РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РґРѕ РЅРµРіРѕ Рё РїРѕСЃР»Рµ РЅРµРіРѕ
     Dec(FrameInfoIndex);
     if FrameInfoIndex < 0 then
       FrameInfoIndex := FrameInfoCount - 1;
@@ -2179,7 +2179,7 @@ begin
             LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
             RelativePath := Copy(s, 1, LastDelimiterPos);
             FileName := Copy(s, LastDelimiterPos + 1, MaxInt);
-            FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // не перезачитываем кадры, если они уже были считаны
+            FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // РЅРµ РїРµСЂРµР·Р°С‡РёС‚С‹РІР°РµРј РєР°РґСЂС‹, РµСЃР»Рё РѕРЅРё СѓР¶Рµ Р±С‹Р»Рё СЃС‡РёС‚Р°РЅС‹
             if FoundFrameInfoIndex <> -1 then
               FFrameInfoList.Move(FoundFrameInfoIndex, FrameInfoIndex)
             else
@@ -2233,12 +2233,12 @@ begin
 
       finally
         JSONValue.Free;
-      end else begin // старый вариант формата файла
+      end else begin // СЃС‚Р°СЂС‹Р№ РІР°СЂРёР°РЅС‚ С„РѕСЂРјР°С‚Р° С„Р°Р№Р»Р°
 
         i := 0;
         s := Strings[i];
-        // Те файлы читаются в порядке регистрации, и максимум что может быть
-        // - это очередная секция отсутствовать. Переставить местами их нельзя.
+        // РўРµ С„Р°Р№Р»С‹ С‡РёС‚Р°СЋС‚СЃСЏ РІ РїРѕСЂСЏРґРєРµ СЂРµРіРёСЃС‚СЂР°С†РёРё, Рё РјР°РєСЃРёРјСѓРј С‡С‚Рѕ РјРѕР¶РµС‚ Р±С‹С‚СЊ
+        // - СЌС‚Рѕ РѕС‡РµСЂРµРґРЅР°СЏ СЃРµРєС†РёСЏ РѕС‚СЃСѓС‚СЃС‚РІРѕРІР°С‚СЊ. РџРµСЂРµСЃС‚Р°РІРёС‚СЊ РјРµСЃС‚Р°РјРё РёС… РЅРµР»СЊР·СЏ.
         if (Copy(s, 1, Length('Wave = ')) = 'Wave = ') then
           begin
             WaveFileName := Copy(s, Length('Wave = ') + 1, MaxInt);
@@ -2277,7 +2277,7 @@ begin
                 LastDelimiterPos := LastDelimiter(PathDelim + DriveDelim, s);
                 RelativePath := Copy(s, 1, LastDelimiterPos);
                 FileName := Copy(s, LastDelimiterPos + 1, MaxInt);
-                FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // не перезачитываем кадры, если они уже были считаны
+                FoundFrameInfoIndex := FindFrameInfo(RelativePath, FileName);  // РЅРµ РїРµСЂРµР·Р°С‡РёС‚С‹РІР°РµРј РєР°РґСЂС‹, РµСЃР»Рё РѕРЅРё СѓР¶Рµ Р±С‹Р»Рё СЃС‡РёС‚Р°РЅС‹
                 if FoundFrameInfoIndex <> -1 then
                   FFrameInfoList.Move(FoundFrameInfoIndex, FrameInfoIndex)
                 else
@@ -2330,8 +2330,8 @@ begin
                 Break;
               FrameInfoIndex := StrToInt(s);
               FrameInfoList[FrameInfoIndex].HaveStopperAfter := True;
-              // В тех файлах стопперы стояли на кадре, а теперь стали между кадрами и поэтому,
-              // для имитации прежнего поведения, должны быть до него и после него
+              // Р’ С‚РµС… С„Р°Р№Р»Р°С… СЃС‚РѕРїРїРµСЂС‹ СЃС‚РѕСЏР»Рё РЅР° РєР°РґСЂРµ, Р° С‚РµРїРµСЂСЊ СЃС‚Р°Р»Рё РјРµР¶РґСѓ РєР°РґСЂР°РјРё Рё РїРѕСЌС‚РѕРјСѓ,
+              // РґР»СЏ РёРјРёС‚Р°С†РёРё РїСЂРµР¶РЅРµРіРѕ РїРѕРІРµРґРµРЅРёСЏ, РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РґРѕ РЅРµРіРѕ Рё РїРѕСЃР»Рµ РЅРµРіРѕ
               Dec(FrameInfoIndex);
               if FrameInfoIndex < 0 then
                 FrameInfoIndex := FrameInfoCount - 1;
@@ -2359,11 +2359,11 @@ begin
   CaptureFirstFrameSizes;
 
   if {$IFDEF FPC}FileExistsUTF8{$ELSE}FileExists{$ENDIF}(PhotoFolder + WaveFileName) then
-    OpenAudio(PhotoFolder + WaveFileName); // см. ниже условие про SwitchToMicrophoneUsage
+    OpenAudio(PhotoFolder + WaveFileName); // СЃРј. РЅРёР¶Рµ СѓСЃР»РѕРІРёРµ РїСЂРѕ SwitchToMicrophoneUsage
 
   if (WaveFileName = ExtractFileName(AFileName) + '.wav') and
      (CalculateSoundFramesCount = RecordedFrames.Count)
-  then // TODO: сделать более надёжный и явный признак
+  then // TODO: СЃРґРµР»Р°С‚СЊ Р±РѕР»РµРµ РЅР°РґС‘Р¶РЅС‹Р№ Рё СЏРІРЅС‹Р№ РїСЂРёР·РЅР°Рє
     SwitchToMicrophoneUsage(True);
 
   Saved := True;
@@ -2373,7 +2373,7 @@ end;
 
 procedure TMainForm.actOpenExecute(Sender: TObject);
 resourcestring
-  rs_SaveBeforeOpenRequest = 'открытием другого';
+  rs_SaveBeforeOpenRequest = 'РѕС‚РєСЂС‹С‚РёРµРј РґСЂСѓРіРѕРіРѕ';
 begin
   Stop;
   SaveBeforeClose(rs_SaveBeforeOpenRequest);
@@ -2456,7 +2456,7 @@ end;
 
 function TMainForm.OnSaveAsCloseQuery(const ANewMovieName: string): Boolean;
 resourcestring
-  rs_DoYouWantReplaceMovie = 'В папке "%s"'#13#10'уже есть мульт с именем "%s".'#13#10'Заменить?';
+  rs_DoYouWantReplaceMovie = 'Р’ РїР°РїРєРµ "%s"'#13#10'СѓР¶Рµ РµСЃС‚СЊ РјСѓР»СЊС‚ СЃ РёРјРµРЅРµРј "%s".'#13#10'Р—Р°РјРµРЅРёС‚СЊ?';
 begin
   if FileExists(PhotoFolder + ANewMovieName + '.mp') then
     Result := MessageDlg(
@@ -2554,7 +2554,7 @@ begin
     AudioName := ExtractFileName(FExternalAudioFileName)
   else
     AudioName := ProjectFileName + '.wav';
-  // если внешний файл под другим именем уже хранится в папке проекта, не будем его перезаписывать.
+  // РµСЃР»Рё РІРЅРµС€РЅРёР№ С„Р°Р№Р» РїРѕРґ РґСЂСѓРіРёРј РёРјРµРЅРµРј СѓР¶Рµ С…СЂР°РЅРёС‚СЃСЏ РІ РїР°РїРєРµ РїСЂРѕРµРєС‚Р°, РЅРµ Р±СѓРґРµРј РµРіРѕ РїРµСЂРµР·Р°РїРёСЃС‹РІР°С‚СЊ.
   if ExpandFileName(PhotoFolder + AudioName) <> ExpandFileName(FExternalAudioFileName) then
     WaveStorage.Wave.SaveToFile(PhotoFolder + AudioName);
   RootJSONObject := TJSONObject.Create;
@@ -2645,7 +2645,7 @@ end;
 
 procedure TMainForm.actSaveAsExecute(Sender: TObject);
 resourcestring
-  rs_SaveAs = 'Сохранение мульта под новым имемем';
+  rs_SaveAs = 'РЎРѕС…СЂР°РЅРµРЅРёРµ РјСѓР»СЊС‚Р° РїРѕРґ РЅРѕРІС‹Рј РёРјРµРјРµРј';
 begin
   Stop;
   if not TMovieNameDialog.Execute(PhotoFolder, ProjectFileName, rs_SaveAs, OnSaveAsCloseQuery) then
@@ -2680,7 +2680,7 @@ end;
 
 procedure TMainForm.UpdateCaption;
 resourcestring
-  rs_FrameNotInWorkingSet = ', скрыт из рабочего набора..';
+  rs_FrameNotInWorkingSet = ', СЃРєСЂС‹С‚ РёР· СЂР°Р±РѕС‡РµРіРѕ РЅР°Р±РѕСЂР°..';
 var
   s: string;
 begin
@@ -2688,10 +2688,10 @@ begin
   if not Exporting then
     if FDisplayedFrameIndex >= 0 then
       if Assigned(CurrentWorkingSetFrame) then
-        s := ' — ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName
+        s := ' вЂ” ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName
       else
-        s := ' — ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName + rs_FrameNotInWorkingSet;
-  Caption := ProjectFileName + s + ' — ' + Application.Title;
+        s := ' вЂ” ' + FrameInfoList[FDisplayedFrameIndex].RelativeFileName + rs_FrameNotInWorkingSet;
+  Caption := ProjectFileName + s + ' вЂ” ' + Application.Title;
 end;
 
 procedure TMainForm.SetCurrentRecordPosition(const Value: Integer);
@@ -2759,38 +2759,38 @@ begin
   if FExternalAudioFileName <> '' then
     begin
       SoundFramesCount := CalculateSoundFramesCount;
-      s := ' Длина озвучки ' + FrameIndexToTimeStamp(SoundFramesCount) + '. ';
+      s := ' Р”Р»РёРЅР° РѕР·РІСѓС‡РєРё ' + FrameIndexToTimeStamp(SoundFramesCount) + '. ';
     end;
 
   if Recording then
     begin
       if FExternalAudioFileName <> '' then
-        s := s + 'Записывается кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, SoundFramesCount)) + '%)'
+        s := s + 'Р—Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РєР°РґСЂ ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, SoundFramesCount)) + '%)'
       else
-        s := s + 'Записывается кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition)
+        s := s + 'Р—Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РєР°РґСЂ ' + FrameIndexToTimeStamp(CurrentRecordPosition)
     end
   else //if Playing then
     begin
       if FrameInfoCount = 0 then
-        s := s + 'Кадров для мульта пока не указано.'
+        s := s + 'РљР°РґСЂРѕРІ РґР»СЏ РјСѓР»СЊС‚Р° РїРѕРєР° РЅРµ СѓРєР°Р·Р°РЅРѕ.'
       else if RecordedFrames.Count = 0 then
-        s := s + 'Кадров пока в мульт не записано.'
+        s := s + 'РљР°РґСЂРѕРІ РїРѕРєР° РІ РјСѓР»СЊС‚ РЅРµ Р·Р°РїРёСЃР°РЅРѕ.'
       else
-        s := s + 'Кадр ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' из ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
+        s := s + 'РљР°РґСЂ ' + FrameIndexToTimeStamp(CurrentRecordPosition) + ' РёР· ' + FrameIndexToTimeStamp(RecordedFrames.Count) + ' (' + IntToStr(MulDiv(CurrentRecordPosition, 100, RecordedFrames.Count)) + '%)';
     end;
 
   if FExternalAudioFileName <> '' then
     begin
       if mmiStopRecordingOnSoundtrackFinish.Checked then
-        s := s + ', запись будет остановлена по достижении конца озвучки.'
+        s := s + ', Р·Р°РїРёСЃСЊ Р±СѓРґРµС‚ РѕСЃС‚Р°РЅРѕРІР»РµРЅР° РїРѕ РґРѕСЃС‚РёР¶РµРЅРёРё РєРѕРЅС†Р° РѕР·РІСѓС‡РєРё.'
       else
-        s := s + ', по достижении конца озвучки запись будет продолжена в тишине.';
+        s := s + ', РїРѕ РґРѕСЃС‚РёР¶РµРЅРёРё РєРѕРЅС†Р° РѕР·РІСѓС‡РєРё Р·Р°РїРёСЃСЊ Р±СѓРґРµС‚ РїСЂРѕРґРѕР»Р¶РµРЅР° РІ С‚РёС€РёРЅРµ.';
     end
   else if PhotoFolder <> '' then
     if Recording then
-      s := s + ' Озвучка записывается вместе с кадрами.'
+      s := s + ' РћР·РІСѓС‡РєР° Р·Р°РїРёСЃС‹РІР°РµС‚СЃСЏ РІРјРµСЃС‚Рµ СЃ РєР°РґСЂР°РјРё.'
     else
-      s := s + ' Озвучка будет записываться вместе с кадрами.';
+      s := s + ' РћР·РІСѓС‡РєР° Р±СѓРґРµС‚ Р·Р°РїРёСЃС‹РІР°С‚СЊСЃСЏ РІРјРµСЃС‚Рµ СЃ РєР°РґСЂР°РјРё.';
 
   SetStatus(s);
 end;
@@ -2815,8 +2815,8 @@ begin
     Exit;
 
   FDisplayedFrameIndex := Value;
-  // При вызовах из SetCurrentWorkingSetFrame оставляем тот экземпляр,
-  // какой был установлен и не ищем первый аналогичный. В других случаях - ищем.
+  // РџСЂРё РІС‹Р·РѕРІР°С… РёР· SetCurrentWorkingSetFrame РѕСЃС‚Р°РІР»СЏРµРј С‚РѕС‚ СЌРєР·РµРјРїР»СЏСЂ,
+  // РєР°РєРѕР№ Р±С‹Р» СѓСЃС‚Р°РЅРѕРІР»РµРЅ Рё РЅРµ РёС‰РµРј РїРµСЂРІС‹Р№ Р°РЅР°Р»РѕРіРёС‡РЅС‹Р№. Р’ РґСЂСѓРіРёС… СЃР»СѓС‡Р°СЏС… - РёС‰РµРј.
   if not Assigned(CurrentWorkingSetFrame) or (CurrentWorkingSetFrame.FrameInfoIndex <> Value) then
     CurrentWorkingSetFrame := WorkingSetFrames.FindByFrameIndex(FDisplayedFrameIndex);
 
@@ -2850,7 +2850,7 @@ end;
 
 procedure TMainForm.StockAudioPlayerActivate(Sender: TObject);
 begin
-  if RecordingMustBeChanged then // значит, начали играть для записи мультика
+  if RecordingMustBeChanged then // Р·РЅР°С‡РёС‚, РЅР°С‡Р°Р»Рё РёРіСЂР°С‚СЊ РґР»СЏ Р·Р°РїРёСЃРё РјСѓР»СЊС‚РёРєР°
     begin
       Recording := True;
       AdvertisementShowing := False;
@@ -2858,12 +2858,12 @@ begin
       actRecord.Checked := True;
     end
   else
-    begin  // значит, начали играть для проигрывания записанного мультика
-      // запускаем воспроизведение только после того, как звук будет готов воспроизводиться
+    begin  // Р·РЅР°С‡РёС‚, РЅР°С‡Р°Р»Рё РёРіСЂР°С‚СЊ РґР»СЏ РїСЂРѕРёРіСЂС‹РІР°РЅРёСЏ Р·Р°РїРёСЃР°РЅРЅРѕРіРѕ РјСѓР»СЊС‚РёРєР°
+      // Р·Р°РїСѓСЃРєР°РµРј РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ С‚РѕРіРѕ, РєР°Рє Р·РІСѓРє Р±СѓРґРµС‚ РіРѕС‚РѕРІ РІРѕСЃРїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ
       actPlay.Checked := True;
       ReplaceControlActions(caNone);
       UpdatePlayActions;
-      // на всякий случай. TODO надо ли, когда в actPlayExecute есть ?
+      // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№. TODO РЅР°РґРѕ Р»Рё, РєРѕРіРґР° РІ actPlayExecute РµСЃС‚СЊ ?
       if CurrentRecordPosition >= RecordedFrames.Count - 1 then
         CurrentRecordPosition := 0;
       Interval := 0;
@@ -2878,14 +2878,14 @@ begin
       StopRecording;
       AdvertisementShowing := True;
       RepaintAll;
-      InfoMsg('Конец файла озвучки, запись остановлена'#13#10'согласно выбранному режиму.');
+      InfoMsg('РљРѕРЅРµС† С„Р°Р№Р»Р° РѕР·РІСѓС‡РєРё, Р·Р°РїРёСЃСЊ РѕСЃС‚Р°РЅРѕРІР»РµРЅР°'#13#10'СЃРѕРіР»Р°СЃРЅРѕ РІС‹Р±СЂР°РЅРЅРѕРјСѓ СЂРµР¶РёРјСѓ.');
     end;
 
-  // Останавливать воспроизведение при завершени звука надо, как минимум, потому
-  // что StopPlaying на это рассчитана.
-  //  TODO: понять, когда не надо останавливать воспроизведение видео при завершении звука
-  // (например, если звука меньше, чем записанного мульта, и надо б продолжить в тишине ?)
-  // и придумать, как это совместить.
+  // РћСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ РїСЂРё Р·Р°РІРµСЂС€РµРЅРё Р·РІСѓРєР° РЅР°РґРѕ, РєР°Рє РјРёРЅРёРјСѓРј, РїРѕС‚РѕРјСѓ
+  // С‡С‚Рѕ StopPlaying РЅР° СЌС‚Рѕ СЂР°СЃСЃС‡РёС‚Р°РЅР°.
+  //  TODO: РїРѕРЅСЏС‚СЊ, РєРѕРіРґР° РЅРµ РЅР°РґРѕ РѕСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ РІРёРґРµРѕ РїСЂРё Р·Р°РІРµСЂС€РµРЅРёРё Р·РІСѓРєР°
+  // (РЅР°РїСЂРёРјРµСЂ, РµСЃР»Рё Р·РІСѓРєР° РјРµРЅСЊС€Рµ, С‡РµРј Р·Р°РїРёСЃР°РЅРЅРѕРіРѕ РјСѓР»СЊС‚Р°, Рё РЅР°РґРѕ Р± РїСЂРѕРґРѕР»Р¶РёС‚СЊ РІ С‚РёС€РёРЅРµ ?)
+  // Рё РїСЂРёРґСѓРјР°С‚СЊ, РєР°Рє СЌС‚Рѕ СЃРѕРІРјРµСЃС‚РёС‚СЊ.
   if Playing then
     begin
       actPlay.Checked := False;
@@ -2919,7 +2919,7 @@ begin
       StockAudioPlayer.Active := False;
       ShowTimes;
     end
-  else // через деактивацию записи
+  else // С‡РµСЂРµР· РґРµР°РєС‚РёРІР°С†РёСЋ Р·Р°РїРёСЃРё
     begin
       RecordingMustBeChanged := True;
       AudioRecorder.Active := False;
@@ -2936,8 +2936,8 @@ begin
   if (FrameInfoCount = 0) then
     Exit;
 
-  // выходим, если ничего грузить не нужно.
-  // А грузить нужно либо иконку, либо превьюшку, в зависимости от видимости представления в виде иконок
+  // РІС‹С…РѕРґРёРј, РµСЃР»Рё РЅРёС‡РµРіРѕ РіСЂСѓР·РёС‚СЊ РЅРµ РЅСѓР¶РЅРѕ.
+  // Рђ РіСЂСѓР·РёС‚СЊ РЅСѓР¶РЅРѕ Р»РёР±Рѕ РёРєРѕРЅРєСѓ, Р»РёР±Рѕ РїСЂРµРІСЊСЋС€РєСѓ, РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РІРёРґРёРјРѕСЃС‚Рё РїСЂРµРґСЃС‚Р°РІР»РµРЅРёСЏ РІ РІРёРґРµ РёРєРѕРЅРѕРє
   if not lvFrameset.Visible and FrameInfoList[AFrameInfoIndex].PreviewLoaded then
     Exit;
 
@@ -3122,10 +3122,10 @@ begin
         begin
           if not Recording then
             begin
-              CurrentRecordPosition := RecordedFrames.Count; // заодно пинаем позиционирование звука
-              // Запуск самой записи и последующая остановка - через обработчики
-              // StockAudioPlayerActivate и StockAudioPlayerDeactivate:
-              // запускаем запись кадров только после того, как звук будет готов воспроизводиться.
+              CurrentRecordPosition := RecordedFrames.Count; // Р·Р°РѕРґРЅРѕ РїРёРЅР°РµРј РїРѕР·РёС†РёРѕРЅРёСЂРѕРІР°РЅРёРµ Р·РІСѓРєР°
+              // Р—Р°РїСѓСЃРє СЃР°РјРѕР№ Р·Р°РїРёСЃРё Рё РїРѕСЃР»РµРґСѓСЋС‰Р°СЏ РѕСЃС‚Р°РЅРѕРІРєР° - С‡РµСЂРµР· РѕР±СЂР°Р±РѕС‚С‡РёРєРё
+              // StockAudioPlayerActivate Рё StockAudioPlayerDeactivate:
+              // Р·Р°РїСѓСЃРєР°РµРј Р·Р°РїРёСЃСЊ РєР°РґСЂРѕРІ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ С‚РѕРіРѕ, РєР°Рє Р·РІСѓРє Р±СѓРґРµС‚ РіРѕС‚РѕРІ РІРѕСЃРїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ.
               RecordingMustBeChanged := True;
               StockAudioPlayer.Active := True;
             end
@@ -3133,9 +3133,9 @@ begin
             StopRecording;
         end
       else
-        // если звук с микрофона - то запись кадров начнётся в
+        // РµСЃР»Рё Р·РІСѓРє СЃ РјРёРєСЂРѕС„РѕРЅР° - С‚Рѕ Р·Р°РїРёСЃСЊ РєР°РґСЂРѕРІ РЅР°С‡РЅС‘С‚СЃСЏ РІ
         // AudioRecorderActivate
-        // а закончится - в AudioRecorderDeactivate
+        // Р° Р·Р°РєРѕРЅС‡РёС‚СЃСЏ - РІ AudioRecorderDeactivate
         AudioRecorder.Active := not Recording
     end;
 end;
@@ -3174,7 +3174,7 @@ procedure TMainForm.pbDisplayMouseUp(Sender: TObject; Button: TMouseButton;
 begin
   if PhotoFolder = '' then
   begin
-    if (Button = mbRight) or ((Button = mbLeft) and (ssShift in Shift)) then // открытие вешаем не только на шифт+левую кнопку мыши, но и просто на правую кнопку мыши.
+    if (Button = mbRight) or ((Button = mbLeft) and (ssShift in Shift)) then // РѕС‚РєСЂС‹С‚РёРµ РІРµС€Р°РµРј РЅРµ С‚РѕР»СЊРєРѕ РЅР° С€РёС„С‚+Р»РµРІСѓСЋ РєРЅРѕРїРєСѓ РјС‹С€Рё, РЅРѕ Рё РїСЂРѕСЃС‚Рѕ РЅР° РїСЂР°РІСѓСЋ РєРЅРѕРїРєСѓ РјС‹С€Рё.
       actOpen.Execute
     else if (Button = mbLeft) then
       actSelectPhotoFolder.Execute;
@@ -3213,11 +3213,11 @@ begin
       end
     else
       begin
-        CreateAdvertisementFrame; // на всякий случай
+        CreateAdvertisementFrame; // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№
         if (DisplayedFrameIndex >= 0) then
-          LoadPhoto(DisplayedFrameIndex, -1); // на всякий случай
-        // основной кадр.
-        // Сначала ищем смещение экрана, нужное, чтоб он по возможности не подлазил под миниатюры.
+          LoadPhoto(DisplayedFrameIndex, -1); // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№
+        // РѕСЃРЅРѕРІРЅРѕР№ РєР°РґСЂ.
+        // РЎРЅР°С‡Р°Р»Р° РёС‰РµРј СЃРјРµС‰РµРЅРёРµ СЌРєСЂР°РЅР°, РЅСѓР¶РЅРѕРµ, С‡С‚РѕР± РѕРЅ РїРѕ РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё РЅРµ РїРѕРґР»Р°Р·РёР» РїРѕРґ РјРёРЅРёР°С‚СЋСЂС‹.
 
         if not AdvertisementShowing and
           (DisplayedFrameIndex >= 0) and
@@ -3283,12 +3283,12 @@ begin
 
         if Assigned(CurrentWorkingSetFrame) and mmiShowNeighbourFrames.Checked then
           begin
-            // левая миниатюра
+            // Р»РµРІР°СЏ РјРёРЅРёР°С‚СЋСЂР°
             if CameraForm.Active then
               WorkSetFrame := CurrentWorkingSetFrame
             else
               WorkSetFrame := FindWorkingSetFrameByOffset(-1);
-            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№
             if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
               begin
                 Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
@@ -3309,9 +3309,9 @@ begin
                   );
                 pbDisplay.Canvas.StretchDraw(R_PrevNextPreview, Image);
               end;
-            // правая миниатюра
+            // РїСЂР°РІР°СЏ РјРёРЅРёР°С‚СЋСЂР°
             WorkSetFrame := FindWorkingSetFrameByOffset(+1);
-            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // на всякий случай
+            LoadPhoto(WorkSetFrame.FrameInfoIndex, -1); // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№
             if FrameInfoList[WorkSetFrame.FrameInfoIndex].PreviewLoaded then
               begin
                 Image := FrameInfoList[WorkSetFrame.FrameInfoIndex].Preview;
@@ -3338,7 +3338,7 @@ begin
           end;
       end;
   except
-    ; // на всякий случай глушим ошибки рисования, потому что они непонятно откуда лезут
+    ; // РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ РіР»СѓС€РёРј РѕС€РёР±РєРё СЂРёСЃРѕРІР°РЅРёСЏ, РїРѕС‚РѕРјСѓ С‡С‚Рѕ РѕРЅРё РЅРµРїРѕРЅСЏС‚РЅРѕ РѕС‚РєСѓРґР° Р»РµР·СѓС‚
   end;
 end;
 
@@ -3392,7 +3392,7 @@ var
 
 procedure TMainForm.pbIndicatorPaint(Sender: TObject);
 resourcestring
-  rs_Framerate = '- по %d, при %d кадрах в секунду';
+  rs_Framerate = '- РїРѕ %d, РїСЂРё %d РєР°РґСЂР°С… РІ СЃРµРєСѓРЅРґСѓ';
 var
 //  X: TPoint;
   a: Double;
@@ -3422,7 +3422,7 @@ begin
       with Point(15 + Round(10 * Cos(a)), 15 - Round(10 * Sin(a))) do
         Ellipse(X-2, Y-2, X+3, Y+3);
 
-      a := -(GetTickCount mod 1000)* 2 * Pi / 1000; // текущая милисекунда. Просто FrameRate раз в секунду перерисовывается.
+      a := -(GetTickCount mod 1000)* 2 * Pi / 1000; // С‚РµРєСѓС‰Р°СЏ РјРёР»РёСЃРµРєСѓРЅРґР°. РџСЂРѕСЃС‚Рѕ FrameRate СЂР°Р· РІ СЃРµРєСѓРЅРґСѓ РїРµСЂРµСЂРёСЃРѕРІС‹РІР°РµС‚СЃСЏ.
       with Point(15 + Round(10 * Cos(a)), 15 - Round(10 * Sin(a))) do
         FillRect(Rect(X-1, Y-1, X+2, Y+2));
 
@@ -3575,7 +3575,7 @@ var
       pbRecord.Canvas.FillRect(Rect(R.Left, y, R.Right, y + AThickness));
       Text := FrameIndexToTimeStamp(DrawingRecordedFrameIndex, False);
       TextSize := pbRecord.Canvas.TextExtent(Text);
-      pbRecord.Canvas.Brush.Style := bsFDiagonal; // bsClear почпему-то не выключался обратно и линии, делаемые выше через FillRect, пропадали вовсе
+      pbRecord.Canvas.Brush.Style := bsFDiagonal; // bsClear РїРѕС‡РїРµРјСѓ-С‚Рѕ РЅРµ РІС‹РєР»СЋС‡Р°Р»СЃСЏ РѕР±СЂР°С‚РЅРѕ Рё Р»РёРЅРёРё, РґРµР»Р°РµРјС‹Рµ РІС‹С€Рµ С‡РµСЂРµР· FillRect, РїСЂРѕРїР°РґР°Р»Рё РІРѕРІСЃРµ
       pbRecord.Canvas.Font.Color := clBlack;
       pbRecord.Canvas.TextOut(pbRecord.Width - TextSize.cx - 8, y - TextSize.cy - 3, Text);
       pbRecord.Canvas.Brush.Style := bsSolid;
@@ -3593,12 +3593,12 @@ begin
 
   // Automatic scrollbar position
   pbRecordOffset := CurrentRecordPosition - (DataAreaHeight div 2);
-  if (pbRecordOffset + DataAreaHeight) > RecordedFrames.Count + FrameRate then //  + FrameRate чтоб одну секунду хвоста звука после кадра рекламы можно было увидеть
+  if (pbRecordOffset + DataAreaHeight) > RecordedFrames.Count + FrameRate then //  + FrameRate С‡С‚РѕР± РѕРґРЅСѓ СЃРµРєСѓРЅРґСѓ С…РІРѕСЃС‚Р° Р·РІСѓРєР° РїРѕСЃР»Рµ РєР°РґСЂР° СЂРµРєР»Р°РјС‹ РјРѕР¶РЅРѕ Р±С‹Р»Рѕ СѓРІРёРґРµС‚СЊ
     pbRecordOffset := RecordedFrames.Count + FrameRate - DataAreaHeight;
   if pbRecordOffset < 0 then
     pbRecordOffset := 0;
 
-  MakeRecordedAudioLines; // досчитываем непосчитанное, новое записанное
+  MakeRecordedAudioLines; // РґРѕСЃС‡РёС‚С‹РІР°РµРј РЅРµРїРѕСЃС‡РёС‚Р°РЅРЅРѕРµ, РЅРѕРІРѕРµ Р·Р°РїРёСЃР°РЅРЅРѕРµ
 
   // background
   pbRecord.Canvas.Brush.Color := clBtnFace;
@@ -3720,8 +3720,8 @@ var
   i: Integer;
   Volumes: ^TVolumeArray;
 begin
-  // Готовы очередные 200 милисекунд звука с микрофона.
-  // Посчитаем максимум, и нарисуем его.
+  // Р“РѕС‚РѕРІС‹ РѕС‡РµСЂРµРґРЅС‹Рµ 200 РјРёР»РёСЃРµРєСѓРЅРґ Р·РІСѓРєР° СЃ РјРёРєСЂРѕС„РѕРЅР°.
+  // РџРѕСЃС‡РёС‚Р°РµРј РјР°РєСЃРёРјСѓРј, Рё РЅР°СЂРёСЃСѓРµРј РµРіРѕ.
   Volumes := Buffer;
   MaxVolume := 0;
   for i := 0 to BufferSize - 1 do
@@ -3830,7 +3830,7 @@ begin
     for i := -1 to WorkingSetFrames.Count - 1 do
       begin
         WorkingFrameIndex := i;
-        if i = -1 then // -1 - это трюк, чтоб нарисовать крайний правый телепорт или стоппер перед первой меткой тоже
+        if i = -1 then // -1 - СЌС‚Рѕ С‚СЂСЋРє, С‡С‚РѕР± РЅР°СЂРёСЃРѕРІР°С‚СЊ РєСЂР°Р№РЅРёР№ РїСЂР°РІС‹Р№ С‚РµР»РµРїРѕСЂС‚ РёР»Рё СЃС‚РѕРїРїРµСЂ РїРµСЂРµРґ РїРµСЂРІРѕР№ РјРµС‚РєРѕР№ С‚РѕР¶Рµ
           WorkingFrameIndex := WorkingSetFrames.Count - 1;
 
         x := WorkingFrameIndexToWorkingSetX(i);
@@ -3883,7 +3883,7 @@ begin
           affNone: Continue;
           affTeleport: BookmarkText := BookmarkKey[FrameInfoList[WorkingSetFrames[WorkingFrameIndex].FrameInfoIndex].TeleportTargetBookmark];
           affStopper: BookmarkText := 'x';
-          affBouncer: BookmarkText := '‡';
+          affBouncer: BookmarkText := 'вЂЎ';
           affLooper:  BookmarkText := '@';
         end;
         TextSize := pbWorkingSet.Canvas.TextExtent(BookmarkText);
@@ -3934,7 +3934,7 @@ end;
 
 procedure TMainForm.PushControlAction(Value: TControlAction);
 begin
-  // Если была автоматика, а пришло действие, которому надо автоматику отключить, то не отодвигаем её, а стираем.
+  // Р•СЃР»Рё Р±С‹Р»Р° Р°РІС‚РѕРјР°С‚РёРєР°, Р° РїСЂРёС€Р»Рѕ РґРµР№СЃС‚РІРёРµ, РєРѕС‚РѕСЂРѕРјСѓ РЅР°РґРѕ Р°РІС‚РѕРјР°С‚РёРєСѓ РѕС‚РєР»СЋС‡РёС‚СЊ, С‚Рѕ РЅРµ РѕС‚РѕРґРІРёРіР°РµРј РµС‘, Р° СЃС‚РёСЂР°РµРј.
   if not (Value in [caPrevFlag, caNextFlag]) then
     if NextControlAction in [caPlayBackward, caPlayForward] then
       NextControlActionStackPosition := 0;
@@ -4042,7 +4042,7 @@ end;
 
 function TMainForm.FlagsEnabled: Boolean;
 begin
-  Result := not ((GetAsyncKeyState(VK_SHIFT) < 0) xor (GetKeyState(VK_CAPITAL) and 1 = 1)); // либо то, либо другое...
+  Result := not ((GetAsyncKeyState(VK_SHIFT) < 0) xor (GetKeyState(VK_CAPITAL) and 1 = 1)); // Р»РёР±Рѕ С‚Рѕ, Р»РёР±Рѕ РґСЂСѓРіРѕРµ...
 end;
 
 procedure TMainForm.TimerTimer(Sender: TObject);
@@ -4084,11 +4084,11 @@ begin
             CurrentWorkingSetFrame := FindWorkingSetFrameByOffset(1);
             PopControlAction;
           end;
-        caPlayBackward, caPlayForward, // должны перекрываться нажатыми actBackwardWhilePressed и actForwardWhilePressed
+        caPlayBackward, caPlayForward, // РґРѕР»Р¶РЅС‹ РїРµСЂРµРєСЂС‹РІР°С‚СЊСЃСЏ РЅР°Р¶Р°С‚С‹РјРё actBackwardWhilePressed Рё actForwardWhilePressed
         caNone:
           if Interval <= 1 then
             begin
-              //  эти буквы ещё упомянуты в меню и в блокировщике горячих клавиш IsShortCut
+              //  СЌС‚Рё Р±СѓРєРІС‹ РµС‰С‘ СѓРїРѕРјСЏРЅСѓС‚С‹ РІ РјРµРЅСЋ Рё РІ Р±Р»РѕРєРёСЂРѕРІС‰РёРєРµ РіРѕСЂСЏС‡РёС… РєР»Р°РІРёС€ IsShortCut
               if actBackwardWhilePressed.Checked or (
                 (GetAsyncKeyState(VK_CONTROL) >= 0) and
                 ((GetAsyncKeyState(Ord('A')) < 0) or (GetAsyncKeyState(Ord('C')) < 0))
@@ -4106,7 +4106,7 @@ begin
                   caPlayBackward: AutoMove(-1);
                   caPlayForward:  AutoMove( 1);
                   caNone: begin
-                    AutoMovementStopped := False; // самая последняя альтернатива, если клавиши не нажаты, то следующее нажатие должно опять сработать
+                    AutoMovementStopped := False; // СЃР°РјР°СЏ РїРѕСЃР»РµРґРЅСЏСЏ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР°, РµСЃР»Рё РєР»Р°РІРёС€Рё РЅРµ РЅР°Р¶Р°С‚С‹, С‚Рѕ СЃР»РµРґСѓСЋС‰РµРµ РЅР°Р¶Р°С‚РёРµ РґРѕР»Р¶РЅРѕ РѕРїСЏС‚СЊ СЃСЂР°Р±РѕС‚Р°С‚СЊ
                     SkipFirstStopper := True;
                   end;
                 end;
@@ -4221,17 +4221,17 @@ begin
       AudioRecorder.WaitForStop;
     end;
 
-  Playing := not Playing; // это перед установкой CurrentRecordPosition, чтобы с ним установилась и позиция звука.
+  Playing := not Playing; // СЌС‚Рѕ РїРµСЂРµРґ СѓСЃС‚Р°РЅРѕРІРєРѕР№ CurrentRecordPosition, С‡С‚РѕР±С‹ СЃ РЅРёРј СѓСЃС‚Р°РЅРѕРІРёР»Р°СЃСЊ Рё РїРѕР·РёС†РёСЏ Р·РІСѓРєР°.
   if (CurrentRecordPosition >= RecordedFrames.Count) or AdvertisementShowing then
     CurrentRecordPosition := 0
   else
-    CurrentRecordPosition := CurrentRecordPosition; // пинаем позиционирование звука. TODO: это кривовато как-то...
+    CurrentRecordPosition := CurrentRecordPosition; // РїРёРЅР°РµРј РїРѕР·РёС†РёРѕРЅРёСЂРѕРІР°РЅРёРµ Р·РІСѓРєР°. TODO: СЌС‚Рѕ РєСЂРёРІРѕРІР°С‚Рѕ РєР°Рє-С‚Рѕ...
 
   StockAudioPlayer.Active := Playing;
-  // Запуск самого воспроизведения и последующая остановка -
-  // через обработчики StockAudioPlayerActivate и StockAudioPlayerDeactivate:
-  // запускаем воспроизведение кадров только после того, как звук будет готов воспроизводиться.
-  // Но вот останавливать вручную, на всякий случай, будем сразу, а не когда звук соизволит.
+  // Р—Р°РїСѓСЃРє СЃР°РјРѕРіРѕ РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёСЏ Рё РїРѕСЃР»РµРґСѓСЋС‰Р°СЏ РѕСЃС‚Р°РЅРѕРІРєР° -
+  // С‡РµСЂРµР· РѕР±СЂР°Р±РѕС‚С‡РёРєРё StockAudioPlayerActivate Рё StockAudioPlayerDeactivate:
+  // Р·Р°РїСѓСЃРєР°РµРј РІРѕСЃРїСЂРѕРёР·РІРµРґРµРЅРёРµ РєР°РґСЂРѕРІ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ С‚РѕРіРѕ, РєР°Рє Р·РІСѓРє Р±СѓРґРµС‚ РіРѕС‚РѕРІ РІРѕСЃРїСЂРѕРёР·РІРѕРґРёС‚СЊСЃСЏ.
+  // РќРѕ РІРѕС‚ РѕСЃС‚Р°РЅР°РІР»РёРІР°С‚СЊ РІСЂСѓС‡РЅСѓСЋ, РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№, Р±СѓРґРµРј СЃСЂР°Р·Сѓ, Р° РЅРµ РєРѕРіРґР° Р·РІСѓРє СЃРѕРёР·РІРѕР»РёС‚.
   if not Playing then
     begin
       actPlay.Checked := False;
@@ -4260,8 +4260,8 @@ begin
   NewRecordedFrame.FrameInfoIndex := NewFrameInfoIndex;
   CurrentWorkingSetFrame := NewRecordedFrame;
 
-  // FFrameInfoList с диска потребует сохранения.
-  // А если имени проекта ещё нет, то это просто все файлы папки, это не обязательно сохранять.
+  // FFrameInfoList СЃ РґРёСЃРєР° РїРѕС‚СЂРµР±СѓРµС‚ СЃРѕС…СЂР°РЅРµРЅРёСЏ.
+  // Рђ РµСЃР»Рё РёРјРµРЅРё РїСЂРѕРµРєС‚Р° РµС‰С‘ РЅРµС‚, С‚Рѕ СЌС‚Рѕ РїСЂРѕСЃС‚Рѕ РІСЃРµ С„Р°Р№Р»С‹ РїР°РїРєРё, СЌС‚Рѕ РЅРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ СЃРѕС…СЂР°РЅСЏС‚СЊ.
   if ProjectFileName <> '' then
     Saved := False;
 end;
@@ -4272,7 +4272,7 @@ begin
     StopRecording;
   if Playing then
     StopPlaying;
-// Stop выполняется перед всякими действиями, от которых можно отказаться. И в этом случае экспорт должен мочь продолжиться
+// Stop РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ РїРµСЂРµРґ РІСЃСЏРєРёРјРё РґРµР№СЃС‚РІРёСЏРјРё, РѕС‚ РєРѕС‚РѕСЂС‹С… РјРѕР¶РЅРѕ РѕС‚РєР°Р·Р°С‚СЊСЃСЏ. Р РІ СЌС‚РѕРј СЃР»СѓС‡Р°Рµ СЌРєСЃРїРѕСЂС‚ РґРѕР»Р¶РµРЅ РјРѕС‡СЊ РїСЂРѕРґРѕР»Р¶РёС‚СЊСЃСЏ
 //  if Exporting then
 //    ExportCancelled := True;
 end;
@@ -4339,7 +4339,7 @@ end;
 
 procedure TMainForm.ApplicationEventsIdle(Sender: TObject; var Done: Boolean);
 resourcestring
-  rs_PreloadStatus = 'Загрузка кадра: ';
+  rs_PreloadStatus = 'Р—Р°РіСЂСѓР·РєР° РєР°РґСЂР°: ';
 var
   i: integer;
   FrameInfo: TFrameInfo;
@@ -4490,7 +4490,7 @@ begin
           FramesInOriginalOrder[lvFrameset.Items[ItemIndex].ImageIndex] := nil;
           Saved := False;
         end;
-      // кто не нашёлся в lvFrameset.Items и не был убран из списка FramesInOriginalOrder - освобождаеся.
+      // РєС‚Рѕ РЅРµ РЅР°С€С‘Р»СЃСЏ РІ lvFrameset.Items Рё РЅРµ Р±С‹Р» СѓР±СЂР°РЅ РёР· СЃРїРёСЃРєР° FramesInOriginalOrder - РѕСЃРІРѕР±РѕР¶РґР°РµСЃСЏ.
       for WorkingFrameIndex := 0 to WorkingSetFrames.Count - 1 do
         FramesInOriginalOrder[WorkingFrameIndex].Free;
     end;
@@ -4547,26 +4547,26 @@ var
   i: Integer;
   FrameAtLeft: TRecordedFrame;
 begin
-  // разворачиваем направление поиска относительно исходного направления движения
+  // СЂР°Р·РІРѕСЂР°С‡РёРІР°РµРј РЅР°РїСЂР°РІР»РµРЅРёРµ РїРѕРёСЃРєР° РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РёСЃС…РѕРґРЅРѕРіРѕ РЅР°РїСЂР°РІР»РµРЅРёСЏ РґРІРёР¶РµРЅРёСЏ
   ADirection := -ADirection;
-  // переходим к предыдущему кадру, к тому после которого словили лупер,
-  // чтоб на обратном пути не словить сразу же его же
+  // РїРµСЂРµС…РѕРґРёРј Рє РїСЂРµРґС‹РґСѓС‰РµРјСѓ РєР°РґСЂСѓ, Рє С‚РѕРјСѓ РїРѕСЃР»Рµ РєРѕС‚РѕСЂРѕРіРѕ СЃР»РѕРІРёР»Рё Р»СѓРїРµСЂ,
+  // С‡С‚РѕР± РЅР° РѕР±СЂР°С‚РЅРѕРј РїСѓС‚Рё РЅРµ СЃР»РѕРІРёС‚СЊ СЃСЂР°Р·Сѓ Р¶Рµ РµРіРѕ Р¶Рµ
   i := MoveToFrameByOffset(AIndex, ADirection, True, False).Index;
   repeat
     FrameAtLeft := nil; // hide warning
-    // Если вправо - то кадр слева это тот, что до следующего
+    // Р•СЃР»Рё РІРїСЂР°РІРѕ - С‚Рѕ РєР°РґСЂ СЃР»РµРІР° СЌС‚Рѕ С‚РѕС‚, С‡С‚Рѕ РґРѕ СЃР»РµРґСѓСЋС‰РµРіРѕ
     if ADirection > 0 then
       FrameAtLeft := WorkingSetFrames[i];
 
-    // переходим к следующему кадру
+    // РїРµСЂРµС…РѕРґРёРј Рє СЃР»РµРґСѓСЋС‰РµРјСѓ РєР°РґСЂСѓ
     i := MoveToFrameByOffset(i, ADirection, True, False).Index;
 
-    // Если влево - то кадр слева это тот, что следующий
+    // Р•СЃР»Рё РІР»РµРІРѕ - С‚Рѕ РєР°РґСЂ СЃР»РµРІР° СЌС‚Рѕ С‚РѕС‚, С‡С‚Рѕ СЃР»РµРґСѓСЋС‰РёР№
     if ADirection < 0 then
       FrameAtLeft := WorkingSetFrames[i];
 
     if FrameInfoList[FrameAtLeft.FrameInfoIndex].HaveLooperAfter then
-      // переходим на кадр, расположенный в исходном направлениии после найденного луппера
+      // РїРµСЂРµС…РѕРґРёРј РЅР° РєР°РґСЂ, СЂР°СЃРїРѕР»РѕР¶РµРЅРЅС‹Р№ РІ РёСЃС…РѕРґРЅРѕРј РЅР°РїСЂР°РІР»РµРЅРёРёРё РїРѕСЃР»Рµ РЅР°Р№РґРµРЅРЅРѕРіРѕ Р»СѓРїРїРµСЂР°
       Exit(MoveToFrameByOffset(i, -ADirection, True, False).Index);
   until i = AIndex;
   Exit(AIndex);
@@ -4617,7 +4617,7 @@ begin
               end;
               Exit;
             end;
-          // Первый стоппер проверен, если надо поскипан, и теперь остальные стопперы не первые в этом забеге.
+          // РџРµСЂРІС‹Р№ СЃС‚РѕРїРїРµСЂ РїСЂРѕРІРµСЂРµРЅ, РµСЃР»Рё РЅР°РґРѕ РїРѕСЃРєРёРїР°РЅ, Рё С‚РµРїРµСЂСЊ РѕСЃС‚Р°Р»СЊРЅС‹Рµ СЃС‚РѕРїРїРµСЂС‹ РЅРµ РїРµСЂРІС‹Рµ РІ СЌС‚РѕРј Р·Р°Р±РµРіРµ.
           SkipFirstStopper := False;
         end;
 
@@ -4646,8 +4646,8 @@ begin
       Exit(False);
 
   if not (
-    // если не клавиша, обрабатываемая другим способом, то обрабатываем по-прежнему как потенциальный ShortCut
-    // А другим способом обрабатываются клавиши движения по кадрам при не нажатых Ctrl и Alt
+    // РµСЃР»Рё РЅРµ РєР»Р°РІРёС€Р°, РѕР±СЂР°Р±Р°С‚С‹РІР°РµРјР°СЏ РґСЂСѓРіРёРј СЃРїРѕСЃРѕР±РѕРј, С‚Рѕ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј РїРѕ-РїСЂРµР¶РЅРµРјСѓ РєР°Рє РїРѕС‚РµРЅС†РёР°Р»СЊРЅС‹Р№ ShortCut
+    // Рђ РґСЂСѓРіРёРј СЃРїРѕСЃРѕР±РѕРј РѕР±СЂР°Р±Р°С‚С‹РІР°СЋС‚СЃСЏ РєР»Р°РІРёС€Рё РґРІРёР¶РµРЅРёСЏ РїРѕ РєР°РґСЂР°Рј РїСЂРё РЅРµ РЅР°Р¶Р°С‚С‹С… Ctrl Рё Alt
         (GetAsyncKeyState(VK_CONTROL) >= 0)
     and (GetAsyncKeyState(VK_MENU) >= 0)
     and (
@@ -4921,15 +4921,15 @@ begin
         TargetIndex := lvFrameset.Items.Count - 1;
         TargetPosition.x := -1;
       end;
-    // двигаем вперёд те, что были перед целью
+    // РґРІРёРіР°РµРј РІРїРµСЂС‘Рґ С‚Рµ, С‡С‚Рѕ Р±С‹Р»Рё РїРµСЂРµРґ С†РµР»СЊСЋ
     for i := 0 to MovedItems.Count - 1 do begin
       MovedItem := MovedItems[i];
       if TargetIndex > MovedItem.Index then
         MoveItem;
     end;
-    // Двигаем назад те, что были после цели.
-    // Если их двигать этим методом в прямом порядке, они окажутся в обратном.
-    // Поэтому двигаю в обратном, чтоб получались в прямом.
+    // Р”РІРёРіР°РµРј РЅР°Р·Р°Рґ С‚Рµ, С‡С‚Рѕ Р±С‹Р»Рё РїРѕСЃР»Рµ С†РµР»Рё.
+    // Р•СЃР»Рё РёС… РґРІРёРіР°С‚СЊ СЌС‚РёРј РјРµС‚РѕРґРѕРј РІ РїСЂСЏРјРѕРј РїРѕСЂСЏРґРєРµ, РѕРЅРё РѕРєР°Р¶СѓС‚СЃСЏ РІ РѕР±СЂР°С‚РЅРѕРј.
+    // РџРѕСЌС‚РѕРјСѓ РґРІРёРіР°СЋ РІ РѕР±СЂР°С‚РЅРѕРј, С‡С‚РѕР± РїРѕР»СѓС‡Р°Р»РёСЃСЊ РІ РїСЂСЏРјРѕРј.
     for i := MovedItems.Count - 1 downto 0 do begin
       MovedItem := MovedItems[i];
       if TargetIndex < MovedItem.Index then
@@ -4954,7 +4954,7 @@ var
 begin
   IniFile := TIniFile.Create(ChangeFileExt(ParamStr(0), '.ini'));
   try
-    if (WindowState = wsNormal) and not actFullScreenMode.Checked then // развёрнутый размер не интересен для сохранения
+    if (WindowState = wsNormal) and not actFullScreenMode.Checked then // СЂР°Р·РІС‘СЂРЅСѓС‚С‹Р№ СЂР°Р·РјРµСЂ РЅРµ РёРЅС‚РµСЂРµСЃРµРЅ РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ
     begin
       IniFile.WriteInteger('LastUsed', 'MainWindowLeft', Left);
       IniFile.WriteInteger('LastUsed', 'MainWindowTop', Top);
